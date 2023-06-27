@@ -2,15 +2,16 @@ import dxpy
 from subprocess import check_output
 from subprocess import run
 import glob
+import compareAnnotation
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id):
     # TODO: automatically get recent vcf files for twe and tso500. Should also get bed file ID
     # must be from most recent 002 project that is not archived and contains vcf and bed files
     # Also check with Jethro for recent 002 folder structure
     twe_vcf_id = "file-GPJ4xzQ4BG0j66gZyGZX2Bb2"
-    tso_vcf_id = "file-GPJ4xzQ4BG0j66gZyGZX2Bb2"
+    tso_vcf_id = "file-GPgfQpQ4vbbBjvJ6XX89Q35q"
     twe_bed_id = "file-G2V8k90433GVQ7v07gfj0ggX"
-    tso_bed_id = "file-G2V8k90433GVQ7v07gfj0ggX"
+    tso_bed_id = "file-G4F6jX04ZFVV3JZJG62ZQ5yJ"
 
     # Run on Dev TWE VCF
     dev_twe_folder = "clinvar_testing_dev_twe"
@@ -34,14 +35,13 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id):
     # Perform comparison of differences when using dev vs. prod
     # Get diff for twe
     twe_diff = get_diff_output(dev_twe_output, prod_twe_output)
-    # Get detailed table of differences for twe
-    twe_comparison = compare_annotation(dev_twe_output, prod_twe_output)
     # Get diff for tso500
     tso_diff = get_diff_output(dev_tso_output, prod_tso_output)
-    # Get detailed table of differences for tso500
-    tso_comparison = compare_annotation(dev_tso_output, prod_tso_output)
 
-    return twe_comparison, tso_comparison, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job
+    # Get detailed table of differences for twe and tso500
+    annotation_comparison = compareAnnotation.compare_annotation(twe_diff, tso_diff)
+
+    return annotation_comparison, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job
 
 def parse_vep_output(project_id, folder, label):
     # Download files locally
@@ -61,20 +61,7 @@ def get_diff_output(dev_output, prod_output):
 
     return diff_output
 
-def compare_annotation(dev_vcf, prod_vcf):
-    # TODO: write algorithm to document and describe all differences
-    comparison_spreadsheet = "annotation_comparison.csv"
-    return comparison_spreadsheet
-
 def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file):
-    # run the below command via DNAnexus
-    """
-    dx run eggd_vep --destination="/clinvar_testing_dev_twe" \
-	-iconfig_file="file-GQzqZ284v6X437p1QZgk8ZPY" \
-	-ivcf="file-GPJ4xzQ4BG0j66gZyGZX2Bb2" \
-	-ipanel_bed="file-G2V8k90433GVQ7v07gfj0ggX"
-    """
-
     inputs = {
         "config_file" : config_file,
         "vcf" : vcf_file,

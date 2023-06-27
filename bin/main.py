@@ -25,12 +25,12 @@ def run_prometheus():
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     print("Running vep for development and production configs")
-    (twe_comparison, tso_comparison, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job,
+    (annotation_comparison, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job,
     prod_tso_job) = vepTesting.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
 
     # Step 4 - generate confluence page and jira ticket
     print("Documenting testing on Confluence")
-    confluence_link = confluenceHandler.generate_page(twe_comparison, tso_comparison,
+    confluence_link = confluenceHandler.generate_page(annotation_comparison,
     twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job)
     print("Generating Jira ticket")
     jira_link = jiraHandler.generate_ticket(confluence_link)
