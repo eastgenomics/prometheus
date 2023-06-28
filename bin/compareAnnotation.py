@@ -4,27 +4,44 @@ import pandas
 import json
 
 regex_config_location = "resources/annotation_regex.json"
+output_location = "evidence"
 
 def compare_annotation(diff_twe, diff_tso):
-    # TODO: write algorithm to document and describe all differences
     # get variant annotation changes for TWE
     added_twe, deleted_twe, changed_twe = parse_diff(diff_twe)
     # add "assay" column with "TWE" for added, deleted, and changed
-    # TODO: implement here
+    added_twe["assay"] = "TWE"
+    deleted_twe["assay"] = "TWE"
+    changed_twe["assay"] = "TWE"
     
     # get variant annotation changes for TSO500
     added_tso, deleted_tso, changed_tso = parse_diff(diff_tso)
+    # add "assay" column with "TSO500" for added, deleted, and changed
+    added_twe["assay"] = "TSO500"
+    deleted_twe["assay"] = "TSO500"
+    changed_twe["assay"] = "TSO500"
 
     # combine both tables on all columns for added, deleted, and changed
     added = pandas.concat([added_twe, added_tso])
     deleted = pandas.concat([deleted_twe, deleted_tso])
     changed = pandas.concat([changed_twe, changed_tso])
     # filter added to show only "Added" "Count TWE" and "Count TSO500" columns
+    added = added.groupby(["added", "assay"]).size().reset_index(name='counts')
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
+    deleted = deleted.groupby(["deleted", "assay"]).size().reset_index(name='counts')
     # filter changed to show only "Changed from" "Changed to" "Count TWE" and "Count TSO500" columns
+    changed = changed.groupby(["added", "assay"]).size().reset_index(name='counts')
+
+    added_output = "{}/added_variants.csv".format(output_location)
+    added.to_csv(added_output, index=False)
+
+    deleted_output = "{}/deleted_variants.csv".format(output_location)
+    deleted.to_csv(deleted_output, index=False)
+
+    changed_output = "{}/changed_variants.csv".format(output_location)
+    changed.to_csv(changed_output, index=False)
     
-    comparison_spreadsheet = "annotation_comparison.csv"
-    return comparison_spreadsheet
+    return added_output, deleted_output, changed_output
 
 def parse_diff(diff):
     """
@@ -50,9 +67,8 @@ def parse_diff(diff):
 
     added_list = []
     deleted_list = []
-    changed_list = []
-
-    changed_del_temp = ""
+    changed_list_from = []
+    changed_list_to = []
 
     for line in diff:
         match parse_mode:
@@ -80,18 +96,29 @@ def parse_diff(diff):
                 # search for changed line (old)
                 result = re.search(deleted_regex, line)
                 if result:
-                    changed_del_temp = result
+                    changed_list_from.append(result)
                     parse_mode = consts.CHANGED_MODE_ADD
             case consts.CHANGED_MODE_ADD:
                 # search for changed line (new)
                 result = re.search(added_regex, line)
                 if result:
-                    changed_list.append((changed_del_temp, result))
+                    changed_list_to.append(result)
                     parse_mode = consts.SCAN_MODE
 
     # TODO: add code for processing this info
+    added_split = split_variant_info(added_list)
+    deleted_split = split_variant_info(deleted_list)
+    changed_from_split = split_variant_info(changed_list_from)
+    changed_to_split = split_variant_info(changed_list_to)
 
-    return added_list, deleted_list, changed_list
+    added_df, deleted_df, changed_df = make_tables(
+        added_split,
+        deleted_split,
+        changed_from_split,
+        changed_to_split
+    )
+
+    return added_df, deleted_df, changed_df
 
 def split_variant_info(raw_list) -> list(str):
     filtered_list = []
@@ -99,13 +126,30 @@ def split_variant_info(raw_list) -> list(str):
         # format: mutation, locus, category, info
         filtered_list.append(item.split(' '))
 
-def make_tables(added_list, deleted_list, changed_list):
-    added_table = pandas.DataFrame(data=added_list, columns=["mutation", "locus", "category", "info"])
+    return filtered_list
+
+def make_tables(added_list, deleted_list, changed_list_from, changed_list_to):
     # output format: variant category, count TWE, count TSO500
     # in the case of conflicting evidence, category is based on "category" and "info" columns
     # list of full category names from category and input columns
-    added_categories = get_categories(added_table)
-    
+    added_df = pandas.DataFrame(data=added_list, columns=["mutation", "locus", "category", "info"])
+    added_df["added"] = get_categories(added_df)
+    added_df = added_df[["added"]]
+
+    deleted_df = pandas.DataFrame(data=deleted_list, columns=["mutation", "locus", "category", "info"])
+    deleted_df["deleted"] = get_categories(deleted_df)
+    deleted_df = deleted_df[["deleted"]]
+
+    # TODO: make sure order of rows remains constant for changed tables (from and to)
+    changed_from_df = pandas.DataFrame(data=changed_list_from, columns=["mutation", "locus", "category", "info"])
+    changed_from_df["from"] = get_categories(changed_from_df)
+
+    changed_to_df = pandas.DataFrame(data=changed_list_to, columns=["mutation", "locus", "category", "info"])
+    changed_from_df["to"] = get_categories(changed_to_df)
+
+    changed_df = changed_from_df[["from", "to"]]
+
+    return added_df, deleted_df, changed_df
 
 def get_categories(dataframe_extract):
     # get full category name from category and info columns for all entries
