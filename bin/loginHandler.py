@@ -5,10 +5,13 @@ Handles all logins for Prometheus
 import dxpy as dx
 import sys
 import logging
+import json
 
 class LoginHandler:
+    def __init__(self):
+        self.load_credentials()
 
-    def login(self) -> None:
+    def login_DNAnexus(self) -> None:
         """
         Logs into DNAnexus
         Parameters
@@ -37,25 +40,14 @@ class LoginHandler:
             logger.error("Error logging in to DNAnexus")
             sys.exit(1)
 
+    def login_slack(self) -> None:
+        print("logging into slack")
+    
         
-    def load_credential_info(self):
-        """
-        Load the tokens and Jira email from the credentials.json file
-
-        Returns
-        -------
-        None
-        """
+    def load_credentials(self):
         # Get tokens etc from credentials file
-        with open(
-            ROOT_DIR.joinpath("credentials.json"), "r", encoding='utf8'
-        ) as json_file:
-            credentials = json.load(json_file)
+        with open("resources/credentials.json", "r", encoding='utf8') as json_file:
+            creds = json.load(json_file)
 
-        self.dx_token = credentials.get('DX_TOKEN')
-        self.jira_email = credentials.get('JIRA_EMAIL')
-        self.jira_token = credentials.get('JIRA_TOKEN')
-        self.staging_proj_id = credentials.get('STAGING_AREA_PROJ_ID')
-        self.default_months = credentials.get('DEFAULT_MONTHS')
-
-        return dx_token, jira_email, jira_token, staging_proj_id, default_months
+        self.dx_token = creds.get('DX_TOKEN')
+        self.slack_token = creds.get('SLACK_TOKEN')

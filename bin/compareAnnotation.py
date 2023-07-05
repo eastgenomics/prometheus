@@ -17,9 +17,9 @@ def compare_annotation(diff_twe, diff_tso):
     # get variant annotation changes for TSO500
     added_tso, deleted_tso, changed_tso = parse_diff(diff_tso)
     # add "assay" column with "TSO500" for added, deleted, and changed
-    added_twe["assay"] = "TSO500"
-    deleted_twe["assay"] = "TSO500"
-    changed_twe["assay"] = "TSO500"
+    added_tso["assay"] = "TSO500"
+    deleted_tso["assay"] = "TSO500"
+    changed_tso["assay"] = "TSO500"
 
     # combine both tables on all columns for added, deleted, and changed
     added = pandas.concat([added_twe, added_tso])
@@ -30,7 +30,7 @@ def compare_annotation(diff_twe, diff_tso):
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
     deleted = deleted.groupby(["deleted", "assay"]).size().reset_index(name='counts')
     # filter changed to show only "Changed from" "Changed to" "Count TWE" and "Count TSO500" columns
-    changed = changed.groupby(["added", "assay"]).size().reset_index(name='counts')
+    changed = changed.groupby(["from", "to", "assay"]).size().reset_index(name='counts')
 
     added_output = "{}/added_variants.csv".format(output_location)
     added.to_csv(added_output, index=False)
@@ -200,12 +200,15 @@ def get_full_category_name(base_name, info):
                     # we now have a vec (new_info) containing all evidence categories for this variant
                     # the next step is to order this list of categories so the order is uniform for all variants
 
+                    # TODO: check that all evidence is in valid format
+
                     output_string = base_name + " "
-                    for regex in evidence_regex:
+                    for regex_category in evidence_regex:
                         for evidence in new_info:
-                            if re.match(evidence_regex[regex], evidence):
+                            if re.match(evidence_regex[regex_category], evidence):
                                 # add category and &
-                                output_string += regex + "&"
+                                output_string += regex_category + "&"
+                                continue
 
                     output_string = output_string[:-1]
                     return output_string

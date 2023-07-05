@@ -39,9 +39,9 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id):
     tso_diff = get_diff_output(dev_tso_output, prod_tso_output)
 
     # Get detailed table of differences for twe and tso500
-    annotation_comparison = compareAnnotation.compare_annotation(twe_diff, tso_diff)
+    added_csv, deleted_csv, changed_csv = compareAnnotation.compare_annotation(twe_diff, tso_diff)
 
-    return annotation_comparison, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job
+    return added_csv, deleted_csv, changed_csv, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job
 
 def parse_vep_output(project_id, folder, label):
     # Download files locally
