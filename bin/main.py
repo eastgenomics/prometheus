@@ -9,7 +9,6 @@ import vepTesting
 import confluenceHandler
 import jiraHandler
 import deployer
-import announcer
 import json
 import loginHandler
 import slackHandler
@@ -57,10 +56,8 @@ def run_prometheus():
 
     # Step 6 - announce update to team
     slack_handler = slackHandler(login_handler.slack_token)
-    slack_handler.announce_clinvar_update(recent_vcf_file, earliest_time)
     slack_channel = "egg-test"
-    announcer.announce_clinvar_update(slack_handler, slack_channel, recent_vcf_file, earliest_time)
-    
+    slack_handler.announce_clinvar_update(recent_vcf_file, earliest_time)
 
 def load_project_ids():
     # Get tokens etc from credentials file

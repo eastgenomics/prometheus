@@ -6,8 +6,13 @@ import dxpy
 
 def deploy_clinvar_to_production(reference_project_id, vcf_file_id, tbi_file_id):
     # move vcf file and vcf.tbi file to 001 reference project
+    ref_folder = "annotation/b37/clinvar"
 
-    return
+    vcf_file = dxpy.bindings.DXObject(dxid=vcf_file_id)
+    vcf_file.clone(project=reference_project_id, folder=ref_folder)
+
+    tbi_file = dxpy.bindings.DXObject(dxid=tbi_file_id)
+    tbi_file.clone(project=reference_project_id, folder=ref_folder)
 
 def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv, deleted_csv, changed_csv):
     # upload .csv files generated earlier to subfolder of 003 project
