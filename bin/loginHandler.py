@@ -9,7 +9,7 @@ import json
 
 class LoginHandler:
     def __init__(self):
-        self.load_credentials()
+        self.dx_token, self.slack_token = self.load_credentials()
 
     def login_DNAnexus(self) -> None:
         """
@@ -49,5 +49,7 @@ class LoginHandler:
         with open("resources/credentials.json", "r", encoding='utf8') as json_file:
             creds = json.load(json_file)
 
-        self.dx_token = creds.get('DX_TOKEN')
-        self.slack_token = creds.get('SLACK_TOKEN')
+        dx_token = creds.get('DX_TOKEN')
+        slack_token = creds.get('SLACK_TOKEN')
+
+        return dx_token, slack_token

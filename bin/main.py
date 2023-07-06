@@ -12,6 +12,7 @@ import deployer
 import announcer
 import json
 import loginHandler
+import slackHandler
 
 def run_prometheus():
     # load config files
@@ -55,7 +56,8 @@ def run_prometheus():
     deployer.deploy_clinvar_to_production(ref_proj_id, recent_vcf_file, recent_tbi_file)
 
     # Step 6 - announce update to team
-    announcer.announce_clinvar_update(recent_vcf_file, earliest_time)
+    slack_handler = slackHandler(login_handler.slack_token)
+    announcer.announce_clinvar_update(slack_handler, recent_vcf_file, earliest_time)
     
 
 def load_project_ids():
