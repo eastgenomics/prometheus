@@ -46,8 +46,11 @@ def generate_config_files(dev_version, dev_annotation_file_id, dev_index_file_id
     path_to_dev = make_config_file(dev_filename, dev_annotation_file_id, dev_index_file_id)
 
     # upload prod and dev files to DNAnexus via dxpy
-    dev_file = dxpy.upload_local_file(filename=path_to_dev, project=project_id)
-    prod_file = dxpy.upload_local_file(filename=path_to_prod, project=project_id)
+    subfolder = "ClinVar_version_{}_annotation_resource_update".format(dev_version)
+    folder_path = "{}/Testing".format(subfolder)
+
+    dev_file = dxpy.upload_local_file(filename=path_to_dev, project=project_id, folder=folder_path)
+    prod_file = dxpy.upload_local_file(filename=path_to_prod, project=project_id, folder=folder_path)
 
     dev_id = dev_file.get_id()
     prod_id = prod_file.get_id()

@@ -38,7 +38,7 @@ def run_prometheus():
 
     # step 4 - upload .csv files to DNAnexus
     print("Documenting testing on DNAnexus")
-    deployer.deploy_testing_to_development(dev_proj_id, added_csv, deleted_csv, changed_csv)
+    deployer.deploy_testing_to_development(dev_proj_id, clinvar_version, added_csv, deleted_csv, changed_csv)
     
 
     """# Step 4 - generate confluence page and jira ticket
