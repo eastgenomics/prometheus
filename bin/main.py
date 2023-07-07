@@ -3,27 +3,27 @@ Runs prometheus
 This program is to be run on a DNAnexus node once a week as new clinvar updates come in
 """
 
-import getClinvarFiles
-import makeVepTestConfigs as vep
-import vepTesting
+import get_clinvar_files as get_clinvar_files
+import make_vep_test_configs as vep
+import vep_testing
 import deployer
 import json
-import loginHandler
-import slackHandler
+import login_handler
+import slack_handler
 
 def run_prometheus():
     # load config files
     ref_proj_id, dev_proj_id, slack_channel = load_config()
-    login_handler = loginHandler()
+    login_handler = login_handler()
     login_handler.login_DNAnexus()
     login_handler.login_slack()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     print("Fetching latest ClinVar annotation resource files")
-    recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version = getClinvarFiles.get_ftp_files()
+    recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version = get_clinvar_files.get_ftp_files()
     print("Downloading the clinvar annotation resource files {1} and {2} from {3}".format(recent_vcf_file,
     recent_tbi_file, earliest_time))
-    project_id, clinvar_vcf_id, clinvar_tbi_id = getClinvarFiles.retrieve_clinvar_files(recent_vcf_file, recent_tbi_file, clinvar_version)
+    project_id, clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(recent_vcf_file, recent_tbi_file, clinvar_version)
 
     # Step 2 - Make dev and prod VEP config files from template and store local paths
     print("Creating development and production config files from template")
@@ -31,7 +31,7 @@ def run_prometheus():
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     print("Running vep for development and production configs")
-    added_csv, deleted_csv, changed_csv, job_report = vepTesting.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
+    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
 
     # step 4 - upload .csv files to DNAnexus
     print("Documenting testing on DNAnexus")
@@ -42,7 +42,7 @@ def run_prometheus():
     deployer.deploy_clinvar_to_production(ref_proj_id, recent_vcf_file, recent_tbi_file)
 
     # Step 6 - announce update to team
-    slack_handler = slackHandler(login_handler.slack_token)
+    slack_handler = slack_handler(login_handler.slack_token)
     slack_handler.announce_clinvar_update(slack_channel, recent_vcf_file, earliest_time)
 
 def load_config():
