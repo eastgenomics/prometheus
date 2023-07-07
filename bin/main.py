@@ -24,16 +24,16 @@ def run_prometheus():
     print("Downloading the clinvar annotation resource files {0} and {1} from {2}".format(recent_vcf_file,
     recent_tbi_file, earliest_time))
     download_dir = "./downloads"
-    project_id, clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(dev_proj_id, 
+    clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(dev_proj_id, 
         download_dir, recent_vcf_file, recent_tbi_file, clinvar_version)
 
     # Step 2 - Make dev and prod VEP config files from template and store local paths
     print("Creating development and production config files from template")
-    vep_config_dev, vep_config_prod = vep.generate_config_files(clinvar_version, clinvar_vcf_id, clinvar_tbi_id, project_id)
+    vep_config_dev, vep_config_prod = vep.generate_config_files(clinvar_version, clinvar_vcf_id, clinvar_tbi_id, dev_proj_id, ref_proj_id)
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     print("Running vep for development and production configs")
-    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
+    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, vep_config_prod)
 
     # step 4 - upload .csv files to DNAnexus
     print("Documenting testing on DNAnexus")

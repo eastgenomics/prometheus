@@ -7,6 +7,7 @@ import re
 from ftplib import FTP
 from datetime import datetime
 import dxpy
+from os.path import exists
 
 dirname = os.path.dirname(__file__)
 clinvar_dir = os.path.join(dirname, "/data/clinvar/")
@@ -70,17 +71,23 @@ def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
     Returns: None
     """
 
-    ftp = connect_to_website()
-
     vcf_file_to_download = os.path.join(download_dir, ftp_vcf)
-
-    with open(vcf_file_to_download, 'wb') as localfile:
-        ftp.retrbinary('RETR ' + ftp_vcf, localfile.write, 1024)
-
     tbi_file_to_download = os.path.join(download_dir, ftp_vcf_index)
 
-    with open(tbi_file_to_download, 'wb') as localfile:
-        ftp.retrbinary('RETR ' + ftp_vcf_index, localfile.write, 1024)
+    # if files are already present, skip the download
+    if exists(vcf_file_to_download) and exists(tbi_file_to_download):
+        return vcf_file_to_download, tbi_file_to_download
+
+    ftp = connect_to_website()
+
+    # download unless files are already present
+    if not exists(vcf_file_to_download):
+        with open(vcf_file_to_download, 'wb') as localfile:
+            ftp.retrbinary('RETR ' + ftp_vcf, localfile.write, 1024)
+
+    if not exists(tbi_file_to_download):
+        with open(tbi_file_to_download, 'wb') as localfile:
+            ftp.retrbinary('RETR ' + ftp_vcf_index, localfile.write, 1024)
 
     ftp.quit()
 
@@ -88,9 +95,12 @@ def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
 
 def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version):
     # upload downloaded clinvar files to new folder in existing 003 project
-    # TODO: create new project folder in specified 003 project
     subfolder = "ClinVar_version_{}_annotation_resource_update".format(vcf_version)
     folder_path = "/{}/Testing".format(subfolder)
+
+    # get DNAnexus folder object
+    dev_project = dxpy.bindings.dxproject.DXProject(project_id)
+    dev_project.new_folder(folder_path, parents=True)
 
     # Upload from a path to new project with dxpy
     vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
@@ -98,7 +108,7 @@ def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version):
 
     tbi_file_id = vcf_file.get_id()
     vcf_file_id = tbi_file.get_id()
-    return project_id, tbi_file_id, vcf_file_id
+    return tbi_file_id, vcf_file_id
 
 def connect_to_website(): 
     try:
