@@ -19,15 +19,15 @@ def get_ftp_files():
     file_list = []
     ftp.retrlines('LIST', file_list.append)
 
+    earliest_time = datetime.strptime("20200101", '%Y%m%d').date()
+    recent_vcf_version = ""
+    recent_vcf_file = ""
+
     for file_name in file_list:
 
         if file_name == "":
             continue
         file_name = file_name.split()[-1]
-
-        earliest_time = datetime.strptime("20200101", '%Y%m%d').date()
-        recent_vcf_version = ""
-        recent_vcf_file = ""
 
         # find most recent version of annotation resource
         if clinvar_gz_regex.match(file_name):
@@ -51,12 +51,12 @@ def get_ftp_files():
 
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
-def retrieve_clinvar_files(recent_vcf_file, recent_tbi_file, clinvar_version):
-    vcf_path, tbi_path = download_vcf(recent_vcf_file, recent_tbi_file)
-    project_id, vcf_id, tbi_id = upload_to_DNAnexus(vcf_path, tbi_path, clinvar_version)
-    return project_id, vcf_id, tbi_id
+def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version):
+    vcf_path, tbi_path = download_vcf(download_dir, recent_vcf_file, recent_tbi_file)
+    vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version)
+    return vcf_id, tbi_id
 
-def download_vcf(ftp_vcf, ftp_vcf_index):
+def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
     """
     Downloads file from NCBI FTP site to /data/clinvar, called by
     check_current_vcf()
@@ -72,12 +72,12 @@ def download_vcf(ftp_vcf, ftp_vcf_index):
 
     ftp = connect_to_website()
 
-    vcf_file_to_download = os.path.join(clinvar_dir, ftp_vcf)
+    vcf_file_to_download = os.path.join(download_dir, ftp_vcf)
 
     with open(vcf_file_to_download, 'wb') as localfile:
         ftp.retrbinary('RETR ' + ftp_vcf, localfile.write, 1024)
 
-    tbi_file_to_download = os.path.join(clinvar_dir, ftp_vcf_index)
+    tbi_file_to_download = os.path.join(download_dir, ftp_vcf_index)
 
     with open(tbi_file_to_download, 'wb') as localfile:
         ftp.retrbinary('RETR ' + ftp_vcf_index, localfile.write, 1024)
@@ -86,23 +86,15 @@ def download_vcf(ftp_vcf, ftp_vcf_index):
 
     return vcf_file_to_download, tbi_file_to_download
 
-def upload_to_DNAnexus(vcf_path, tbi_path, vcf_version):
-    # create new project and capture returned project id and store
-    date = datetime.today().strftime('%Y%m%d')
-    project_id = dxpy.bindings.dxproject.DXProject().new(
-        name="003_{0}_clinvar_annotation_resource_update_{1}".format(date, vcf_version),
-        summary=(
-            f'ClinVar annotation resource update testing for version {vcf_version}'
-        ),
-        description=(
-            "This project was automatically created by prometheus "
-            f"from {os.environ.get('PARENT_JOB_ID')}"
-        )
-    )
+def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version):
+    # upload downloaded clinvar files to new folder in existing 003 project
+    # TODO: create new project folder in specified 003 project
+    subfolder = "ClinVar_version_{}_annotation_resource_update".format(vcf_version)
+    folder_path = "/{}/Testing".format(subfolder)
 
     # Upload from a path to new project with dxpy
-    vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id)
-    tbi_file = dxpy.upload_local_file(filename=tbi_path, project=project_id)
+    vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
+    tbi_file = dxpy.upload_local_file(filename=tbi_path, project=project_id, folder=folder_path)
 
     tbi_file_id = vcf_file.get_id()
     vcf_file_id = tbi_file.get_id()

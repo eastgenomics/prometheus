@@ -8,22 +8,24 @@ import make_vep_test_configs as vep
 import vep_testing
 import deployer
 import json
-import login_handler
-import slack_handler
+from login_handler import LoginHandler
+from slack_handler import SlackHandler
 
 def run_prometheus():
     # load config files
     ref_proj_id, dev_proj_id, slack_channel = load_config()
-    login_handler = login_handler()
+    login_handler = LoginHandler()
     login_handler.login_DNAnexus()
     login_handler.login_slack()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     print("Fetching latest ClinVar annotation resource files")
     recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version = get_clinvar_files.get_ftp_files()
-    print("Downloading the clinvar annotation resource files {1} and {2} from {3}".format(recent_vcf_file,
+    print("Downloading the clinvar annotation resource files {0} and {1} from {2}".format(recent_vcf_file,
     recent_tbi_file, earliest_time))
-    project_id, clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(recent_vcf_file, recent_tbi_file, clinvar_version)
+    download_dir = "./downloads"
+    project_id, clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(dev_proj_id, 
+        download_dir, recent_vcf_file, recent_tbi_file, clinvar_version)
 
     # Step 2 - Make dev and prod VEP config files from template and store local paths
     print("Creating development and production config files from template")
@@ -42,7 +44,7 @@ def run_prometheus():
     deployer.deploy_clinvar_to_production(ref_proj_id, recent_vcf_file, recent_tbi_file)
 
     # Step 6 - announce update to team
-    slack_handler = slack_handler(login_handler.slack_token)
+    slack_handler = SlackHandler(login_handler.slack_token)
     slack_handler.announce_clinvar_update(slack_channel, recent_vcf_file, earliest_time)
 
 def load_config():

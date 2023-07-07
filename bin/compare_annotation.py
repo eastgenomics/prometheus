@@ -126,7 +126,7 @@ def parse_diff(diff):
 
     return added_df, deleted_df, changed_df
 
-def split_variant_info(raw_list) -> list(str):
+def split_variant_info(raw_list):
     filtered_list = []
     for item in raw_list:
         # format: mutation, locus, category, info
