@@ -6,8 +6,6 @@ This program is to be run on a DNAnexus node once a week as new clinvar updates 
 import getClinvarFiles
 import makeVepTestConfigs as vep
 import vepTesting
-import confluenceHandler
-import jiraHandler
 import deployer
 import json
 import loginHandler
@@ -15,7 +13,7 @@ import slackHandler
 
 def run_prometheus():
     # load config files
-    ref_proj_id, dev_proj_id = load_project_ids()
+    ref_proj_id, dev_proj_id, slack_channel = load_config()
     login_handler = loginHandler()
     login_handler.login_DNAnexus()
     login_handler.login_slack()
@@ -33,22 +31,11 @@ def run_prometheus():
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     print("Running vep for development and production configs")
-    (added_csv, deleted_csv, changed_csv, dev_twe_job, dev_tso_job, prod_twe_job,
-    prod_tso_job) = vepTesting.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
+    added_csv, deleted_csv, changed_csv, job_report = vepTesting.perform_vep_testing(project_id, vep_config_dev, vep_config_prod)
 
     # step 4 - upload .csv files to DNAnexus
     print("Documenting testing on DNAnexus")
-    deployer.deploy_testing_to_development(dev_proj_id, clinvar_version, added_csv, deleted_csv, changed_csv)
-    
-
-    """# Step 4 - generate confluence page and jira ticket
-    print("Documenting testing on Confluence")
-    confluence_link = confluenceHandler.generate_page(added_csv, deleted_csv, changed_csv,
-    twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job)
-    print("Generating Jira ticket")
-    jira_link = jiraHandler.generate_ticket(confluence_link)
-    confluenceHandler.add_jira_link(confluence_link, jira_link)
-    """
+    deployer.deploy_testing_to_development(dev_proj_id, clinvar_version, added_csv, deleted_csv, changed_csv, job_report)
 
     # Step 5 - deploy clinvar file to 001
     print("Deploying clinvar files to 001 reference project")
@@ -56,18 +43,17 @@ def run_prometheus():
 
     # Step 6 - announce update to team
     slack_handler = slackHandler(login_handler.slack_token)
-    slack_channel = "egg-test"
-    slack_handler.announce_clinvar_update(recent_vcf_file, earliest_time)
+    slack_handler.announce_clinvar_update(slack_channel, recent_vcf_file, earliest_time)
 
-def load_project_ids():
-    # Get tokens etc from credentials file
-    with open("resources/project_ids.json", "r", encoding='utf8') as json_file:
-        proj_ids = json.load(json_file)
+def load_config():
+    with open("resources/config.json", "r", encoding="utf8") as json_file:
+        config = json.load(json_file)
 
-    ref_proj_id = proj_ids.get('001_REFERENCE_PROJ_ID')
-    dev_proj_id = proj_ids.get('003_DEV_CLINVAR_UPDATE_PROJ_ID')
+    ref_proj_id = config.get('001_REFERENCE_PROJ_ID')
+    dev_proj_id = config.get('003_DEV_CLINVAR_UPDATE_PROJ_ID')
+    slack_channel = config.get('SLACK_CHANNEL')
 
-    return ref_proj_id, dev_proj_id
+    return ref_proj_id, dev_proj_id, slack_channel
 
 if __name__ == "__main__":
     run_prometheus()

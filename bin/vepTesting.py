@@ -26,6 +26,9 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id):
     prod_tso_folder = "clinvar_testing_prod_tso500"
     prod_tso_job = run_vep(project_id, prod_tso_folder, prod_config_id, tso_vcf_id, tso_bed_id)
 
+    # Add job IDs to report text file
+    job_report = make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job)
+
     # parse VEP run output vcf using bcftools
     dev_twe_output = parse_vep_output(project_id, dev_twe_folder, "dev_twe")
     dev_tso_output = parse_vep_output(project_id, dev_tso_folder, "dev_tso500")
@@ -41,7 +44,7 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id):
     # Get detailed table of differences for twe and tso500
     added_csv, deleted_csv, changed_csv = compareAnnotation.compare_annotation(twe_diff, tso_diff)
 
-    return added_csv, deleted_csv, changed_csv, twe_diff, tso_diff, dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job
+    return added_csv, deleted_csv, changed_csv, twe_diff, tso_diff, job_report
 
 def parse_vep_output(project_id, folder, label):
     # Download files locally
@@ -60,6 +63,20 @@ def get_diff_output(dev_output, prod_output):
     diff_output = check_output("diff", "--suppress-common-lines", "--color=always", dev_output, prod_output)
 
     return diff_output
+
+def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path) -> str:
+    try:
+        with open(path, "w") as file:
+            file.write("Development TWE job: {}\n".format(dev_twe_job))
+            file.write("Development TSO500 job: {}\n".format(dev_tso_job))
+            file.write("Production TWE job: {}\n".format(prod_twe_job))
+            file.write("production TSO500 job: {}\n".format(prod_tso_job))
+    except FileNotFoundError:
+        print("The directory for saving the job report ({}) does not exist".format(path))
+    except FileExistsError:
+        print("The file ({}) already exists and job report cannot be saved".format(path))
+
+    return path
 
 def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file):
     inputs = {

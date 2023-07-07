@@ -14,14 +14,6 @@ else {
 
 process getClinvarFiles
 {
-    publishDir "./output/", mode: "copy", overwrite: false
-
-    input:
-
-        
-    output:
-        path "${pathToProjectDir}/data/clinvar"
-
     script:
         
         """

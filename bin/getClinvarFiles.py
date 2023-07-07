@@ -4,8 +4,6 @@ Get latest weekly release of ClinVar files
 
 import os
 import re
-import gzip
-import zipfile
 from ftplib import FTP
 from datetime import datetime
 import dxpy
@@ -15,15 +13,6 @@ clinvar_dir = os.path.join(dirname, "/data/clinvar/")
 print("Clinvar dir: {}".format(clinvar_dir))
 
 def get_ftp_files():
-    """
-    Get latest available vcf from NCBI FTP site
-
-    Args: None
-
-    Returns:
-        ftp_vcf (string): filename of latest available VCF from FTP site
-        ftp_vcf_ver (int): version of latest available VCF from FTP site
-    """
     clinvar_gz_regex = re.compile("^clinvar_[0-9]+\.vcf\.gz$")
     ftp = connect_to_website()
 
