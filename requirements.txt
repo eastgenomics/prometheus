@@ -1,0 +1,7 @@
+atlassian
+dxpy==0.351.0
+jira==3.5.2
+pandas==2.0.3
+Requests
+slack_sdk==3.21.3
+urllib3==1.26.5

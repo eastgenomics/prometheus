@@ -33,7 +33,7 @@ def run_prometheus():
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     print("Running vep for development and production configs")
-    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, vep_config_prod)
+    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, vep_config_prod, clinvar_version)
 
     # step 4 - upload .csv files to DNAnexus
     print("Documenting testing on DNAnexus")
