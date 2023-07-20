@@ -4,7 +4,7 @@ import pandas
 import json
 
 regex_config_location = "resources/annotation_regex.json"
-output_location = "evidence"
+output_location = "temp"
 
 def compare_annotation(diff_twe, diff_tso):
     # get variant annotation changes for TWE
@@ -31,7 +31,7 @@ def compare_annotation(diff_twe, diff_tso):
     added = added.fillna(0).astype(int)
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
     deleted = deleted[['deleted', 'assay']].value_counts().reset_index(name='assay counts')
-    deleted = pandas.pivot_table(deleted, index='added', columns='assay', values='assay counts')
+    deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
     deleted = deleted.fillna(0).astype(int)
     # filter changed to show only "Changed from" "Changed to" "Count TWE" and "Count TSO500" columns
     changed = changed[['changed from', 'changed to', 'assay']].value_counts().reset_index(name='assay counts')
@@ -148,19 +148,19 @@ def make_tables(added_list, deleted_list, changed_list_from, changed_list_to):
 
     # TODO: make sure order of rows remains constant for changed tables (from and to)
     changed_from_df = pandas.DataFrame(data=changed_list_from, columns=["mutation", "locus", "category", "info"])
-    changed_from_df["from"] = get_categories(changed_from_df)
+    changed_from_df["changed from"] = get_categories(changed_from_df)
 
     changed_to_df = pandas.DataFrame(data=changed_list_to, columns=["mutation", "locus", "category", "info"])
-    changed_from_df["to"] = get_categories(changed_to_df)
+    changed_from_df["changed to"] = get_categories(changed_to_df)
 
-    changed_df = changed_from_df[["from", "to"]]
+    changed_df = changed_from_df[["changed from", "changed to"]]
 
     return added_df, deleted_df, changed_df
 
 def get_categories(dataframe_extract):
     # get full category name from category and info columns for all entries
     updated_categories = []
-    for row in dataframe_extract:
+    for index, row in dataframe_extract.iterrows():
         base_name = row.category
         info = row.info
         full_name = get_full_category_name(base_name, info)

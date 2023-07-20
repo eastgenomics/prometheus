@@ -41,7 +41,7 @@ def run_prometheus():
 
     # Step 5 - deploy clinvar file to 001
     print("Deploying clinvar files to 001 reference project")
-    deployer.deploy_clinvar_to_production(ref_proj_id, recent_vcf_file, recent_tbi_file)
+    deployer.deploy_clinvar_to_production(ref_proj_id, dev_proj_id, clinvar_vcf_id, clinvar_tbi_id)
 
     # Step 6 - announce update to team
     slack_handler = SlackHandler(login_handler.slack_token)

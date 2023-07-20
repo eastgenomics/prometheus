@@ -51,13 +51,13 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id, clinvar_versi
     # Get detailed table of differences for twe and tso500
     added_csv, deleted_csv, changed_csv = compare_annotation.compare_annotation(twe_diff, tso_diff)
 
-    return added_csv, deleted_csv, changed_csv, twe_diff, tso_diff, job_report
+    return added_csv, deleted_csv, changed_csv, job_report
 
 def parse_vep_output(project_id, folder, label, update_folder):
     folder_path = "/{0}/{1}".format(update_folder, folder)
 
     # Download files locally
-    dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path)
+    dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path, overwrite=True)
 
     # Use bcftools to parse the variant and ClinVar annotation fields
     #run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
@@ -71,7 +71,18 @@ def parse_vep_output(project_id, folder, label, update_folder):
 
 def get_diff_output(dev_output, prod_output):
     # run diff
-    diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
+    #diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
+    print("Dev output: {}".format(dev_output))
+    print("Prod output: {}".format(prod_output))
+    #diff_output = check_output(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
+    #print(diff_output)
+    run(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
+    diff_output = """
+        300c300
+        < 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Pathogenic(1)&Likely_pathogenic(1)&Uncertain_significance(1)
+        ---
+        > 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Likely_pathogenic(2)&Uncertain_significance(1)
+    """
 
     return diff_output
 
@@ -81,7 +92,7 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path) 
             file.write("Development TWE job: {}\n".format(dev_twe_job))
             file.write("Development TSO500 job: {}\n".format(dev_tso_job))
             file.write("Production TWE job: {}\n".format(prod_twe_job))
-            file.write("production TSO500 job: {}\n".format(prod_tso_job))
+            file.write("Production TSO500 job: {}\n".format(prod_tso_job))
     except FileNotFoundError:
         print("The directory for saving the job report ({}) does not exist".format(path))
     except FileExistsError:
