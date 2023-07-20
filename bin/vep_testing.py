@@ -62,27 +62,27 @@ def parse_vep_output(project_id, folder, label, update_folder):
     # Use bcftools to parse the variant and ClinVar annotation fields
     #run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
     # TODO: uncomment above line to run as applet
-    run(["sh", "bin/parse.sh", "temp/{}".format(label) + "/*.vcf.gz", label])
+    run(["sh", "bin/parse.sh", "temp/{}".format(label) + "/*.vcf.gz", label, "temp/"])
 
-    # find results output by parse
-    filename = glob.glob("temp/{}".format(label) + "/*.vcf.gz.{}.txt".format(label))
+    # find results output by parse and take first match (there should only be 1 matching file)
+    glob_path = "temp/" + "*.vcf.gz.{}.txt".format(label)
+
+    filename = ""
+
+    try:
+        filename = glob.glob(glob_path)[0]
+    except IndexError:
+        print("Error: cannot find file at: {}".format(glob_path))
 
     return filename
 
 def get_diff_output(dev_output, prod_output):
     # run diff
-    #diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
     print("Dev output: {}".format(dev_output))
     print("Prod output: {}".format(prod_output))
-    #diff_output = check_output(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
-    #print(diff_output)
-    run(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
-    diff_output = """
-        300c300
-        < 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Pathogenic(1)&Likely_pathogenic(1)&Uncertain_significance(1)
-        ---
-        > 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Likely_pathogenic(2)&Uncertain_significance(1)
-    """
+    diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
+
+    print(diff_output)
 
     return diff_output
 
