@@ -1,6 +1,7 @@
 {
   "difference_regex":{
     "benign": "^Benign$",
+    "benign/likely benign": "^Benign/Likely_benign$",
     "not provided": "^not_provided$",
     "pathogenic": "^Pathogenic$",
     "uncertain significance": "^Uncertain_significance$",

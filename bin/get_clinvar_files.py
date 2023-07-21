@@ -52,9 +52,9 @@ def get_ftp_files():
 
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
-def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version):
+def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build):
     vcf_path, tbi_path = download_vcf(download_dir, recent_vcf_file, recent_tbi_file)
-    vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version)
+    vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version, genome_build)
     return vcf_id, tbi_id
 
 def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
@@ -93,7 +93,7 @@ def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
 
     return vcf_file_to_download, tbi_file_to_download
 
-def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version):
+def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version, genome_build):
     # upload downloaded clinvar files to new folder in existing 003 project
     subfolder = "ClinVar_version_{}_annotation_resource_update".format(vcf_version)
     folder_path = "/{}/Testing".format(subfolder)
@@ -106,9 +106,13 @@ def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version):
     vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
     tbi_file = dxpy.upload_local_file(filename=tbi_path, project=project_id, folder=folder_path)
 
-    tbi_file_id = vcf_file.get_id()
-    vcf_file_id = tbi_file.get_id()
-    return tbi_file_id, vcf_file_id
+    # Append build (e.g., b37, b38) to files
+    vcf_file.rename("clinvar_{0}_{1}.vcf.gz".format(vcf_version, genome_build))
+    tbi_file.rename("clinvar_{0}_{1}.vcf.gz.tbi".format(vcf_version, genome_build))
+
+    vcf_file_id = vcf_file.get_id()
+    tbi_file_id = tbi_file.get_id()
+    return vcf_file_id, tbi_file_id
 
 def connect_to_website(): 
     try:

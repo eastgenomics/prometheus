@@ -1,6 +1,5 @@
 import dxpy
-from subprocess import check_output
-from subprocess import run
+import subprocess
 import glob
 import compare_annotation
 import time
@@ -44,12 +43,12 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id, clinvar_versi
 
     # Perform comparison of differences when using dev vs. prod
     # Get diff for twe
-    twe_diff = get_diff_output(dev_twe_output, prod_twe_output)
+    twe_diff_filename = get_diff_output(dev_twe_output, prod_twe_output, "twe")
     # Get diff for tso500
-    tso_diff = get_diff_output(dev_tso_output, prod_tso_output)
+    tso_diff_filename = get_diff_output(dev_tso_output, prod_tso_output, "tso500")
 
     # Get detailed table of differences for twe and tso500
-    added_csv, deleted_csv, changed_csv = compare_annotation.compare_annotation(twe_diff, tso_diff)
+    added_csv, deleted_csv, changed_csv = compare_annotation.compare_annotation(twe_diff_filename, tso_diff_filename)
 
     return added_csv, deleted_csv, changed_csv, job_report
 
@@ -60,9 +59,9 @@ def parse_vep_output(project_id, folder, label, update_folder):
     dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path, overwrite=True)
 
     # Use bcftools to parse the variant and ClinVar annotation fields
-    #run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
+    #subprocess.run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
     # TODO: uncomment above line to run as applet
-    run(["sh", "bin/parse.sh", "temp/{}".format(label) + "/*.vcf.gz", label, "temp/"])
+    subprocess.run(["sh", "bin/parse.sh", "temp/{}".format(label) + "/*.vcf.gz", label, "temp/"])
 
     # find results output by parse and take first match (there should only be 1 matching file)
     glob_path = "temp/" + "*.vcf.gz.{}.txt".format(label)
@@ -76,15 +75,14 @@ def parse_vep_output(project_id, folder, label, update_folder):
 
     return filename
 
-def get_diff_output(dev_output, prod_output):
+def get_diff_output(dev_output, prod_output, label):
     # run diff
-    print("Dev output: {}".format(dev_output))
-    print("Prod output: {}".format(prod_output))
-    diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
+    output_file = "temp/{}_diff_output.txt".format(label)
+    # TODO: switch to nextflow-bin for use as a nextflow script
+    diff_input = ["sh", "bin/get_diff.sh", dev_output, prod_output, output_file]
+    subprocess.run(diff_input, stderr=subprocess.STDOUT)
 
-    print(diff_output)
-
-    return diff_output
+    return output_file
 
 def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path) -> str:
     try:

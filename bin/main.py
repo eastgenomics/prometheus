@@ -24,8 +24,9 @@ def run_prometheus():
     print("Downloading the clinvar annotation resource files {0} and {1} from {2}".format(recent_vcf_file,
     recent_tbi_file, earliest_time))
     download_dir = "./downloads"
+    genome_build = "b37"
     clinvar_vcf_id, clinvar_tbi_id = get_clinvar_files.retrieve_clinvar_files(dev_proj_id, 
-        download_dir, recent_vcf_file, recent_tbi_file, clinvar_version)
+        download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build)
 
     # Step 2 - Make dev and prod VEP config files from template and store local paths
     print("Creating development and production config files from template")

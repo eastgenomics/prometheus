@@ -49,12 +49,19 @@ def compare_annotation(diff_twe, diff_tso):
     
     return added_output, deleted_output, changed_output
 
-def parse_diff(diff):
+def parse_diff(diff_filename):
     """
     Returns list of deleted variants (list of strings), 
     added variants (list of strings), 
     changed variants (list of tuples in format: string, string) for old variant, new variant
     """
+
+    # read in file from filename passed in
+    try:
+        diff = open(diff_filename, "r")
+    except (FileNotFoundError, IOError):
+        print("Error: the diff file {} could not be found!".format(diff_filename))
+
     consts = types.SimpleNamespace()
     consts.SCAN_MODE = 0
     consts.ADDED_MODE = 1
@@ -90,28 +97,27 @@ def parse_diff(diff):
                 # search for added line
                 result = re.search(added_regex, line)
                 if result:
-                    added_list.append(result)
+                    added_list.append(result.group(0))
                     parse_mode = consts.SCAN_MODE
             case consts.DELETED_MODE:
                 # search for deleted line
                 result = re.search(deleted_regex, line)
                 if result:
-                    deleted_list.append(result)
+                    deleted_list.append(result.group(0))
                     parse_mode = consts.SCAN_MODE
             case consts.CHANGED_MODE_DEL:
                 # search for changed line (old)
                 result = re.search(deleted_regex, line)
                 if result:
-                    changed_list_from.append(result)
+                    changed_list_from.append(result.group(0))
                     parse_mode = consts.CHANGED_MODE_ADD
             case consts.CHANGED_MODE_ADD:
                 # search for changed line (new)
                 result = re.search(added_regex, line)
                 if result:
-                    changed_list_to.append(result)
+                    changed_list_to.append(result.group(0))
                     parse_mode = consts.SCAN_MODE
 
-    # TODO: add code for processing this info
     added_split = split_variant_info(added_list)
     deleted_split = split_variant_info(deleted_list)
     changed_from_split = split_variant_info(changed_list_from)
@@ -130,7 +136,8 @@ def split_variant_info(raw_list):
     filtered_list = []
     for item in raw_list:
         # format: mutation, locus, category, info
-        filtered_list.append(item.split(' '))
+        # ignore first element as this is ">" or "<"
+        filtered_list.append(item.split(' ')[1:])
 
     return filtered_list
 
@@ -166,13 +173,15 @@ def get_categories(dataframe_extract):
         full_name = get_full_category_name(base_name, info)
         updated_categories.append(full_name)
 
+    return updated_categories
+
 def get_full_category_name(base_name, info):
     # get full category name from category and info columns for single entry
     with open(regex_config_location, "r") as file:
         regex_dict = json.load(file)
 
-    difference_regex = regex_dict[difference_regex]
-    evidence_regex = regex_dict[evidence_regex]
+    difference_regex = regex_dict["difference_regex"]
+    evidence_regex = regex_dict["evidence_regex"]
 
     # validate that category is contained in difference regex
     for key in difference_regex:
