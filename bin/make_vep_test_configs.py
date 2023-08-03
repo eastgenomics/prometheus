@@ -1,6 +1,7 @@
 import dxpy
 from datetime import datetime
 import shutil
+import re
 
 def get_production_clinvar_version(ref_proj_id):
     name_regex = "clinvar_*_b37.vcf.gz"
@@ -22,9 +23,10 @@ def get_production_clinvar_version(ref_proj_id):
     version = ""
 
     for file in vcf_files:
-        version = dxpy.describe(
+        name = dxpy.describe(
                     file['id']
-                )['name'].split('_')[1]
+                )['name']
+        version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
         version_date = datetime.strptime(version, '%Y%m%d').date()
         if version_date > earliest_time:
             earliest_time = version_date
