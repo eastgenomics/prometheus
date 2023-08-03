@@ -168,8 +168,10 @@ def get_categories(dataframe_extract):
     # get full category name from category and info columns for all entries
     updated_categories = []
     for index, row in dataframe_extract.iterrows():
-        base_name = row.category
-        info = row.info
+        base_name = row["category"]
+        info = row["info"]
+        print("The info variable fed into get_full_category name is "
+            + "{} and its type is {}".format(info, type(info)))
         full_name = get_full_category_name(base_name, info)
         updated_categories.append(full_name)
 
@@ -199,13 +201,14 @@ def get_full_category_name(base_name, info):
                 else:
                     # try to parse info
                     # split info by &
+                    print("Info: {}".format(info))
                     split_info = info.split("&")
                     # remove numbers in brackets
                     # TODO: extract numbers for final report table
                     # TODO: check if format of split string is valid (matches r"(*)\([0-9]\)")
                     new_info = []
                     for my_str in split_info:
-                        match = re.match(r"(*)\([0-9]\)", my_str)
+                        match = re.match(r"(.+)\([0-9]\)", my_str).group(0)
                         if match:
                             new_info.append(match)
                         else:

@@ -8,6 +8,7 @@ from ftplib import FTP
 from datetime import datetime
 import dxpy
 from os.path import exists
+import time
 
 dirname = os.path.dirname(__file__)
 clinvar_dir = os.path.join(dirname, "/data/clinvar/")
@@ -103,7 +104,18 @@ def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version, genome_build
     dev_project.new_folder(folder_path, parents=True)
 
     # Upload from a path to new project with dxpy
-    vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
+    sleep_interval = 60 # 60 seconds
+    max_retries = 3
+    retry_count = 0
+    if (retry_count <= max_retries):
+        try:
+            vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
+        except TimeoutError:
+            print("Connection aborted due to timeout when attempting to upload VCF files to DNAnexus. Retrying...")
+            retry_count += 1
+            time.sleep(sleep_interval)
+    else:
+        raise TimeoutError("Exceeded maximum number of reties when trying to upload VCF file to DNAnexus")
     tbi_file = dxpy.upload_local_file(filename=tbi_path, project=project_id, folder=folder_path)
 
     # Append build (e.g., b37, b38) to files
