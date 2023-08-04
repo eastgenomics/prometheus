@@ -170,8 +170,6 @@ def get_categories(dataframe_extract):
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
         info = row["info"]
-        print("The info variable fed into get_full_category name is "
-            + "{} and its type is {}".format(info, type(info)))
         full_name = get_full_category_name(base_name, info)
         updated_categories.append(full_name)
 
@@ -208,7 +206,7 @@ def get_full_category_name(base_name, info):
                     # TODO: check if format of split string is valid (matches r"(*)\([0-9]\)")
                     new_info = []
                     for my_str in split_info:
-                        match = re.match(r"(.+)\([0-9]\)", my_str).group(0)
+                        match = re.match(r"(.+)\([0-9]+\)", my_str).groups()[0]
                         if match:
                             new_info.append(match)
                         else:
