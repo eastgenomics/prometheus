@@ -31,12 +31,12 @@ def compare_annotation(diff_twe, diff_tso):
     #added = added.fillna(0).astype(int)
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
     deleted = deleted[['deleted', 'assay']].value_counts().reset_index(name='assay counts')
-    deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
-    deleted = deleted.fillna(0).astype(int)
+    #deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
+    #deleted = deleted.fillna(0).astype(int)
     # filter changed to show only "Changed from" "Changed to" "Count TWE" and "Count TSO500" columns
     changed = changed[['changed from', 'changed to', 'assay']].value_counts().reset_index(name='assay counts')
-    changed = pandas.pivot_table(changed, index=['changed from', 'changed to'], columns='assay', values='assay counts')
-    changed = changed.fillna(0).astype(int)
+    #changed = pandas.pivot_table(changed, index=['changed from', 'changed to'], columns='assay', values='assay counts')
+    #changed = changed.fillna(0).astype(int)
 
     added_output = "{}/added_variants.csv".format(output_location)
     added.to_csv(added_output, index=False)
@@ -71,9 +71,9 @@ def parse_diff(diff_filename):
 
     parse_mode = consts.SCAN_MODE
 
-    change_regex = r"^[0-9]+c[0-9]$"
-    added_regex = r"^[0-9]+a[0-9]$"
-    deleted_regex = r"^[0-9]+d[0-9]$"
+    change_regex = r"^[0-9]+c[0-9]+$"
+    add_regex = r"^[0-9]+a[0-9]+$"
+    delete_regex = r"^[0-9]+d[0-9]+$"
 
     added_regex = r"^> (.*)$"
     deleted_regex = r"^< (.*)$"
@@ -89,9 +89,9 @@ def parse_diff(diff_filename):
                 # search for new difference annotation
                 if re.search(change_regex, line):
                     parse_mode = consts.CHANGED_MODE_DEL
-                elif re.search(added_regex, line):
+                elif re.search(add_regex, line):
                     parse_mode = consts.ADDED_MODE
-                elif re.search(deleted_regex, line):
+                elif re.search(delete_regex, line):
                     parse_mode = consts.DELETED_MODE
             case consts.ADDED_MODE:
                 # search for added line
