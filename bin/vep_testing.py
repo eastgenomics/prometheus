@@ -56,6 +56,7 @@ def parse_vep_output(project_id, folder, label, update_folder):
     folder_path = "/{0}/{1}".format(update_folder, folder)
 
     # Download files locally
+    # TODO: check that folder exists before downloading. Handle error if folder not found
     dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path, overwrite=True)
 
     # Use bcftools to parse the variant and ClinVar annotation fields

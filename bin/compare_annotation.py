@@ -27,8 +27,8 @@ def compare_annotation(diff_twe, diff_tso):
     changed = pandas.concat([changed_twe, changed_tso])
     # filter added to show only "Added" "Count TWE" and "Count TSO500" columns
     added = added[['added', 'assay']].value_counts().reset_index(name='assay counts')
-    added = pandas.pivot_table(added, index='added', columns='assay', values='assay counts')
-    added = added.fillna(0).astype(int)
+    #added = pandas.pivot_table(added, index='added', columns='assay', values='assay counts')
+    #added = added.fillna(0).astype(int)
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
     deleted = deleted[['deleted', 'assay']].value_counts().reset_index(name='assay counts')
     deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
