@@ -71,9 +71,9 @@ def parse_diff(diff_filename):
 
     parse_mode = consts.SCAN_MODE
 
-    change_regex = r"^[0-9]+c[0-9]+$"
-    add_regex = r"^[0-9]+a[0-9]+$"
-    delete_regex = r"^[0-9]+d[0-9]+$"
+    change_regex = r"[0-9]+c[0-9]+"
+    add_regex = r"[0-9]+a[0-9]+"
+    delete_regex = r"[0-9]+d[0-9]+"
 
     added_regex = r"^> (.*)$"
     deleted_regex = r"^< (.*)$"
@@ -83,39 +83,55 @@ def parse_diff(diff_filename):
     changed_list_from = []
     changed_list_to = []
 
+    # tracks multiple lines added, removed, or changed in diff output
+    added_line_counter = 0
+    deleted_line_counter = 0
+
     for line in diff:
         match parse_mode:
             case consts.SCAN_MODE:
                 # search for new difference annotation
                 if re.search(change_regex, line):
                     parse_mode = consts.CHANGED_MODE_DEL
+                    added_line_counter = line.count(",")/2
+                    deleted_line_counter = line.count(",")/2
                 elif re.search(add_regex, line):
                     parse_mode = consts.ADDED_MODE
+                    added_line_counter = line.count(",")/2
                 elif re.search(delete_regex, line):
                     parse_mode = consts.DELETED_MODE
+                    deleted_line_counter = line.count(",")/2
             case consts.ADDED_MODE:
                 # search for added line
                 result = re.search(added_regex, line)
                 if result:
                     added_list.append(result.group(0))
+                    added_line_counter -= 1
+                if added_line_counter <= 0:
                     parse_mode = consts.SCAN_MODE
             case consts.DELETED_MODE:
                 # search for deleted line
                 result = re.search(deleted_regex, line)
                 if result:
                     deleted_list.append(result.group(0))
+                    deleted_line_counter -= 1
+                if deleted_line_counter <= 0:
                     parse_mode = consts.SCAN_MODE
             case consts.CHANGED_MODE_DEL:
                 # search for changed line (old)
                 result = re.search(deleted_regex, line)
                 if result:
                     changed_list_from.append(result.group(0))
+                    deleted_line_counter -= 1
+                if deleted_line_counter <= 0:
                     parse_mode = consts.CHANGED_MODE_ADD
             case consts.CHANGED_MODE_ADD:
                 # search for changed line (new)
                 result = re.search(added_regex, line)
                 if result:
                     changed_list_to.append(result.group(0))
+                    added_line_counter -= 1
+                if added_line_counter <= 0:
                     parse_mode = consts.SCAN_MODE
 
     added_split = split_variant_info(added_list)
