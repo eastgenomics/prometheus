@@ -27,25 +27,25 @@ def compare_annotation(diff_twe, diff_tso):
     changed = pandas.concat([changed_twe, changed_tso])
     # filter added to show only "Added" "Count TWE" and "Count TSO500" columns
     added = added[['added', 'assay']].value_counts().reset_index(name='assay counts')
-    #added = pandas.pivot_table(added, index='added', columns='assay', values='assay counts')
-    #added = added.fillna(0).astype(int)
+    added = pandas.pivot_table(added, index='added', columns='assay', values='assay counts')
+    added = added.fillna(0).astype(int)
     # filter deleted to show only "Deleted" "Count TWE" and "Count TSO500" columns
     deleted = deleted[['deleted', 'assay']].value_counts().reset_index(name='assay counts')
-    #deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
-    #deleted = deleted.fillna(0).astype(int)
+    deleted = pandas.pivot_table(deleted, index='deleted', columns='assay', values='assay counts')
+    deleted = deleted.fillna(0).astype(int)
     # filter changed to show only "Changed from" "Changed to" "Count TWE" and "Count TSO500" columns
     changed = changed[['changed from', 'changed to', 'assay']].value_counts().reset_index(name='assay counts')
-    #changed = pandas.pivot_table(changed, index=['changed from', 'changed to'], columns='assay', values='assay counts')
-    #changed = changed.fillna(0).astype(int)
+    changed = pandas.pivot_table(changed, index=['changed from', 'changed to'], columns='assay', values='assay counts')
+    changed = changed.fillna(0).astype(int)
 
     added_output = "{}/added_variants.csv".format(output_location)
-    added.to_csv(added_output, index=False)
+    added.to_csv(added_output, index=True)
 
     deleted_output = "{}/deleted_variants.csv".format(output_location)
-    deleted.to_csv(deleted_output, index=False)
+    deleted.to_csv(deleted_output, index=True)
 
     changed_output = "{}/changed_variants.csv".format(output_location)
-    changed.to_csv(changed_output, index=False)
+    changed.to_csv(changed_output, index=True)
     
     return added_output, deleted_output, changed_output
 
