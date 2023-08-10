@@ -87,20 +87,21 @@ def parse_diff(diff_filename):
     added_line_counter = 0
     deleted_line_counter = 0
 
+    # TODO: add check to make sure line.count(",") never returns an odd or negative number
     for line in diff:
         match parse_mode:
             case consts.SCAN_MODE:
                 # search for new difference annotation
                 if re.search(change_regex, line):
                     parse_mode = consts.CHANGED_MODE_DEL
-                    added_line_counter = line.count(",")/2
-                    deleted_line_counter = line.count(",")/2
+                    added_line_counter = line.count(",")/2 + 1
+                    deleted_line_counter = line.count(",")/2 + 1
                 elif re.search(add_regex, line):
                     parse_mode = consts.ADDED_MODE
-                    added_line_counter = line.count(",")/2
+                    added_line_counter = line.count(",")/2 + 1
                 elif re.search(delete_regex, line):
                     parse_mode = consts.DELETED_MODE
-                    deleted_line_counter = line.count(",")/2
+                    deleted_line_counter = line.count(",")/2 + 1
             case consts.ADDED_MODE:
                 # search for added line
                 result = re.search(added_regex, line)
