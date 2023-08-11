@@ -2,18 +2,11 @@
 Get latest weekly release of ClinVar files
 """
 
-import os
 import re
 from ftplib import FTP
 from datetime import datetime
 import dxpy
-from os.path import exists
-import time
 from utils import check_jobs_finished
-
-dirname = os.path.dirname(__file__)
-clinvar_dir = os.path.join(dirname, "/data/clinvar/")
-print("Clinvar dir: {}".format(clinvar_dir))
 
 def get_ftp_files():
     clinvar_gz_regex = re.compile("^clinvar_[0-9]+\.vcf\.gz$")
@@ -55,9 +48,6 @@ def get_ftp_files():
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
 def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build):
-    #vcf_path, tbi_path = download_vcf(download_dir, recent_vcf_file, recent_tbi_file)
-    #vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version, genome_build)
-
     # validate genome build
     valid_genome_builds = ["b37", "b38"]
     if not genome_build in valid_genome_builds:
@@ -126,61 +116,6 @@ def run_url_fetcher(project_id, destination_folder, download_link, new_file_name
     job_id = job.describe().get('id')
 
     return job_id
-
-def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
-    vcf_file_to_download = os.path.join(download_dir, ftp_vcf)
-    tbi_file_to_download = os.path.join(download_dir, ftp_vcf_index)
-
-    # if files are already present, skip the download
-    if exists(vcf_file_to_download) and exists(tbi_file_to_download):
-        return vcf_file_to_download, tbi_file_to_download
-
-    ftp = connect_to_website()
-
-    # download unless files are already present
-    if not exists(vcf_file_to_download):
-        with open(vcf_file_to_download, 'wb') as localfile:
-            ftp.retrbinary('RETR ' + ftp_vcf, localfile.write, 1024)
-
-    if not exists(tbi_file_to_download):
-        with open(tbi_file_to_download, 'wb') as localfile:
-            ftp.retrbinary('RETR ' + ftp_vcf_index, localfile.write, 1024)
-
-    ftp.quit()
-
-    return vcf_file_to_download, tbi_file_to_download
-
-def upload_to_DNAnexus(project_id, vcf_path, tbi_path, vcf_version, genome_build):
-    # upload downloaded clinvar files to new folder in existing 003 project
-    subfolder = "ClinVar_version_{}_annotation_resource_update".format(vcf_version)
-    folder_path = "/{}/Testing".format(subfolder)
-
-    # get DNAnexus folder object
-    dev_project = dxpy.bindings.dxproject.DXProject(project_id)
-    dev_project.new_folder(folder_path, parents=True)
-
-    # Upload from a path to new project with dxpy
-    sleep_interval = 60 # 60 seconds
-    max_retries = 3
-    retry_count = 0
-    if (retry_count <= max_retries):
-        try:
-            vcf_file = dxpy.upload_local_file(filename=vcf_path, project=project_id, folder=folder_path)
-        except TimeoutError:
-            print("Connection aborted due to timeout when attempting to upload VCF files to DNAnexus. Retrying...")
-            retry_count += 1
-            time.sleep(sleep_interval)
-    else:
-        raise TimeoutError("Exceeded maximum number of reties when trying to upload VCF file to DNAnexus")
-    tbi_file = dxpy.upload_local_file(filename=tbi_path, project=project_id, folder=folder_path)
-
-    # Append build (e.g., b37, b38) to files
-    vcf_file.rename("clinvar_{0}_{1}.vcf.gz".format(vcf_version, genome_build))
-    tbi_file.rename("clinvar_{0}_{1}.vcf.gz.tbi".format(vcf_version, genome_build))
-
-    vcf_file_id = vcf_file.get_id()
-    tbi_file_id = tbi_file.get_id()
-    return vcf_file_id, tbi_file_id
 
 def connect_to_website(): 
     try:

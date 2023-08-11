@@ -40,27 +40,19 @@ def compare_annotation(diff_twe, diff_tso):
 
     added_output = "{}/added_variants.csv".format(output_location)
     added.to_csv(added_output, index=True)
-
     deleted_output = "{}/deleted_variants.csv".format(output_location)
     deleted.to_csv(deleted_output, index=True)
-
     changed_output = "{}/changed_variants.csv".format(output_location)
     changed.to_csv(changed_output, index=True)
     
     return added_output, deleted_output, changed_output
 
 def parse_diff(diff_filename):
-    """
-    Returns list of deleted variants (list of strings), 
-    added variants (list of strings), 
-    changed variants (list of tuples in format: string, string) for old variant, new variant
-    """
-
     # read in file from filename passed in
     try:
         diff = open(diff_filename, "r")
     except (FileNotFoundError, IOError):
-        print("Error: the diff file {} could not be found!".format(diff_filename))
+        raise FileNotFoundError("Error: the diff file {} could not be found!".format(diff_filename))
 
     consts = types.SimpleNamespace()
     consts.SCAN_MODE = 0
@@ -87,21 +79,20 @@ def parse_diff(diff_filename):
     added_line_counter = 0
     deleted_line_counter = 0
 
-    # TODO: add check to make sure line.count(",") never returns an odd or negative number
     for line in diff:
         match parse_mode:
             case consts.SCAN_MODE:
                 # search for new difference annotation
                 if re.search(change_regex, line):
                     parse_mode = consts.CHANGED_MODE_DEL
-                    added_line_counter = line.count(",")/2 + 1
-                    deleted_line_counter = line.count(",")/2 + 1
+                    added_line_counter = parse_line_count(line)
+                    deleted_line_counter = parse_line_count(line)
                 elif re.search(add_regex, line):
                     parse_mode = consts.ADDED_MODE
-                    added_line_counter = line.count(",")/2 + 1
+                    added_line_counter = parse_line_count(line)
                 elif re.search(delete_regex, line):
                     parse_mode = consts.DELETED_MODE
-                    deleted_line_counter = line.count(",")/2 + 1
+                    deleted_line_counter = parse_line_count(line)
             case consts.ADDED_MODE:
                 # search for added line
                 result = re.search(added_regex, line)
@@ -149,6 +140,16 @@ def parse_diff(diff_filename):
 
     return added_df, deleted_df, changed_df
 
+def parse_line_count(line):
+    # checks if the number of commas is valid when parsing a difference
+    # e.g., "23c23" or "23,24,25c23,24,25" are both valid
+    # "23c23,24" or "45,46c46" would be invalid
+    num_commas = line.count(",")
+    if num_commas % 2 == 0:
+        return num_commas/2 + 1
+    else:
+        raise Exception("Invalid (odd) number of commas found when parsing diff file")
+
 def split_variant_info(raw_list):
     filtered_list = []
     for item in raw_list:
@@ -170,13 +171,10 @@ def make_tables(added_list, deleted_list, changed_list_from, changed_list_to):
     deleted_df["deleted"] = get_categories(deleted_df)
     deleted_df = deleted_df[["deleted"]]
 
-    # TODO: make sure order of rows remains constant for changed tables (from and to)
     changed_from_df = pandas.DataFrame(data=changed_list_from, columns=["mutation", "locus", "category", "info"])
     changed_from_df["changed from"] = get_categories(changed_from_df)
-
     changed_to_df = pandas.DataFrame(data=changed_list_to, columns=["mutation", "locus", "category", "info"])
     changed_from_df["changed to"] = get_categories(changed_to_df)
-
     changed_df = changed_from_df[["changed from", "changed to"]]
 
     return added_df, deleted_df, changed_df
@@ -220,7 +218,6 @@ def get_full_category_name(base_name, info):
                     split_info = info.split("&")
                     # remove numbers in brackets
                     # TODO: extract numbers for final report table
-                    # TODO: check if format of split string is valid (matches r"(*)\([0-9]\)")
                     new_info = []
                     for my_str in split_info:
                         match = re.match(r"(.+)\([0-9]+\)", my_str).groups()[0]
@@ -231,10 +228,7 @@ def get_full_category_name(base_name, info):
                             print("invalid input format in 'info' field")
 
                     # we now have a vec (new_info) containing all evidence categories for this variant
-                    # the next step is to order this list of categories so the order is uniform for all variants
-
-                    # TODO: check that all evidence is in valid format
-
+                    # order this list of categories so the order is uniform for all variants
                     output_string = base_name + " "
                     for regex_category in evidence_regex:
                         for evidence in new_info:
@@ -242,6 +236,6 @@ def get_full_category_name(base_name, info):
                                 # add category and &
                                 output_string += regex_category + "&"
                                 continue
-
+                    # remove final &
                     output_string = output_string[:-1]
                     return output_string

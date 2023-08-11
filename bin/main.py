@@ -8,10 +8,13 @@ import make_vep_test_configs as vep
 import vep_testing
 import deployer
 import json
+import logging
 from login_handler import LoginHandler
 from slack_handler import SlackHandler
 
 def run_prometheus():
+    logger = logging.getLogger("main log")
+
     # load config files
     ref_proj_id, dev_proj_id, slack_channel = load_config()
     login_handler = LoginHandler()
@@ -19,9 +22,9 @@ def run_prometheus():
     login_handler.login_slack()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
-    print("Fetching latest ClinVar annotation resource files")
+    logger.info("Fetching latest ClinVar annotation resource files")
     recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version = get_clinvar_files.get_ftp_files()
-    print("Downloading the clinvar annotation resource files {0} and {1} from {2}".format(recent_vcf_file,
+    logger.info("Downloading the clinvar annotation resource files {0} and {1} from {2}".format(recent_vcf_file,
     recent_tbi_file, earliest_time))
     download_dir = "./downloads"
     genome_build = "b37"
@@ -29,20 +32,21 @@ def run_prometheus():
         download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build)
 
     # Step 2 - Make dev and prod VEP config files from template and store local paths
-    print("Creating development and production config files from template")
+    logger.info("Creating development and production config files from template")
     vep_config_dev, vep_config_prod = vep.generate_config_files(clinvar_version, clinvar_vcf_id, clinvar_tbi_id, dev_proj_id, ref_proj_id)
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
-    print("Running vep for development and production configs")
+    logger.info("Running vep for development and production configs")
     added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, vep_config_prod, clinvar_version)
 
     # step 4 - upload .csv files to DNAnexus
-    print("Documenting testing on DNAnexus")
+    logger.info("Documenting testing on DNAnexus")
     deployer.deploy_testing_to_development(dev_proj_id, clinvar_version, added_csv, deleted_csv, changed_csv, job_report)
 
     # Step 5 - deploy clinvar file to 001
-    print("Deploying clinvar files to 001 reference project")
-    deployer.deploy_clinvar_to_production(ref_proj_id, dev_proj_id, clinvar_vcf_id, clinvar_tbi_id)
+    logger.info("Deploying clinvar files to 001 reference project")
+    b37_folder = "/annotation/b37/clinvar"
+    deployer.deploy_clinvar_to_production(ref_proj_id, dev_proj_id, clinvar_vcf_id, clinvar_tbi_id, b37_folder)
 
     # Step 6 - announce update to team
     slack_handler = SlackHandler(login_handler.slack_token)

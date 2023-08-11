@@ -3,13 +3,13 @@ from datetime import datetime
 import shutil
 import re
 
-def get_production_clinvar_version(ref_proj_id):
-    name_regex = "clinvar_*_b37.vcf.gz"
+def get_production_clinvar_version(ref_proj_id, ref_proj_folder, genome_build):
+    name_regex = "clinvar_*_{}.vcf.gz".format(genome_build)
     vcf_files = list(dxpy.find_data_objects(
             name=name_regex,
             name_mode='glob',
             project=ref_proj_id,
-            folder="/annotation/b37/clinvar"
+            folder=ref_proj_folder
         ))
     
     # Error handling if files are not found in 001 reference
@@ -46,7 +46,8 @@ def get_production_clinvar_version(ref_proj_id):
 
 def generate_config_files(dev_version, dev_annotation_file_id, dev_index_file_id, dev_proj_id, ref_proj_id):
     # make prod testing file from template
-    prod_version, prod_annotation_file_id, prod_index_file_id = get_production_clinvar_version(ref_proj_id)
+    (prod_version, prod_annotation_file_id, 
+        prod_index_file_id) = get_production_clinvar_version(ref_proj_id, "/annotation/b37/clinvar", "b37")
     prod_filename = "Clinvar_annotation_vep_config_prod_{}.json".format(prod_version)
     prod_output_path = "temp/{}".format(prod_filename)
     path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id, prod_index_file_id)
@@ -73,14 +74,10 @@ def make_config_file(filename, annotation_file_id, index_file_id):
     shutil.copy("resources/template_VEP_Config.json", filename)
 
     # replace CLINVAR_VCF_FILE_ID and CLINVAR_VCF_TBI_FILE_ID and save
-    # Read in the file
     with open(filename, 'r') as file:
         file_data = file.read()
-    # Replace the target string
     file_data = file_data.replace("CLINVAR_VCF_FILE_ID", annotation_file_id)
     file_data = file_data.replace("CLINVAR_VCF_TBI_FILE_ID", index_file_id)
-
-    # Write the file out again
     with open(filename, 'w') as file:
         file.write(file_data)
 
