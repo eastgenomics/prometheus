@@ -10,15 +10,12 @@ class SlackHandler:
         self.slack_token = slack_token
 
     def announce_clinvar_update(self, channel, clinvar_date, month):
-        # TODO: learn how to use slack API
         update_message = """
         The new version of the ClinVar annotation resource file {} ({}) has been deployed into 001_reference
         """.format(clinvar_date, month)
         self.send_message(channel, update_message)
 
     def send_message(self, channel, message):
-        # send message to slack channel
-
         http = requests.Session()
         retries = Retry(total=5, backoff_factor=10, method_whitelist=['POST'])
         http.mount("https://", HTTPAdapter(max_retries=retries))

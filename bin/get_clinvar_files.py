@@ -9,6 +9,7 @@ from datetime import datetime
 import dxpy
 from os.path import exists
 import time
+from utils import check_jobs_finished
 
 dirname = os.path.dirname(__file__)
 clinvar_dir = os.path.join(dirname, "/data/clinvar/")
@@ -54,24 +55,79 @@ def get_ftp_files():
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
 def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build):
-    vcf_path, tbi_path = download_vcf(download_dir, recent_vcf_file, recent_tbi_file)
-    vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version, genome_build)
+    #vcf_path, tbi_path = download_vcf(download_dir, recent_vcf_file, recent_tbi_file)
+    #vcf_id, tbi_id = upload_to_DNAnexus(project_id, vcf_path, tbi_path, clinvar_version, genome_build)
+
+    # validate genome build
+    valid_genome_builds = ["b37", "b38"]
+    if not genome_build in valid_genome_builds:
+        raise Exception("Genome build \"{}\"specified in retrieve_clinvar_files is invalid".format(genome_build))
+    
+    build_number = genome_build[1:]
+    vcf_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh{}/weekly/{}".format(build_number, recent_vcf_file)
+    tbi_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh{}/weekly/{}".format(build_number, recent_tbi_file)
+    vcf_base_name = recent_vcf_file.split(".")[0]
+    renamed_vcf = "{}_{}.vcf.gz".format(vcf_base_name, genome_build)
+    renamed_tbi = "{}_{}.vcf.gz.tbi".format(vcf_base_name, genome_build)
+    subfolder = "ClinVar_version_{}_annotation_resource_update".format(clinvar_version)
+    project_folder = "/{}/Testing".format(subfolder)
+
+    # start url fetcher jobs
+    vcf_job_id = run_url_fetcher(project_id, project_folder, vcf_link, renamed_vcf)
+    tbi_job_id = run_url_fetcher(project_id, project_folder, tbi_link, renamed_tbi)
+
+    # Pause until jobs have finished
+    job_list = [vcf_job_id, tbi_job_id]
+    check_jobs_finished(job_list, 2, 20)
+
+    # find file in DNAnexus output folder + get file ID
+    vcf_files = list(dxpy.find_data_objects(
+            name=renamed_vcf,
+            project=project_id,
+            folder=project_folder
+        ))
+    
+    # check if file is present
+    if vcf_files:
+        vcf_id = vcf_files[0]['id']
+    else:
+        raise FileNotFoundError("VCF file {} not found in DNAnexus project {} in folder {}"
+                                .format(vcf_id, project_id, project_folder))
+
+    tbi_files = list(dxpy.find_data_objects(
+            name=renamed_tbi,
+            project=project_id,
+            folder=project_folder
+        ))
+    
+    # check if file is present
+    if tbi_files:
+        tbi_id = tbi_files[0]['id']
+    else:
+        raise FileNotFoundError("TBI file {} not found in DNAnexus project {} in folder {}"
+                                .format(tbi_id, project_id, project_folder))
+
+
     return vcf_id, tbi_id
 
+def run_url_fetcher(project_id, destination_folder, download_link, new_file_name):
+    inputs = {
+        "url" : download_link,
+        "output_name": new_file_name
+    }
+
+    job = dxpy.bindings.dxapp.DXApp(name="url_fetcher").run(
+                app_input=inputs,
+                project=project_id,
+                folder=destination_folder,
+                priority='high'
+            )
+
+    job_id = job.describe().get('id')
+
+    return job_id
+
 def download_vcf(download_dir, ftp_vcf, ftp_vcf_index):
-    """
-    Downloads file from NCBI FTP site to /data/clinvar, called by
-    check_current_vcf()
-
-    Args:
-        filename (string): name of VCF to be downloaded from FTP site
-
-    Outputs:
-        localfile (file): downloaded VCF into /data/clinvar/
-
-    Returns: None
-    """
-
     vcf_file_to_download = os.path.join(download_dir, ftp_vcf)
     tbi_file_to_download = os.path.join(download_dir, ftp_vcf_index)
 
