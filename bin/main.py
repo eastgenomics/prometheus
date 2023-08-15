@@ -12,7 +12,7 @@ import logging
 from login_handler import LoginHandler
 from slack_handler import SlackHandler
 
-def run_prometheus():
+def run_prometheus(bin_folder):
     logger = logging.getLogger("main log")
 
     # load config files
@@ -37,7 +37,9 @@ def run_prometheus():
 
     # Step 3 - Run vep for dev and prod configs, find differences, get evidence of changes
     logger.info("Running vep for development and production configs")
-    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, vep_config_prod, clinvar_version)
+    added_csv, deleted_csv, changed_csv, job_report = vep_testing.perform_vep_testing(dev_proj_id, vep_config_dev, 
+                                                                                        vep_config_prod, clinvar_version,
+                                                                                        bin_folder)
 
     # step 4 - upload .csv files to DNAnexus
     logger.info("Documenting testing on DNAnexus")
@@ -63,4 +65,6 @@ def load_config():
     return ref_proj_id, dev_proj_id, slack_channel
 
 if __name__ == "__main__":
-    run_prometheus()
+    # TODO: send either "bin" or "nextflow-bin" from nextflow script depending on where program is run
+    # This will either be "bin" for local, or "nextflow-bin" for running it as a DNAnexus app/applet
+    run_prometheus("bin")
