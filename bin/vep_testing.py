@@ -61,15 +61,11 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
     dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path, overwrite=True)
 
     # Use bcftools to parse the variant and ClinVar annotation fields
-    #subprocess.run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
-    # TODO: uncomment above line to run as applet
     subprocess.run(["sh", "{}/parse.sh".format(bin_folder), "temp/{}".format(label) + "/*.vcf.gz", label, "temp/"])
 
     # find results output by parse and take first match (there should only be 1 matching file)
     glob_path = "temp/" + "*.vcf.gz.{}.txt".format(label)
-
     filename = ""
-
     try:
         filename = glob.glob(glob_path)[0]
     except IndexError:
@@ -80,7 +76,6 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
 def get_diff_output(dev_output, prod_output, label, bin_folder):
     # run diff
     output_file = "temp/{}_diff_output.txt".format(label)
-    # TODO: switch to nextflow-bin for use as a nextflow script
     diff_input = ["sh", "{}/get_diff.sh".format(bin_folder), dev_output, prod_output, output_file]
     subprocess.run(diff_input, stderr=subprocess.STDOUT)
 
