@@ -1,5 +1,7 @@
-import dxpy
 import time
+
+import dxpy
+
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
     # timer is in minutes (e.g., check if job is done every 2 minutes)

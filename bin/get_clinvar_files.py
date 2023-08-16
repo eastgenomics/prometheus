@@ -8,8 +8,9 @@ from datetime import datetime
 import dxpy
 from utils import check_jobs_finished
 
+
 def get_ftp_files():
-    clinvar_gz_regex = re.compile("^clinvar_[0-9]+\.vcf\.gz$")
+    clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
     ftp = connect_to_website()
 
     file_list = []
@@ -47,24 +48,32 @@ def get_ftp_files():
 
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
-def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build):
+
+def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file,
+                           recent_tbi_file, clinvar_version, genome_build):
     # validate genome build
     valid_genome_builds = ["b37", "b38"]
-    if not genome_build in valid_genome_builds:
-        raise Exception("Genome build \"{}\"specified in retrieve_clinvar_files is invalid".format(genome_build))
-    
+    if genome_build not in valid_genome_builds:
+        raise Exception("Genome build \"{}\"specified in ".format(genome_build)
+                        + "retrieve_clinvar_files is invalid")
+
     build_number = genome_build[1:]
-    vcf_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh{}/weekly/{}".format(build_number, recent_vcf_file)
-    tbi_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh{}/weekly/{}".format(build_number, recent_tbi_file)
+    vcf_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+    + "{}/weekly/{}".format(build_number, recent_vcf_file)
+    tbi_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+    + "{}/weekly/{}".format(build_number, recent_tbi_file)
     vcf_base_name = recent_vcf_file.split(".")[0]
     renamed_vcf = "{}_{}.vcf.gz".format(vcf_base_name, genome_build)
     renamed_tbi = "{}_{}.vcf.gz.tbi".format(vcf_base_name, genome_build)
-    subfolder = "ClinVar_version_{}_annotation_resource_update".format(clinvar_version)
+    subfolder = "ClinVar_version_{}".format(clinvar_version)
+    + "annotation_resource_update"
     project_folder = "/{}/Testing".format(subfolder)
 
     # start url fetcher jobs
-    vcf_job_id = run_url_fetcher(project_id, project_folder, vcf_link, renamed_vcf)
-    tbi_job_id = run_url_fetcher(project_id, project_folder, tbi_link, renamed_tbi)
+    vcf_job_id = run_url_fetcher(project_id, project_folder,
+                                 vcf_link, renamed_vcf)
+    tbi_job_id = run_url_fetcher(project_id, project_folder,
+                                 tbi_link, renamed_tbi)
 
     # Pause until jobs have finished
     job_list = [vcf_job_id, tbi_job_id]
@@ -76,33 +85,36 @@ def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file, recent_tbi
             project=project_id,
             folder=project_folder
         ))
-    
+
     # check if file is present
     if vcf_files:
         vcf_id = vcf_files[0]['id']
     else:
-        raise FileNotFoundError("VCF file {} not found in DNAnexus project {} in folder {}"
-                                .format(vcf_id, project_id, project_folder))
+        raise FileNotFoundError("VCF file {} not found in ".format(vcf_id)
+                                + "DNAnexus project {} in folder {}"
+                                .format(project_id, project_folder))
 
     tbi_files = list(dxpy.find_data_objects(
             name=renamed_tbi,
             project=project_id,
             folder=project_folder
         ))
-    
+
     # check if file is present
     if tbi_files:
         tbi_id = tbi_files[0]['id']
     else:
-        raise FileNotFoundError("TBI file {} not found in DNAnexus project {} in folder {}"
-                                .format(tbi_id, project_id, project_folder))
-
+        raise FileNotFoundError("TBI file {} not found in ".format(tbi_id)
+                                + "DNAnexus project {} in folder {}"
+                                .format(project_id, project_folder))
 
     return vcf_id, tbi_id
 
-def run_url_fetcher(project_id, destination_folder, download_link, new_file_name):
+
+def run_url_fetcher(project_id, destination_folder,
+                    download_link, new_file_name):
     inputs = {
-        "url" : download_link,
+        "url": download_link,
         "output_name": new_file_name
     }
 
@@ -112,12 +124,12 @@ def run_url_fetcher(project_id, destination_folder, download_link, new_file_name
                 folder=destination_folder,
                 priority='high'
             )
-
     job_id = job.describe().get('id')
 
     return job_id
 
-def connect_to_website(): 
+
+def connect_to_website():
     try:
         ftp = FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()

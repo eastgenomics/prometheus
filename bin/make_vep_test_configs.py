@@ -3,7 +3,8 @@ from datetime import datetime
 import shutil
 import re
 
-def get_production_clinvar_version(ref_proj_id, ref_proj_folder, genome_build):
+
+def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
     name_regex = "clinvar_*_{}.vcf.gz".format(genome_build)
     vcf_files = list(dxpy.find_data_objects(
             name=name_regex,
@@ -11,11 +12,12 @@ def get_production_clinvar_version(ref_proj_id, ref_proj_folder, genome_build):
             project=ref_proj_id,
             folder=ref_proj_folder
         ))
-    
+
     # Error handling if files are not found in 001 reference
     if not vcf_files:
-        raise Exception("No clinvar files matching {} were found in 001 reference project".format(name_regex))
-    
+        raise Exception("No clinvar files matching {} ".format(name_regex)
+                        + "were found in 001 reference project")
+
     earliest_time = datetime.strptime("20200101", '%Y%m%d').date()
     recent_version = ""
     vcf_id = ""
@@ -44,30 +46,44 @@ def get_production_clinvar_version(ref_proj_id, ref_proj_folder, genome_build):
     # return latest production version
     return recent_version, vcf_id, index_id
 
-def generate_config_files(dev_version, dev_annotation_file_id, dev_index_file_id, dev_proj_id, ref_proj_id):
+
+def generate_config_files(dev_version, dev_annotation_file_id,
+                          dev_index_file_id, dev_proj_id, ref_proj_id):
     # make prod testing file from template
-    (prod_version, prod_annotation_file_id, 
-        prod_index_file_id) = get_production_clinvar_version(ref_proj_id, "/annotation/b37/clinvar", "b37")
-    prod_filename = "Clinvar_annotation_vep_config_prod_{}.json".format(prod_version)
+    (prod_version, prod_annotation_file_id,
+        prod_index_file_id) = get_prod_version(ref_proj_id,
+                                               "/annotation/b37/clinvar",
+                                               "b37")
+    prod_filename = "Clinvar_annotation_vep_config_prod_"
+    + "{}.json".format(prod_version)
     prod_output_path = "temp/{}".format(prod_filename)
-    path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id, prod_index_file_id)
+    path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id,
+                                    prod_index_file_id)
 
     # make dev testing file from template
-    dev_filename = "Clinvar_annotation_vep_config_dev_{}.json".format(dev_version)
+    dev_filename = "Clinvar_annotation_vep_config_dev_"
+    + "{}.json".format(dev_version)
     dev_output_path = "temp/{}".format(dev_filename)
-    path_to_dev = make_config_file(dev_output_path, dev_annotation_file_id, dev_index_file_id)
+    path_to_dev = make_config_file(dev_output_path, dev_annotation_file_id,
+                                   dev_index_file_id)
 
     # upload prod and dev files to DNAnexus via dxpy
-    subfolder = "ClinVar_version_{}_annotation_resource_update".format(dev_version)
+    subfolder = "ClinVar_version_{}".format(dev_version)
+    + "_annotation_resource_update"
     folder_path = "/{}/Testing".format(subfolder)
 
-    dev_file = dxpy.upload_local_file(filename=path_to_dev, project=dev_proj_id, folder=folder_path)
-    prod_file = dxpy.upload_local_file(filename=path_to_prod, project=dev_proj_id, folder=folder_path)
+    dev_file = dxpy.upload_local_file(filename=path_to_dev,
+                                      project=dev_proj_id,
+                                      folder=folder_path)
+    prod_file = dxpy.upload_local_file(filename=path_to_prod,
+                                       project=dev_proj_id,
+                                       folder=folder_path)
 
     dev_id = dev_file.get_id()
     prod_id = prod_file.get_id()
 
     return dev_id, prod_id
+
 
 def make_config_file(filename, annotation_file_id, index_file_id):
     # copy template file and rename
