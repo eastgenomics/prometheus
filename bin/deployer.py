@@ -9,7 +9,15 @@ from dxpy import upload_local_file
 
 def deploy_clinvar_to_production(reference_project_id, dev_project_id,
                                  vcf_file_id, tbi_file_id, deploy_folder):
-    # move vcf file and vcf.tbi file to 001 reference project
+    """move vcf file and vcf.tbi file to 001 reference project
+
+    Args:
+        reference_project_id (str): DNAnexus ID of 001 reference project
+        dev_project_id (str): DNAnexus ID of 003 development project
+        vcf_file_id (str): DNAnexus ID of vcf file to upload
+        tbi_file_id (str): DNAnexus ID of tbi file to upload
+        deploy_folder (str): DNAnexus project folder to upload to
+    """
     vcf_file = open_dxfile(dxid=vcf_file_id, project=dev_project_id)
     vcf_file.clone(project=reference_project_id, folder=deploy_folder)
 
@@ -19,7 +27,26 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
 
 def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
                                   deleted_csv, changed_csv, job_report):
-    # upload .csv files generated earlier to subfolder of 003 project
+    """uploads all files output from testing to subfolder of 003 dev project
+
+    Args:
+        dev_project_id (str): DNAnexus ID of 003 development project
+        clinvar_version (str): current version of ClinVar file
+        added_csv (str): path to added csv
+        deleted_csv (str): path to deleted csv
+        changed_csv (str): path to changed csv
+        job_report (str): path to job report txt file
+
+    Returns:
+        added_id: str
+            DNAnexus file ID for added csv
+        deleted_id: str
+            DNAnexus file ID for deleted csv
+        changed_id: str
+            DNAnexus file ID for changed csv
+        job_report_id: str
+            DNAnexus file ID for txt file containing job IDs
+    """
     subfolder = "ClinVar_version_{}".format(clinvar_version)
     + "_annotation_resource_update"
     folder_path = "/{}/Evidence".format(subfolder)

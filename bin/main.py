@@ -6,7 +6,6 @@ new clinvar updates come in
 import json
 import logging
 
-# local modules
 from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
 import make_vep_test_configs as vep
 import vep_testing
@@ -16,13 +15,17 @@ from slack_handler import SlackHandler
 
 
 def run_prometheus(bin_folder):
+    """runs all steps of prometheus
+
+    Args:
+        bin_folder (str): folder scripts are run from
+    """
     logger = logging.getLogger("main log")
 
     # load config files
     ref_proj_id, dev_proj_id, slack_channel = load_config()
     login_handler = LoginHandler()
     login_handler.login_DNAnexus()
-    login_handler.login_slack()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     logger.info("Fetching latest ClinVar annotation resource files")
@@ -33,10 +36,8 @@ def run_prometheus(bin_folder):
     logger.info("Downloading the clinvar annotation resource files "
                 + "{} and {} from {}".format(recent_vcf_file, recent_tbi_file,
                                              earliest_time))
-    download_dir = "./downloads"
     genome_build = "b37"
     clinvar_vcf_id, clinvar_tbi_id = retrieve_clinvar_files(dev_proj_id,
-                                                            download_dir,
                                                             recent_vcf_file,
                                                             recent_tbi_file,
                                                             clinvar_version,
@@ -85,6 +86,16 @@ def run_prometheus(bin_folder):
 
 
 def load_config():
+    """loads config file
+
+    Returns:
+        ref_proj_id: str
+            DNAnexus project ID for 001 reference project
+        dev_proj_id: str
+            DNAnexus project ID for 003 development project
+        slack_channel: str
+            Slack API token
+    """
     with open("resources/config.json", "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 

@@ -6,10 +6,23 @@ import re
 from ftplib import FTP
 from datetime import datetime
 import dxpy
+
 from utils import check_jobs_finished
 
 
 def get_ftp_files():
+    """retrieves information about latest ClinVar file
+
+    Returns:
+        recent_vcf_file: str
+            name of latest vcf file on ncbi website
+        recent_tbi_file: str
+            name of latest vcf index file on ncbi website
+        earliest_time: str
+            version date of latest ClinVar file
+        recent_vcf_version: str
+            version of latest ClinVar file
+    """
     clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
     ftp = connect_to_website()
 
@@ -49,8 +62,28 @@ def get_ftp_files():
     return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
 
 
-def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file,
-                           recent_tbi_file, clinvar_version, genome_build):
+def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
+                           clinvar_version, genome_build):
+    """download latest ClinVar files to 003 development project
+
+    Args:
+        project_id (str): DNAnexus file ID of 003 dev project
+        recent_vcf_file (str): file name of most recent ClinVar vcf file
+        recent_tbi_file (str): file name of most recent ClinVar tbi file
+        clinvar_version (str): version of latest Clinvar file
+        genome_build (str): genome build of ClinVar file to be retrieved
+
+    Raises:
+        Exception: invalid genome build provided
+        FileNotFoundError: vcf file not found
+        FileNotFoundError: tbi file not found
+
+    Returns:
+        vcf_id: str
+            DNAnexus file ID for downloaded vcf file
+        tbi_id: str
+            DNAnexus file ID for downloaded tbi file
+    """
     # validate genome build
     valid_genome_builds = ["b37", "b38"]
     if genome_build not in valid_genome_builds:
@@ -113,6 +146,17 @@ def retrieve_clinvar_files(project_id, download_dir, recent_vcf_file,
 
 def run_url_fetcher(project_id, destination_folder,
                     download_link, new_file_name):
+    """runs url fetcher to download a file to a given project folder
+
+    Args:
+        project_id (str): DNAnexus project ID for project to download to
+        destination_folder (str): path to DNAnexus project folder
+        download_link (str): website link to download from
+        new_file_name (str): new name of downloaded file
+
+    Returns:
+        str: DNAnexus job ID for url fetcher job run
+    """
     inputs = {
         "url": download_link,
         "output_name": new_file_name
@@ -130,6 +174,11 @@ def run_url_fetcher(project_id, destination_folder,
 
 
 def connect_to_website():
+    """generates a FTP object to enable download from ncbi website
+
+    Returns:
+        ftplib.FTP: FTP object to enable download from ncbi website
+    """
     try:
         ftp = FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()

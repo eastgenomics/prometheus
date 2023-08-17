@@ -5,6 +5,24 @@ import re
 
 
 def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
+    """gets information on latest production ClinVar file
+
+    Args:
+        ref_proj_id (str): DNAnexus project ID for 001 reference project
+        ref_proj_folder (str): folder path containing ClinVar files
+        genome_build (str): genome build of ClinVar file
+
+    Raises:
+        Exception: no ClinVar files could be found in ref project folder
+
+    Returns:
+        recent_version: str
+            version of production Clinvar file
+        vcf_id: str
+            DNAnexus file ID for production vcf file
+        index_id: str
+            DNAnexus file ID for production vcf index file
+    """
     name_regex = "clinvar_*_{}.vcf.gz".format(genome_build)
     vcf_files = list(dxpy.find_data_objects(
             name=name_regex,
@@ -49,6 +67,21 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
 def generate_config_files(dev_version, dev_annotation_file_id,
                           dev_index_file_id, dev_proj_id, ref_proj_id):
+    """generates vep config files for dev and prod ClinVar files
+
+    Args:
+        dev_version (str): version of dev vcf file
+        dev_annotation_file_id (str): DNAnexus file ID for dev vcf file
+        dev_index_file_id (str): DNAnexus file ID for dev tbi file
+        dev_proj_id (str): DNAnexus project ID for 003 dev project
+        ref_proj_id (str): DNAnexus project ID for 001 reference project
+
+    Returns:
+        dev_id: str
+            DNAnexus file ID for dev vep config file
+        prod_id: str
+            DNAnexus file ID for prod vep config file
+    """
     # make prod testing file from template
     (prod_version, prod_annotation_file_id,
         prod_index_file_id) = get_prod_version(ref_proj_id,
@@ -86,6 +119,16 @@ def generate_config_files(dev_version, dev_annotation_file_id,
 
 
 def make_config_file(filename, annotation_file_id, index_file_id):
+    """makes vep config file from template
+
+    Args:
+        filename (str): name of vep config file to be output
+        annotation_file_id (str): DNAnexus file ID of vcf file
+        index_file_id (str): DNAnexus file ID of vcf index file
+
+    Returns:
+        str: path to config file created
+    """
     # copy template file and rename
     shutil.copy("resources/template_VEP_Config.json", filename)
 

@@ -10,6 +10,25 @@ from utils import check_jobs_finished
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id,
                         clinvar_version, bin_folder):
+    """_summary_
+
+    Args:
+        project_id (str): DNAnexus file ID for 003 dev project
+        dev_config_id (str): DNAnexus file ID for dev vep config file
+        prod_config_id (str): DNAnexus file ID for prod vep config file
+        clinvar_version (str): version of ClinVar vcf
+        bin_folder (str): path to bin folder
+
+    Returns:
+        added_csv: str
+            path to csv report for added variants
+        deleted_csv: str
+            path to csv report for deleted variants
+        changed_csv: str
+            path to csv report for changed variants
+        job_report: str
+            path to txt file report for vep jobs run
+    """
     # TODO: automatically get recent vcf files for twe and tso500
     # Should also get bed file ID
     # Must be from most recent 002 project that is not archived and
@@ -79,8 +98,19 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
 
 
 def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
-    folder_path = "/{0}/{1}".format(update_folder, folder)
+    """parses output from running vep and returns path to processed output
 
+    Args:
+        project_id (str): DNAnexus project ID for 003 dev project
+        folder (str): folder name to output to in current update folder
+        label (str): label for naming the end of the output file
+        update_folder (str): path to folder in 003 project for current update
+        bin_folder (str): path to bin folder
+
+    Returns:
+        str: path to parsed vep output
+    """
+    folder_path = "/{0}/{1}".format(update_folder, folder)
     # Download files output from vep
     # TODO: check that folder exists before downloading
     # Handle error if folder not found
@@ -106,6 +136,17 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
 
 
 def get_diff_output(dev_output, prod_output, label, bin_folder):
+    """get the diff output between dev and prod vep parsed outputs
+
+    Args:
+        dev_output (str): parsed vep output for dev vcf
+        prod_output (str): parsed vep output for prod vcf
+        label (str): label for naming the end of the output file
+        bin_folder (str): path to bin folder
+
+    Returns:
+        str: path to diff output txt file
+    """
     # run diff
     output_file = "temp/{}_diff_output.txt".format(label)
     diff_input = ["sh", "{}/get_diff.sh".format(bin_folder),
@@ -117,6 +158,18 @@ def get_diff_output(dev_output, prod_output, label, bin_folder):
 
 def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
                     prod_tso_job, path) -> str:
+    """generates job report txt file from vep run DNAnexus job IDs
+
+    Args:
+        dev_twe_job (str): DNAnexus job ID for dev twe vep run
+        dev_tso_job (str): DNAnexus job ID for dev tso vep run
+        prod_twe_job (str): DNAnexus job ID for prod twe vep run
+        prod_tso_job (str): DNAnexus job ID for prod tso vep run
+        path (str): output path
+
+    Returns:
+        str: path to job report txt file
+    """
     try:
         with open(path, "w") as file:
             file.write("Development TWE job: {}\n".format(dev_twe_job))
@@ -135,6 +188,19 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
 
 def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
             update_folder):
+    """runs the DNAnexus app vep
+
+    Args:
+        project_id (str): DNAnexus project ID for 003 dev project
+        project_folder (str): DNAnexus folder name to run vep in
+        config_file (str): DNAnexus file ID for vep config file
+        vcf_file (str): DNAnexus file ID for vep vcf file
+        panel_bed_file (str): DNAnexus file ID for vep panel bed file
+        update_folder (str): DNAnexus folder in 003 project for current update
+
+    Returns:
+        str: DNAnexus job ID for vep run
+    """
     inputs = {
         "config_file": {'$dnanexus_link': config_file},
         "vcf": {'$dnanexus_link': vcf_file},

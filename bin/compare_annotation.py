@@ -8,6 +8,20 @@ output_location = "temp"
 
 
 def compare_annotation(diff_twe, diff_tso):
+    """generates csv reports from diff outputs for TWE and TSO500
+
+    Args:
+        diff_twe (str): path to diff output file for TWE
+        diff_tso (str): path to diff output file for TSO500
+
+    Returns:
+        added_output: str
+            path to .csv summarising added variants
+        deleted_output: str
+            path to .csv summarising deleted variants
+        changed_output: str
+            path to .csv summarising changed variants
+    """
     # get variant annotation changes for TWE
     added_twe, deleted_twe, changed_twe = parse_diff(diff_twe)
     # add "assay" column with "TWE" for added, deleted, and changed
@@ -57,6 +71,21 @@ def compare_annotation(diff_twe, diff_tso):
 
 
 def parse_diff(diff_filename):
+    """parses file of diff output to dataframes
+
+    Args:
+        diff_filename (str): path to diff file
+
+    Raises:
+        FileNotFoundError: diff file not found
+    Returns:
+        added_df: pandas.DataFrame
+            path to .csv summarising added variants
+        deleted_df: pandas.DataFrame
+            path to .csv summarising deleted variants
+        changed_df: pandas.DataFrame
+            path to .csv summarising changed variants
+    """
     # read in file from filename passed in
     try:
         diff = open(diff_filename, "r")
@@ -142,7 +171,7 @@ def parse_diff(diff_filename):
     changed_from_split = split_variant_info(changed_list_from)
     changed_to_split = split_variant_info(changed_list_to)
 
-    added_df, deleted_df, changed_df = make_tables(
+    added_df, deleted_df, changed_df = make_dataframes(
         added_split,
         deleted_split,
         changed_from_split,
@@ -153,9 +182,17 @@ def parse_diff(diff_filename):
 
 
 def parse_line_count(line):
-    # checks if the number of commas is valid when parsing a difference
-    # e.g., "23c23" or "23,24,25c23,24,25" are both valid
-    # "23c23,24" or "45,46c46" would be invalid
+    """checks if the number of commas is valid when parsing a difference
+
+    Args:
+        line (str): line containing difference description
+
+    Raises:
+        Exception: odd number of commas found in line
+
+    Returns:
+        int: number of differences found based on number of commas
+    """
     num_commas = line.count(",")
     if num_commas % 2 == 0:
         return num_commas/2 + 1
@@ -165,6 +202,14 @@ def parse_line_count(line):
 
 
 def split_variant_info(raw_list):
+    """splits diff string into columns
+
+    Args:
+        raw_list (str): diff string
+
+    Returns:
+        list: row of values in format mutation, locus, category, info
+    """
     filtered_list = []
     for item in raw_list:
         # format: mutation, locus, category, info
@@ -174,10 +219,24 @@ def split_variant_info(raw_list):
     return filtered_list
 
 
-def make_tables(added_list, deleted_list, changed_list_from, changed_list_to):
-    # output format: variant category, count TWE, count TSO500
-    # in the case of conflicting evidence, category is based
-    # on "category" and "info" columns
+def make_dataframes(added_list, deleted_list, changed_list_from,
+                    changed_list_to):
+    """generates dataframes from lists of variants
+
+    Args:
+        added_list (list): list of added variants
+        deleted_list (list): list of deleted variants
+        changed_list_from (list): list of old changed variants
+        changed_list_to (list): list of new changed variants
+
+    Returns:
+        added_df: pandas.DataFrame
+            columns: added
+        deleted_df: pandas.DataFrame
+            columns: deleted
+        changed_df: pandas.DataFrame
+            columns: changed_from, changed_to
+    """
     added_df = pandas.DataFrame(data=added_list,
                                 columns=["mutation", "locus",
                                          "category", "info"])
@@ -204,7 +263,14 @@ def make_tables(added_list, deleted_list, changed_list_from, changed_list_to):
 
 
 def get_categories(dataframe_extract):
-    # get full category name from category and info columns for all entries
+    """get full category name from category and info columns for all entries
+
+    Args:
+        dataframe_extract (pandas.DataFrame): contains category and info cols
+
+    Returns:
+        list: list of updated category names
+    """
     updated_categories = []
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
@@ -216,7 +282,15 @@ def get_categories(dataframe_extract):
 
 
 def get_full_category_name(base_name, info):
-    # get full category name from category and info columns for single entry
+    """get full category name from category and info columns for single entry
+
+    Args:
+        base_name (str): from category column
+        info (str): from info column
+
+    Returns:
+        str: full category name
+    """
     with open(regex_config_location, "r") as file:
         regex_dict = json.load(file)
 

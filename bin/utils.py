@@ -4,9 +4,13 @@ import dxpy
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
-    # timer is in minutes (e.g., check if job is done every 2 minutes)
-    # max wait time is in minutes (e.g., fail after waiting for > 20 minutes)
-    # job_list is list of job IDs to be checked
+    """checks if jobs have finished or until max time has elapsed
+
+    Args:
+        job_id_list (str): DNAnexus job IDs to check if completed
+        timer (int): interval to check in (minutes)
+        max_wait_time (int): max wait time
+    """
     job_list = []
 
     for job_id in job_id_list:
