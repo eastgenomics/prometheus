@@ -1,8 +1,6 @@
 from bin.compare_annotation import get_full_category_name as get_fc
 
 import os
-
-# needed to access "resources" folder containing "annotation_regex.json"
 os.chdir("..")
 
 
