@@ -1,3 +1,7 @@
+"""
+Compares the output of VEP for development and production ClinVar vcfs
+"""
+
 import re
 import types
 import pandas

@@ -1,3 +1,7 @@
+"""
+Handles running vep with development and production ClinVar vcf files
+"""
+
 import dxpy
 import subprocess
 import glob

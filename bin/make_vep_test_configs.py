@@ -1,3 +1,7 @@
+"""
+Generates vep config files for development and production ClinVar vcfs
+"""
+
 import dxpy
 from datetime import datetime
 import shutil

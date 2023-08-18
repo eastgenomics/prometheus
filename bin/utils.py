@@ -1,3 +1,7 @@
+"""
+Contains utility functions used in multiple modules
+"""
+
 import time
 
 import dxpy
