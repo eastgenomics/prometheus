@@ -5,6 +5,7 @@ Contains utility functions used in multiple modules
 import time
 
 import dxpy
+from dxpy.bindings.dxproject import DXProject
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -39,3 +40,46 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
             # wait for [timer] minutes
             time.sleep(timer*60)
             time_elapsed += timer
+
+
+def check_project_exists(project_id):
+    """checks if a DNAnexus project exists from project ID
+
+    Args:
+        project_id (str): DNAnexus project ID
+
+    Returns:
+        bool: does the specified project exist
+    """
+    try:
+        DXProject(project_id)
+        return True
+    except dxpy.exceptions.DXError:
+        return False
+
+
+def check_proj_folder_exists(project_id, folder_path):
+    """checks if a DNAnexus folder exists in a given project
+
+    Args:
+        project_id (str): DNAnexus project ID
+        folder_path (str): path to DNAnexus folder
+
+    Raises:
+        Exception: project not found
+
+    Returns:
+        bool: does folder exist in project
+    """
+    if not check_project_exists(project_id):
+        raise Exception("Project {} does not exist".format(project_id))
+
+    try:
+        dxpy.api.project_list_folder(
+            project_id,
+            input_params={"folder": folder_path, "only": "folders"},
+            always_retry=True
+        )
+        return True
+    except dxpy.exceptions.ResourceNotFound:
+        return False

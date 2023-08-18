@@ -6,6 +6,8 @@ from dxpy.bindings.dxfile_functions import open_dxfile
 from dxpy.bindings.dxproject import DXProject
 from dxpy import upload_local_file
 
+import utils
+
 
 def deploy_clinvar_to_production(reference_project_id, dev_project_id,
                                  vcf_file_id, tbi_file_id, deploy_folder):
@@ -18,6 +20,10 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
         tbi_file_id (str): DNAnexus ID of tbi file to upload
         deploy_folder (str): DNAnexus project folder to upload to
     """
+    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(deploy_folder, reference_project_id))
+
     vcf_file = open_dxfile(dxid=vcf_file_id, project=dev_project_id)
     vcf_file.clone(project=reference_project_id, folder=deploy_folder)
     vcf_file.close()
