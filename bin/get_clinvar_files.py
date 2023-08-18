@@ -18,7 +18,7 @@ def get_ftp_files():
             name of latest vcf file on ncbi website
         recent_tbi_file: str
             name of latest vcf index file on ncbi website
-        earliest_time: str
+        latest_time: str
             version date of latest ClinVar file
         recent_vcf_version: str
             version of latest ClinVar file
@@ -29,7 +29,7 @@ def get_ftp_files():
     file_list = []
     ftp.retrlines('LIST', file_list.append)
 
-    earliest_time = datetime.strptime("20200101", '%Y%m%d').date()
+    latest_time = datetime.strptime("20200101", '%Y%m%d').date()
     recent_vcf_version = ""
     recent_vcf_file = ""
 
@@ -46,20 +46,20 @@ def get_ftp_files():
             ftp_vcf_ver = int(ftp_vcf.split("_")[1].split(".")[0])
             date_object = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
 
-            if earliest_time < date_object:
+            if latest_time < date_object:
                 print("The date {0} is earlier".format(date_object))
-                earliest_time = date_object
+                latest_time = date_object
                 recent_vcf_version = ftp_vcf_ver
                 recent_vcf_file = file_name
                 print(file_name)
-                print(earliest_time)
+                print(latest_time)
 
         # get corresponding .vcf.gz.tbi file based on vcf name
         recent_tbi_file = recent_vcf_file + ".tbi"
 
-    print("Latest ClinVar version available: {0}".format(earliest_time))
+    print("Latest ClinVar version available: {0}".format(latest_time))
 
-    return recent_vcf_file, recent_tbi_file, earliest_time, recent_vcf_version
+    return recent_vcf_file, recent_tbi_file, latest_time, recent_vcf_version
 
 
 def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
