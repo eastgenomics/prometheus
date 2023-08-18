@@ -8,6 +8,8 @@ from urllib3.util import Retry
 
 
 class SlackHandler:
+    """Handles slack interactions
+    """
     def __init__(self, slack_token):
         self.slack_token = slack_token
 
