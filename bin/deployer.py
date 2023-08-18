@@ -20,9 +20,11 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
     """
     vcf_file = open_dxfile(dxid=vcf_file_id, project=dev_project_id)
     vcf_file.clone(project=reference_project_id, folder=deploy_folder)
+    vcf_file.close()
 
     tbi_file = open_dxfile(dxid=tbi_file_id, project=dev_project_id)
     tbi_file.clone(project=reference_project_id, folder=deploy_folder)
+    vcf_file.close()
 
 
 def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
