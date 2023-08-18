@@ -40,7 +40,7 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
         raise Exception("No clinvar files matching {} ".format(name_regex)
                         + "were found in 001 reference project")
 
-    earliest_time = datetime.strptime("20200101", '%Y%m%d').date()
+    latest_time = datetime.strptime("20200101", '%Y%m%d').date()
     recent_version = ""
     vcf_id = ""
     index_id = ""
@@ -52,8 +52,8 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
                 )['name']
         version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
         version_date = datetime.strptime(version, '%Y%m%d').date()
-        if version_date > earliest_time:
-            earliest_time = version_date
+        if version_date > latest_time:
+            latest_time = version_date
             recent_version = version
             vcf_id = file['id']
 
