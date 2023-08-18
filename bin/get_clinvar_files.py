@@ -47,7 +47,7 @@ def get_ftp_files():
             date_object = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
 
             if latest_time < date_object:
-                print("The date {0} is earlier".format(date_object))
+                print("The date {0} is more recent".format(date_object))
                 latest_time = date_object
                 recent_vcf_version = ftp_vcf_ver
                 recent_vcf_file = file_name
