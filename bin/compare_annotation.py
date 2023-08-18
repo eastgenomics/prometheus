@@ -82,6 +82,7 @@ def parse_diff(diff_filename):
 
     Raises:
         FileNotFoundError: diff file not found
+
     Returns:
         added_df: pandas.DataFrame
             path to .csv summarising added variants
@@ -292,6 +293,9 @@ def get_full_category_name(base_name, info):
         base_name (str): from category column
         info (str): from info column
 
+    Raises:
+        Exception: Invalid input format in 'info' field
+
     Returns:
         str: full category name
     """
@@ -314,8 +318,7 @@ def get_full_category_name(base_name, info):
             else:
                 # check info
                 if info == ".":
-                    # throw exception, invalid input
-                    print("invalid input")
+                    raise Exception("Invalid input format in 'info' field")
                 else:
                     # try to parse info
                     # split info by &
@@ -329,8 +332,8 @@ def get_full_category_name(base_name, info):
                         if match:
                             new_info.append(match)
                         else:
-                            # throw exception
-                            print("invalid input format in 'info' field")
+                            raise Exception("Invalid input format "
+                                            + "in 'info' field")
 
                     # we now have a vec (new_info) containing all evidence
                     # categories for this variant
