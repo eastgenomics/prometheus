@@ -18,8 +18,12 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
     """
     job_list = []
 
+    # check that all jobs exist
     for job_id in job_id_list:
-        job_list.append(dxpy.bindings.dxjob.DXJob(job_id))
+        try:
+            job_list.append(dxpy.bindings.dxjob.DXJob(job_id))
+        except dxpy.exceptions.DXError:
+            raise IOError("DNAnexus job {} not found".format(job_id))
 
     time_elapsed = 0
 
