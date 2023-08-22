@@ -6,10 +6,12 @@ import dxpy
 import subprocess
 import glob
 from dxpy.bindings.dxfile_functions import download_folder
+import vcf
 
 # local modules
 import compare_annotation
 from utils import check_jobs_finished
+from utils import check_proj_folder_exists
 
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id,
@@ -114,29 +116,37 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
     Returns:
         str: path to parsed vep output
     """
-    folder_path = "/{0}/{1}".format(update_folder, folder)
     # Download files output from vep
-    # TODO: check that folder exists before downloading
-    # Handle error if folder not found
+    folder_path = "/{0}/{1}".format(update_folder, folder)
+    if not check_proj_folder_exists(project_id, folder_path):
+        raise Exception("Folder {} not found in {}".format(project_id,
+                                                           folder_path))
     download_folder(project_id,
                     "temp/{}".format(label),
                     folder=folder_path,
                     overwrite=True)
 
-    # Use bcftools to parse the variant and ClinVar annotation fields
-    subprocess.run(["sh", "{}/parse.sh".format(bin_folder),
-                    "temp/{}".format(label) + "/*.vcf.gz", label, "temp/"])
-
-    # find results output by parse and take first match
-    # there should only be 1 matching file
-    glob_path = "temp/" + "*.vcf.gz.{}.txt".format(label)
-    filename = ""
+    # Parse the variant and ClinVar annotation fields
+    glob_path = "temp/{}/*.vcf.gz".format(label)
+    vcf_input_path = ""
     try:
-        filename = glob.glob(glob_path)[0]
+        vcf_input_path = glob.glob(glob_path)[0]
     except IndexError:
-        print("Error: cannot find file at: {}".format(glob_path))
+        raise IOError("File matching glob {} not found".format(glob_path))
+    vcf_output_path = "parsed_vcf_{}.txt".format(label)
+    vcf_reader = vcf.Reader(open(vcf_input_path, 'rb'))
 
-    return filename
+    with open(vcf_output_path, "w") as file:
+        for record in vcf_reader:
+            new_record = ("{}:{}:{}:{} {} {} {}\n"
+                          .format(record.CHROM, record.POS,
+                                  record.REF, record.ALT,
+                                  record.INFO["Clinvar"],
+                                  record.INFO["ClinVar_CLNSIG"],
+                                  record.INFO["ClinVar_CLNSIGCONF"]))
+            file.write(new_record)
+
+    return vcf_output_path
 
 
 def get_diff_output(dev_output, prod_output, label, bin_folder):
