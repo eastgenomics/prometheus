@@ -19,6 +19,9 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
         vcf_file_id (str): DNAnexus ID of vcf file to upload
         tbi_file_id (str): DNAnexus ID of tbi file to upload
         deploy_folder (str): DNAnexus project folder to upload to
+
+    Raises:
+        Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception("Folder {} does not exist in project {}"

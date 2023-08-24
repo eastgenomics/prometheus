@@ -7,6 +7,8 @@ from datetime import datetime
 import shutil
 import re
 
+import utils
+
 
 def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
     """gets information on latest production ClinVar file
@@ -18,6 +20,7 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
     Raises:
         Exception: no ClinVar files could be found in ref project folder
+        Exception: project folder does not exist
 
     Returns:
         recent_version: str
@@ -27,6 +30,9 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
         index_id: str
             DNAnexus file ID for production vcf index file
     """
+    if not utils.check_proj_folder_exists(ref_proj_id, ref_proj_folder):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(ref_proj_folder, ref_proj_id))
     name_regex = "clinvar_*_{}.vcf.gz".format(genome_build)
     vcf_files = list(dxpy.find_data_objects(
             name=name_regex,
