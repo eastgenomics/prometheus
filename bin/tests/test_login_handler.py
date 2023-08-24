@@ -1,6 +1,6 @@
 import unittest
 
-from bin.login_handler import LoginHandler
+from .context import login_handler as lh
 
 import os
 os.chdir("..")
@@ -11,7 +11,7 @@ class testCase(unittest.TestCase):
 
     def test_login_valid(self):
         print(os.getcwd())
-        login = LoginHandler()
+        login = lh.LoginHandler()
         assert login.login_DNAnexus() is None
 
 

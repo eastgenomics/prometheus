@@ -6,7 +6,7 @@ import dxpy
 import subprocess
 import glob
 from dxpy.bindings.dxfile_functions import download_folder
-import vcf
+import vcfpy
 
 # local modules
 import compare_annotation
@@ -134,7 +134,7 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
     except IndexError:
         raise IOError("File matching glob {} not found".format(glob_path))
     vcf_output_path = "parsed_vcf_{}.txt".format(label)
-    vcf_reader = vcf.Reader(open(vcf_input_path, 'rb'))
+    vcf_reader = vcfpy.Reader(open(vcf_input_path, 'rb'))
 
     with open(vcf_output_path, "w") as file:
         for record in vcf_reader:
