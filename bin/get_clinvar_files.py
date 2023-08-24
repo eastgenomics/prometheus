@@ -18,7 +18,7 @@ def get_ftp_files():
             name of latest vcf file on ncbi website
         recent_tbi_file: str
             name of latest vcf index file on ncbi website
-        latest_time: str
+        latest_time: datetime.date
             version date of latest ClinVar file
         recent_vcf_version: str
             version of latest ClinVar file
@@ -43,21 +43,16 @@ def get_ftp_files():
         if clinvar_gz_regex.match(file_name):
             # get just the full clinvar vcf
             ftp_vcf = file_name
-            ftp_vcf_ver = int(ftp_vcf.split("_")[1].split(".")[0])
+            ftp_vcf_ver = str(ftp_vcf.split("_")[1].split(".")[0])
             date_object = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
 
             if latest_time < date_object:
-                print("The date {0} is more recent".format(date_object))
                 latest_time = date_object
                 recent_vcf_version = ftp_vcf_ver
                 recent_vcf_file = file_name
-                print(file_name)
-                print(latest_time)
 
         # get corresponding .vcf.gz.tbi file based on vcf name
         recent_tbi_file = recent_vcf_file + ".tbi"
-
-    print("Latest ClinVar version available: {0}".format(latest_time))
 
     return recent_vcf_file, recent_tbi_file, latest_time, recent_vcf_version
 
