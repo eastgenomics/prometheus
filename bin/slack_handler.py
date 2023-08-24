@@ -33,6 +33,10 @@ class SlackHandler:
         Args:
             channel (str): channel to post to
             message (str): message to post
+
+        Raises:
+            Exception: Error sending post request for slack
+            Exception: Error sending slack notification
         """
         http = requests.Session()
         retries = Retry(total=5, backoff_factor=10, method_whitelist=['POST'])
@@ -48,8 +52,8 @@ class SlackHandler:
 
             if not response['ok']:
                 # error in sending slack notification
-                print("Error in sending slack notification: {}"
+                raise Exception("Error sending slack notification: {}"
                       .format(response.get('error')))
         except Exception as err:
-            print("Error in sending post request for slack notification: {}"
-                  .format(err))
+            raise Exception("Error sending post request for slack "
+                            + "notification: {}".format(err))

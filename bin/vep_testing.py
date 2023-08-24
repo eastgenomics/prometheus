@@ -113,6 +113,10 @@ def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
         update_folder (str): path to folder in 003 project for current update
         bin_folder (str): path to bin folder
 
+    Raises:
+        Exception: Folder not found in project
+        IOError: Input vcf file not found
+
     Returns:
         str: path to parsed vep output
     """

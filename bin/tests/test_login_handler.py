@@ -10,7 +10,6 @@ os.chdir("..")
 class testCase(unittest.TestCase):
 
     def test_login_valid(self):
-        print(os.getcwd())
         login = lh.LoginHandler()
         assert login.login_DNAnexus() is None
 
