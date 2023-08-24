@@ -16,7 +16,7 @@ from utils import check_proj_folder_exists
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id,
                         clinvar_version, bin_folder):
-    """_summary_
+    """compares vep output for dev and prod files and outputs reports
 
     Args:
         project_id (str): DNAnexus file ID for 003 dev project
@@ -75,17 +75,13 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
 
     # parse VEP run output vcf using bcftools
     dev_twe_output = parse_vep_output(project_id, dev_twe_folder,
-                                      "dev_twe", update_folder,
-                                      bin_folder)
+                                      "dev_twe", update_folder)
     dev_tso_output = parse_vep_output(project_id, dev_tso_folder,
-                                      "dev_tso500", update_folder,
-                                      bin_folder)
+                                      "dev_tso500", update_folder)
     prod_twe_output = parse_vep_output(project_id, prod_twe_folder,
-                                       "prod_twe", update_folder,
-                                       bin_folder)
+                                       "prod_twe", update_folder)
     prod_tso_output = parse_vep_output(project_id, prod_tso_folder,
-                                       "prod_tso500", update_folder,
-                                       bin_folder)
+                                       "prod_tso500", update_folder)
 
     # Perform comparison of differences when using dev vs. prod
     # Get diff for twe
@@ -103,7 +99,7 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
     return added_csv, deleted_csv, changed_csv, job_report
 
 
-def parse_vep_output(project_id, folder, label, update_folder, bin_folder):
+def parse_vep_output(project_id, folder, label, update_folder):
     """parses output from running vep and returns path to processed output
 
     Args:
@@ -196,9 +192,9 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
             file.write("Production TSO500 job: {}\n".format(prod_tso_job))
     except FileNotFoundError:
         print("The directory for saving the job report "
-              + "({}) does not exist".format(path))
+              + "{} does not exist".format(path))
     except FileExistsError:
-        print("The file ({}) ".format(path)
+        print("The file {} ".format(path)
               + "already exists and job report cannot be saved")
 
     return path
