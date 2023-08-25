@@ -32,6 +32,8 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
             path to csv report for deleted variants
         changed_csv: str
             path to csv report for changed variants
+        detailed_csv: str
+            path to csv report for detailed changed variants
         job_report: str
             path to txt file report for vep jobs run
     """
@@ -92,11 +94,14 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
                                         "tso500", bin_folder)
 
     # Get detailed table of differences for twe and tso500
-    (added_csv, deleted_csv,
-     changed_csv) = compare_annotation.compare_annotation(twe_diff_filename,
-                                                          tso_diff_filename)
+    (added_csv,
+     deleted_csv,
+     changed_csv,
+     detailed_csv) = (compare_annotation
+                      .compare_annotation(twe_diff_filename,
+                                          tso_diff_filename))
 
-    return added_csv, deleted_csv, changed_csv, job_report
+    return added_csv, deleted_csv, changed_csv, detailed_csv, job_report
 
 
 def parse_vep_output(project_id, folder, label, update_folder):

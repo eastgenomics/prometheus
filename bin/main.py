@@ -60,6 +60,7 @@ def run_prometheus(bin_folder):
     (added_csv,
      deleted_csv,
      changed_csv,
+     detailed_csv,
      job_report) = vep_testing.perform_vep_testing(dev_proj_id,
                                                    vep_config_dev,
                                                    vep_config_prod,
@@ -70,7 +71,8 @@ def run_prometheus(bin_folder):
     logger.info("Documenting testing on DNAnexus")
     deployer.deploy_testing_to_development(dev_proj_id, clinvar_version,
                                            added_csv, deleted_csv,
-                                           changed_csv, job_report)
+                                           changed_csv, detailed_csv,
+                                           job_report)
 
     # Step 5 - deploy clinvar file to 001
     logger.info("Deploying clinvar files to 001 reference project")

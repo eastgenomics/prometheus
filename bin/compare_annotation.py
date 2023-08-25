@@ -27,23 +27,26 @@ def compare_annotation(diff_twe, diff_tso):
             path to .csv summarising changed variants
     """
     # get variant annotation changes for TWE
-    added_twe, deleted_twe, changed_twe = parse_diff(diff_twe)
+    added_twe, deleted_twe, changed_twe, detailed_twe = parse_diff(diff_twe)
     # add "assay" column with "TWE" for added, deleted, and changed
     added_twe["assay"] = "TWE"
     deleted_twe["assay"] = "TWE"
     changed_twe["assay"] = "TWE"
+    detailed_twe["assay"] = "TWE"
 
     # get variant annotation changes for TSO500
-    added_tso, deleted_tso, changed_tso = parse_diff(diff_tso)
+    added_tso, deleted_tso, changed_tso, detailed_tso = parse_diff(diff_tso)
     # add "assay" column with "TSO500" for added, deleted, and changed
     added_tso["assay"] = "TSO500"
     deleted_tso["assay"] = "TSO500"
     changed_tso["assay"] = "TSO500"
+    detailed_tso["assay"] = "TSO500"
 
     # combine both tables on all columns for added, deleted, and changed
     added = pandas.concat([added_twe, added_tso])
     deleted = pandas.concat([deleted_twe, deleted_tso])
     changed = pandas.concat([changed_twe, changed_tso])
+    detailed = pandas.concat([detailed_twe, detailed_tso])
     # filter added to show only "Added" "Count TWE" and "Count TSO500" columns
     added = added[['added', 'assay']].value_counts()
     added = added.reset_index(name='assay counts')
@@ -70,8 +73,10 @@ def compare_annotation(diff_twe, diff_tso):
     deleted.to_csv(deleted_output, index=True)
     changed_output = "{}/changed_variants.csv".format(output_location)
     changed.to_csv(changed_output, index=True)
+    detailed_out = "{}/detailed_changed_variants.csv".format(output_location)
+    detailed.to_csv(detailed_out, index=True)
 
-    return added_output, deleted_output, changed_output
+    return added_output, deleted_output, changed_output, detailed_out
 
 
 def parse_diff(diff_filename):
@@ -176,14 +181,14 @@ def parse_diff(diff_filename):
     changed_from_split = split_variant_info(changed_list_from)
     changed_to_split = split_variant_info(changed_list_to)
 
-    added_df, deleted_df, changed_df = make_dataframes(
+    added_df, deleted_df, changed_df, detailed_df = make_dataframes(
         added_split,
         deleted_split,
         changed_from_split,
         changed_to_split
     )
 
-    return added_df, deleted_df, changed_df
+    return added_df, deleted_df, changed_df, detailed_df
 
 
 def parse_line_count(line):
@@ -213,11 +218,11 @@ def split_variant_info(raw_list):
         raw_list (list): list of diff strings
 
     Returns:
-        list: list of row of values in format mutation, locus, category, info
+        list: list of values in format mutation, clinvar ID, category, info
     """
     filtered_list = []
     for item in raw_list:
-        # format: mutation, locus, category, info
+        # format: mutation, clinvar ID, category, info
         # ignore first element as this is ">" or "<"
         filtered_list.append(item.split(' ')[1:])
 
@@ -241,30 +246,94 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
             columns: deleted
         changed_df: pandas.DataFrame
             columns: changed_from, changed_to
+        detailed_df: pandas.DataFrame
+            columns: changed from, changed to, clinvar ID, benign prod,
+                     benign dev, likely benign prod, likely benign dev,
+                     uncertain prod, uncertain dev, likely pathogenic prod,
+                     likely pathogenic dev, pathogenic prod, pathogenic dev
     """
     added_df = pandas.DataFrame(data=added_list,
-                                columns=["mutation", "locus",
+                                columns=["mutation", "clinvar ID",
                                          "category", "info"])
     added_df["added"] = get_categories(added_df)
     added_df = added_df[["added"]]
 
     deleted_df = pandas.DataFrame(data=deleted_list,
-                                  columns=["mutation", "locus",
+                                  columns=["mutation", "clinvar ID",
                                            "category", "info"])
     deleted_df["deleted"] = get_categories(deleted_df)
     deleted_df = deleted_df[["deleted"]]
 
     changed_from_df = pandas.DataFrame(data=changed_list_from,
-                                       columns=["mutation", "locus",
+                                       columns=["mutation", "clinvar ID",
                                                 "category", "info"])
     changed_from_df["changed from"] = get_categories(changed_from_df)
     changed_to_df = pandas.DataFrame(data=changed_list_to,
-                                     columns=["mutation", "locus",
+                                     columns=["mutation", "clinvar ID",
                                               "category", "info"])
     changed_from_df["changed to"] = get_categories(changed_to_df)
     changed_df = changed_from_df[["changed from", "changed to"]]
 
-    return added_df, deleted_df, changed_df
+    # generate variant evidence report
+    # get all changed variants
+    detailed_df = changed_from_df[["changed from",
+                                   "changed to",
+                                   "clinvar ID"]]
+    # add info columns
+    detailed_df["from info"] = changed_from_df["info"]
+    detailed_df["to info"] = changed_to_df["info"]
+    # filter to only changes with from or to having evidence
+    detailed_df.drop(detailed_df[detailed_df["from info"] == "."
+                                 & detailed_df["to info"]].index,
+                     inplace=True)
+    # get list of counts per evidence type (5) for from and to
+    # format: benign, likely benign, uncertain,
+    #         likely pathogenic, pathogenic
+    evidence_list = []
+    for index, row in detailed_df.iterrows():
+        from_evidence = get_evidence_counts(row["from info"])
+        to_evidence = get_evidence_counts(row["to info"])
+        all_evidence = from_evidence + to_evidence
+        evidence_list.append(all_evidence)
+
+    evidence_df = pandas.DataFrame(data=all_evidence,
+                                   columns=["benign prod",
+                                            "likely benign prod",
+                                            "uncertain prod",
+                                            "likely pathogenic prod",
+                                            "pathogenic prod",
+                                            "benign dev",
+                                            "likely benign dev",
+                                            "uncertain dev",
+                                            "likely pathogenic dev",
+                                            "pathogenic dev"])
+
+    detailed_df["benign prod",
+                "benign dev",
+                "likely benign prod",
+                "likely benign dev",
+                "uncertain prod",
+                "uncertain dev",
+                "likely pathogenic prod",
+                "likely pathogenic dev",
+                "pathogenic prod",
+                "pathogenic dev"] = evidence_df["benign prod",
+                                                "benign dev",
+                                                "likely benign prod",
+                                                "likely benign dev",
+                                                "uncertain prod",
+                                                "uncertain dev",
+                                                "likely pathogenic prod",
+                                                "likely pathogenic dev",
+                                                "pathogenic prod",
+                                                "pathogenic dev"]
+    detailed_df.drop(columns=["from info", "to info"])
+
+    return added_df, deleted_df, changed_df, detailed_df
+
+
+def get_evidence_counts():
+    return
 
 
 def get_categories(dataframe_extract):

@@ -37,7 +37,8 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
 
 
 def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
-                                  deleted_csv, changed_csv, job_report):
+                                  deleted_csv, changed_csv, detailed_csv,
+                                  job_report):
     """uploads all files output from testing to subfolder of 003 dev project
 
     Args:
@@ -46,6 +47,7 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
         added_csv (str): path to added csv
         deleted_csv (str): path to deleted csv
         changed_csv (str): path to changed csv
+        detailed_csv (str): path to detailed csv
         job_report (str): path to job report txt file
 
     Returns:
@@ -55,6 +57,8 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
             DNAnexus file ID for deleted csv
         changed_id: str
             DNAnexus file ID for changed csv
+        detailed_id: str
+            DNAnexus file ID for detailed csv
         job_report_id: str
             DNAnexus file ID for txt file containing job IDs
     """
@@ -75,8 +79,11 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
     changed_id = upload_local_file(filename=changed_csv,
                                    project=dev_project_id,
                                    folder=folder_path)
+    detailed_id = upload_local_file(filename=detailed_csv,
+                                    project=dev_project_id,
+                                    folder=folder_path)
     job_report_id = upload_local_file(filename=job_report,
                                       project=dev_project_id,
                                       folder=folder_path)
 
-    return added_id, deleted_id, changed_id, job_report_id
+    return added_id, deleted_id, changed_id, detailed_id, job_report_id
