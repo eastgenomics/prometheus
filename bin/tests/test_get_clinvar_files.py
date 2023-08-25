@@ -24,11 +24,6 @@ class testCase(unittest.TestCase):
          latest_time,
          recent_vcf_version) = gc.get_ftp_files()
 
-        print(recent_vcf_file)
-        print(recent_tbi_file)
-        print(latest_time)
-        print(recent_vcf_version)
-
         assert re.match(r".+.vcf.gz", recent_vcf_file)
         assert re.match(r".+.vcf.gz.tbi", recent_tbi_file)
         assert re.match(r"^\d{8}$", recent_vcf_version)

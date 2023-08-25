@@ -210,10 +210,10 @@ def split_variant_info(raw_list):
     """splits diff string into columns
 
     Args:
-        raw_list (str): diff string
+        raw_list (list): list of diff strings
 
     Returns:
-        list: row of values in format mutation, locus, category, info
+        list: list of row of values in format mutation, locus, category, info
     """
     filtered_list = []
     for item in raw_list:
@@ -295,6 +295,7 @@ def get_full_category_name(base_name, info):
 
     Raises:
         Exception: Invalid input format in 'info' field
+        Exception: Invalid input in 'name' field
 
     Returns:
         str: full category name
@@ -309,9 +310,11 @@ def get_full_category_name(base_name, info):
     conflict_other = "conflicting interpretations of pathogenicity and other"
 
     # validate that category is contained in difference regex
+    name_match = False
     for key in difference_regex:
         if re.match(difference_regex[key], base_name):
             # value entered is valid
+            name_match = True
             if (key != conflict and key != conflict_other):
                 # return simple category, as this does not require modification
                 return key
@@ -321,8 +324,6 @@ def get_full_category_name(base_name, info):
                     raise Exception("Invalid input format in 'info' field")
                 else:
                     # try to parse info
-                    # split info by &
-                    print("Info: {}".format(info))
                     split_info = info.split("&")
                     # remove numbers in brackets
                     # TODO: extract numbers for final report table
@@ -339,6 +340,7 @@ def get_full_category_name(base_name, info):
                     # categories for this variant
                     # order this list of categories so the order is uniform
                     # for all variants
+                    match_found = False
                     output_string = base_name + " "
                     for regex_category in evidence_regex:
                         for evidence in new_info:
@@ -346,7 +348,12 @@ def get_full_category_name(base_name, info):
                                         evidence):
                                 # add category and &
                                 output_string += regex_category + "&"
+                                match_found = True
                                 continue
+                    if not match_found:
+                        raise Exception("Invalid input in 'info' field")
                     # remove final &
                     output_string = output_string[:-1]
                     return output_string
+    if not name_match:
+        raise Exception("Invalid input in 'name' field")
