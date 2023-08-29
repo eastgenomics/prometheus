@@ -1,92 +1,194 @@
-import dxpy
-from subprocess import check_output
-from subprocess import run
-import glob
-import compare_annotation
-import time
+"""
+Handles running vep with development and production ClinVar vcf files
+"""
 
-def perform_vep_testing(project_id, dev_config_id, prod_config_id, clinvar_version):
-    # TODO: automatically get recent vcf files for twe and tso500. Should also get bed file ID
-    # must be from most recent 002 project that is not archived and contains vcf and bed files
+import dxpy
+import subprocess
+import glob
+from dxpy.bindings.dxfile_functions import download_folder
+import vcfpy
+
+# local modules
+import compare_annotation
+from utils import check_jobs_finished
+from utils import check_proj_folder_exists
+
+
+def perform_vep_testing(project_id, dev_config_id, prod_config_id,
+                        clinvar_version, bin_folder):
+    """compares vep output for dev and prod files and outputs reports
+
+    Args:
+        project_id (str): DNAnexus file ID for 003 dev project
+        dev_config_id (str): DNAnexus file ID for dev vep config file
+        prod_config_id (str): DNAnexus file ID for prod vep config file
+        clinvar_version (str): version of ClinVar vcf
+        bin_folder (str): path to bin folder
+
+    Returns:
+        added_csv: str
+            path to csv report for added variants
+        deleted_csv: str
+            path to csv report for deleted variants
+        changed_csv: str
+            path to csv report for changed variants
+        detailed_csv: str
+            path to csv report for detailed changed variants
+        job_report: str
+            path to txt file report for vep jobs run
+    """
+    # TODO: automatically get recent vcf files for twe and tso500
+    # Should also get bed file ID
+    # Must be from most recent 002 project that is not archived and
+    # contains vcf and bed files
     # Also check with Jethro for recent 002 folder structure
     twe_vcf_id = "file-GPJ4xzQ4BG0j66gZyGZX2Bb2"
     tso_vcf_id = "file-GXB0qxj47QVbX6Gz507Fz7Yx"
     twe_bed_id = "file-G2V8k90433GVQ7v07gfj0ggX"
     tso_bed_id = "file-G4F6jX04ZFVV3JZJG62ZQ5yJ"
 
-    update_folder = "ClinVar_version_{}_annotation_resource_update".format(clinvar_version)
+    update_folder = "ClinVar_version_{}".format(clinvar_version)
+    + "_annotation_resource_update"
 
     # Run on Dev TWE VCF
     dev_twe_folder = "clinvar_testing_dev_twe"
-    dev_twe_job = run_vep(project_id, dev_twe_folder, dev_config_id, twe_vcf_id, twe_bed_id, update_folder)
+    dev_twe_job = run_vep(project_id, dev_twe_folder, dev_config_id,
+                          twe_vcf_id, twe_bed_id, update_folder)
     # Run on Dev TSO500 VCF
     dev_tso_folder = "clinvar_testing_dev_tso500"
-    dev_tso_job = run_vep(project_id, dev_tso_folder, dev_config_id, tso_vcf_id, tso_bed_id, update_folder)
+    dev_tso_job = run_vep(project_id, dev_tso_folder, dev_config_id,
+                          tso_vcf_id, tso_bed_id, update_folder)
     # Run on Prod TWE VCF
     prod_twe_folder = "clinvar_testing_prod_twe"
-    prod_twe_job = run_vep(project_id, prod_twe_folder, prod_config_id, twe_vcf_id, twe_bed_id, update_folder)
+    prod_twe_job = run_vep(project_id, prod_twe_folder, prod_config_id,
+                           twe_vcf_id, twe_bed_id, update_folder)
     # Run on Prod TSO500 VCF
     prod_tso_folder = "clinvar_testing_prod_tso500"
-    prod_tso_job = run_vep(project_id, prod_tso_folder, prod_config_id, tso_vcf_id, tso_bed_id, update_folder)
+    prod_tso_job = run_vep(project_id, prod_tso_folder, prod_config_id,
+                           tso_vcf_id, tso_bed_id, update_folder)
 
     # Pause until jobs have finished
     job_list = [dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job]
     check_jobs_finished(job_list, 2, 20)
 
     # Add job IDs to report text file
-    job_report = make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, "./temp/job_report.txt")
+    job_report = make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
+                                 prod_tso_job, "./temp/job_report.txt")
 
     # parse VEP run output vcf using bcftools
-    dev_twe_output = parse_vep_output(project_id, dev_twe_folder, "dev_twe", update_folder)
-    dev_tso_output = parse_vep_output(project_id, dev_tso_folder, "dev_tso500", update_folder)
-    prod_twe_output = parse_vep_output(project_id, prod_twe_folder, "prod_twe", update_folder)
-    prod_tso_output = parse_vep_output(project_id, prod_tso_folder, "prod_tso500", update_folder)
+    dev_twe_output = parse_vep_output(project_id, dev_twe_folder,
+                                      "dev_twe", update_folder)
+    dev_tso_output = parse_vep_output(project_id, dev_tso_folder,
+                                      "dev_tso500", update_folder)
+    prod_twe_output = parse_vep_output(project_id, prod_twe_folder,
+                                       "prod_twe", update_folder)
+    prod_tso_output = parse_vep_output(project_id, prod_tso_folder,
+                                       "prod_tso500", update_folder)
 
     # Perform comparison of differences when using dev vs. prod
     # Get diff for twe
-    twe_diff = get_diff_output(dev_twe_output, prod_twe_output)
+    twe_diff_filename = get_diff_output(dev_twe_output, prod_twe_output,
+                                        "twe", bin_folder)
     # Get diff for tso500
-    tso_diff = get_diff_output(dev_tso_output, prod_tso_output)
+    tso_diff_filename = get_diff_output(dev_tso_output, prod_tso_output,
+                                        "tso500", bin_folder)
 
     # Get detailed table of differences for twe and tso500
-    added_csv, deleted_csv, changed_csv = compare_annotation.compare_annotation(twe_diff, tso_diff)
+    (added_csv,
+     deleted_csv,
+     changed_csv,
+     detailed_csv) = (compare_annotation
+                      .compare_annotation(twe_diff_filename,
+                                          tso_diff_filename))
 
-    return added_csv, deleted_csv, changed_csv, job_report
+    return added_csv, deleted_csv, changed_csv, detailed_csv, job_report
+
 
 def parse_vep_output(project_id, folder, label, update_folder):
-    folder_path = "/{0}/{1}".format(update_folder, folder)
+    """parses output from running vep and returns path to processed output
 
-    # Download files locally
-    dxpy.bindings.dxfile_functions.download_folder(project_id, "temp/{}".format(label), folder=folder_path, overwrite=True)
+    Args:
+        project_id (str): DNAnexus project ID for 003 dev project
+        folder (str): folder name to output to in current update folder
+        label (str): label for naming the end of the output file
+        update_folder (str): path to folder in 003 project for current update
+        bin_folder (str): path to bin folder
 
-    # Use bcftools to parse the variant and ClinVar annotation fields
-    #run(["sh", "nextflow-bin/parse.sh", "temp/{}".format(label) + "/*.vcf", label])
-    # TODO: uncomment above line to run as applet
-    run(["sh", "bin/parse.sh", "temp/{}".format(label) + "/*.vcf.gz", label])
+    Raises:
+        Exception: Folder not found in project
+        IOError: Input vcf file not found
 
-    # find results output by parse
-    filename = glob.glob("temp/{}".format(label) + "/*.vcf.gz.{}.txt".format(label))
-
-    return filename
-
-def get_diff_output(dev_output, prod_output):
-    # run diff
-    #diff_output = check_output(["diff", "--suppress-common-lines", "--color=always", dev_output, prod_output])
-    print("Dev output: {}".format(dev_output))
-    print("Prod output: {}".format(prod_output))
-    #diff_output = check_output(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
-    #print(diff_output)
-    run(["diff", "--suppress-common-lines", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.dev_tso500.txt", "123183350-23143S0001-23TSOD5-8475_withLowSupportHotspots_annotated.vcf.gz.prod_tso500.txt"])
-    diff_output = """
-        300c300
-        < 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Pathogenic(1)&Likely_pathogenic(1)&Uncertain_significance(1)
-        ---
-        > 17:7577099:C:T 376657 Conflicting_interpretations_of_pathogenicity Likely_pathogenic(2)&Uncertain_significance(1)
+    Returns:
+        str: path to parsed vep output
     """
+    # Download files output from vep
+    folder_path = "/{0}/{1}".format(update_folder, folder)
+    if not check_proj_folder_exists(project_id, folder_path):
+        raise Exception("Folder {} not found in {}".format(project_id,
+                                                           folder_path))
+    download_folder(project_id,
+                    "temp/{}".format(label),
+                    folder=folder_path,
+                    overwrite=True)
 
-    return diff_output
+    # Parse the variant and ClinVar annotation fields
+    glob_path = "temp/{}/*.vcf.gz".format(label)
+    vcf_input_path = ""
+    try:
+        vcf_input_path = glob.glob(glob_path)[0]
+    except IndexError:
+        raise IOError("File matching glob {} not found".format(glob_path))
+    vcf_output_path = "parsed_vcf_{}.txt".format(label)
+    vcf_reader = vcfpy.Reader(open(vcf_input_path, 'rb'))
 
-def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path) -> str:
+    with open(vcf_output_path, "w") as file:
+        for record in vcf_reader:
+            new_record = ("{}:{}:{}:{} {} {} {}\n"
+                          .format(record.CHROM, record.POS,
+                                  record.REF, record.ALT,
+                                  record.INFO["Clinvar"],
+                                  record.INFO["ClinVar_CLNSIG"],
+                                  record.INFO["ClinVar_CLNSIGCONF"]))
+            file.write(new_record)
+
+    return vcf_output_path
+
+
+def get_diff_output(dev_output, prod_output, label, bin_folder):
+    """get the diff output between dev and prod vep parsed outputs
+
+    Args:
+        dev_output (str): parsed vep output for dev vcf
+        prod_output (str): parsed vep output for prod vcf
+        label (str): label for naming the end of the output file
+        bin_folder (str): path to bin folder
+
+    Returns:
+        str: path to diff output txt file
+    """
+    # run diff
+    output_file = "temp/{}_diff_output.txt".format(label)
+    diff_input = ["sh", "{}/get_diff.sh".format(bin_folder),
+                  dev_output, prod_output, output_file]
+    subprocess.run(diff_input, stderr=subprocess.STDOUT)
+
+    return output_file
+
+
+def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
+                    prod_tso_job, path) -> str:
+    """generates job report txt file from vep run DNAnexus job IDs
+
+    Args:
+        dev_twe_job (str): DNAnexus job ID for dev twe vep run
+        dev_tso_job (str): DNAnexus job ID for dev tso vep run
+        prod_twe_job (str): DNAnexus job ID for prod twe vep run
+        prod_tso_job (str): DNAnexus job ID for prod tso vep run
+        path (str): output path
+
+    Returns:
+        str: path to job report txt file
+    """
     try:
         with open(path, "w") as file:
             file.write("Development TWE job: {}\n".format(dev_twe_job))
@@ -94,17 +196,34 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path) 
             file.write("Production TWE job: {}\n".format(prod_twe_job))
             file.write("Production TSO500 job: {}\n".format(prod_tso_job))
     except FileNotFoundError:
-        print("The directory for saving the job report ({}) does not exist".format(path))
+        print("The directory for saving the job report "
+              + "{} does not exist".format(path))
     except FileExistsError:
-        print("The file ({}) already exists and job report cannot be saved".format(path))
+        print("The file {} ".format(path)
+              + "already exists and job report cannot be saved")
 
     return path
 
-def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file, update_folder):
+
+def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
+            update_folder):
+    """runs the DNAnexus app vep
+
+    Args:
+        project_id (str): DNAnexus project ID for 003 dev project
+        project_folder (str): DNAnexus folder name to run vep in
+        config_file (str): DNAnexus file ID for vep config file
+        vcf_file (str): DNAnexus file ID for vep vcf file
+        panel_bed_file (str): DNAnexus file ID for vep panel bed file
+        update_folder (str): DNAnexus folder in 003 project for current update
+
+    Returns:
+        str: DNAnexus job ID for vep run
+    """
     inputs = {
-        "config_file" : {'$dnanexus_link': config_file},
-        "vcf" : {'$dnanexus_link': vcf_file},
-        "panel_bed" : {'$dnanexus_link': panel_bed_file}
+        "config_file": {'$dnanexus_link': config_file},
+        "vcf": {'$dnanexus_link': vcf_file},
+        "panel_bed": {'$dnanexus_link': panel_bed_file}
     }
 
     folder_path = "/{0}/{1}".format(update_folder, project_folder)
@@ -119,33 +238,3 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file, u
     job_id = job.describe().get('id')
 
     return job_id
-
-def check_jobs_finished(job_id_list, timer, max_wait_time):
-    # timer is in minutes (e.g., check if job is done every 2 minutes)
-    # max wait time is in minutes (e.g., fail after waiting for > 20 minutes)
-    # job_list is list of job IDs to be checked
-    job_list = []
-
-    for job_id in job_id_list:
-        job_list.append(dxpy.bindings.dxjob.DXJob(job_id))
-
-    time_elapsed = 0
-
-    # check for job to complete until max wait time is reached
-    while time_elapsed < max_wait_time:
-        jobs_completed = 0
-        for job in job_list:
-            # check if job is done
-            job_state = job.describe()["state"]
-            if job_state == "done":
-                jobs_completed += 1
-            else:
-                break
-
-        if jobs_completed >= len(job_list):
-            break
-        else:
-            # wait for [timer] minutes
-            time.sleep(timer*60)
-            time_elapsed += timer
-
