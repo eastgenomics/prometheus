@@ -145,12 +145,24 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
             vcf_id = file['id']
 
     # get index file based on clinvar version
-    index_id = list(dxpy.find_data_objects(
-            name="clinvar_{}_b37.vcf.gz.tbi".format(version),
-            name_mode='glob',
-            project=ref_proj_id,
-            folder="/annotation/b37/clinvar"
-        ))[0]['id']
+    index_id = find_dx_file(ref_proj_id,
+                            "/annotation/b37/clinvar", "clinvar_"
+                            + "{}_b37.vcf.gz.tbi".format(version))
 
     # return latest production version
     return recent_version, vcf_id, index_id
+
+
+def find_dx_file(project_id, folder_path, file_name):
+    file_list = list(dxpy.find_data_objects(
+            name=file_name,
+            name_mode='glob',
+            project=project_id,
+            folder=folder_path
+        ))
+    if len(file_list) > 0:
+        return file_list[0]['id']
+    else:
+        raise IOError("DNAnexus file "
+                      + "{} does not exist in project {} folder {}"
+                      .format(file_name, project_id, folder_path))
