@@ -7,11 +7,13 @@ import subprocess
 import glob
 from dxpy.bindings.dxfile_functions import download_folder
 import vcfpy
+import pandas as pd
 
 # local modules
 import compare_annotation
 from utils import check_jobs_finished
 from utils import check_proj_folder_exists
+from utils import find_dx_file
 
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id,
@@ -46,6 +48,9 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
     tso_vcf_id = "file-GXB0qxj47QVbX6Gz507Fz7Yx"
     twe_bed_id = "file-G2V8k90433GVQ7v07gfj0ggX"
     tso_bed_id = "file-G4F6jX04ZFVV3JZJG62ZQ5yJ"
+
+    twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE")
+    tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500")
 
     update_folder = "ClinVar_version_{}".format(clinvar_version)
     + "_annotation_resource_update"
@@ -238,3 +243,53 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
     job_id = job.describe().get('id')
 
     return job_id
+
+
+def get_recent_vep_vcf_bed(assay):
+    # get 002 projects matching assay name in past 6 months
+    assay_response = list(dxpy.find_projects(
+            level='VIEW',
+            created_after="-6m",
+            name=f"002*{assay}",
+            name_mode="glob",
+            describe={
+                'fields': {
+                    'id': True, 'name': True, 'created': True
+                }
+            }
+        ))
+    if len(assay_response) < 1:
+        raise Exception("No 002 projects found for assay {}"
+                        .format(assay))
+    # get most recent 002 in search and return project id
+    df = pd.DataFrame.from_records(data=assay_response,
+                                   columns=["id", "name", "created"])
+    # sort by date
+    df = df.sort(["created"], ascending=[False])
+
+    if assay == "TSO500":
+        # output/{TSO500 name}/TSO500_reports_workflow_v1.1.3/vcf_rescue_1.1.0
+        folder_vcf = ("/output/TSO500-*/TSO500_reports_workflow_v*"
+                      + "/vcf_rescue_*/")
+        folder_bed = "/bed_files/b37/kits/tso500/"
+        vcf_name = "*Hotspots.vcf.gz"
+    else:
+        # /output/{TWE name}/sentieon-dnaseq-4.2.1
+        folder_vcf = ("/output/TWE-/sentieon-dnaseq-4.2.1/")
+        folder_bed = "/bed_files/b37/kits/twist_exome/"
+        vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
+    # --manifest "/opt/illumina/resources/TST500C_manifest.bed"
+    
+    bed_name = "*.bed"
+
+    for index, row in df.iterrows():
+        # attempt to find vcf and bed files
+        try:
+            project_id = row["id"]
+            vcf = find_dx_file(project_id, folder_vcf, vcf_name)
+            # TODO: select most recent bed file
+            bed = find_dx_file(project_id, folder_bed, bed_name)
+        except IOError:
+            pass
+
+    return vcf, bed

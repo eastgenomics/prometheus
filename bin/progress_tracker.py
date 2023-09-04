@@ -4,6 +4,7 @@ Checks if parts of the update have already been performed
 
 import dxpy
 from pathlib import Path
+import pandas as pd
 
 import utils
 
@@ -143,10 +144,26 @@ class ClinvarProgressTracker:
         dxpy.download_dxfile(changed_id, download_dest)
 
         # perform review to check if changes can be passed automatically
-        # TODO: add review here
-        # for changed, if benign to pathogenic, or pathogenic to benign
-        # then set to manual review
-        self.changes_status = self.STATUS_UNCHECKED
+        changed = pd.read_csv(download_dest)
+        benign_1 = "benign"
+        benign_2 = "benign/likely benign"
+        patho_1 = "pathogenic"
+        patho_2 = "pathogenic/likely pathogenic"
+        for index, row in changed.iterrows():
+            if ((row["changed from"] == benign_1
+                or row["changed from"] == benign_2)
+                and (row["changed to"] == patho_1
+                     or row["changed to"] == patho_2)):
+                self.changes_status == self.STATUS_REVIEW
+                return
+            if ((row["changed to"] == benign_1
+                or row["changed to"] == benign_2)
+                and (row["changed from"] == patho_1
+                     or row["changed from"] == patho_2)):
+                self.changes_status == self.STATUS_REVIEW
+                return
+        self.upload_check_passed()
+        self.changes_status = self.STATUS_PASSED
 
     def check_clinvar_deployed(self):
         # check that clinvar files have been deployed to 001
@@ -163,3 +180,10 @@ class ClinvarProgressTracker:
             self.clinvar_deployed = True
         except IOError:
             self.clinvar_deployed = False
+
+    def upload_check_passed(self):
+        # upload txt file to 003 evidence folder
+        with open("temp/auto_review.txt", "w") as file:
+            file.write("ClinVar changes have passed automatic review")
+        dxpy.upload_local_file("auto_review.txt",
+                               "temp/auto_review.txt")
