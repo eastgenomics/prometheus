@@ -154,15 +154,32 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
 
 def find_dx_file(project_id, folder_path, file_name):
-    file_list = list(dxpy.find_data_objects(
-            name=file_name,
-            name_mode='glob',
-            project=project_id,
-            folder=folder_path
-        ))
-    if len(file_list) > 0:
-        return file_list[0]['id']
+    if folder_path == "":
+        file_list = list(dxpy.find_data_objects(
+                name=file_name,
+                name_mode='glob',
+                project=project_id,
+                tags=["id", "modified"]
+            ))
     else:
+        file_list = list(dxpy.find_data_objects(
+                name=file_name,
+                name_mode='glob',
+                project=project_id,
+                folder=folder_path,
+                tags=["id", "modified"]
+            ))
+    if len(file_list) < 1:
         raise IOError("DNAnexus file "
                       + "{} does not exist in project {} folder {}"
                       .format(file_name, project_id, folder_path))
+
+    # return the most recent file uploaded found
+    if len(file_list) == 1:
+        return file_list[0]["id"]
+    else:
+        latest = file_list[0]
+        for file in file_list:
+            if file["modified"] > latest["modified"]:
+                latest = file
+        return latest["id"]

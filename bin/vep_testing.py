@@ -269,25 +269,25 @@ def get_recent_vep_vcf_bed(assay):
 
     if assay == "TSO500":
         # output/{TSO500 name}/TSO500_reports_workflow_v1.1.3/vcf_rescue_1.1.0
-        folder_vcf = ("/output/TSO500-*/TSO500_reports_workflow_v*"
-                      + "/vcf_rescue_*/")
+        # folder_vcf = ("/output/TSO500-*/TSO500_reports_workflow_v*"
+        #              + "/vcf_rescue_*/")
         folder_bed = "/bed_files/b37/kits/tso500/"
         vcf_name = "*Hotspots.vcf.gz"
     else:
         # /output/{TWE name}/sentieon-dnaseq-4.2.1
-        folder_vcf = ("/output/TWE-/sentieon-dnaseq-4.2.1/")
+        # folder_vcf = ("/output/TWE-/sentieon-dnaseq-4.2.1/")
         folder_bed = "/bed_files/b37/kits/twist_exome/"
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
     # --manifest "/opt/illumina/resources/TST500C_manifest.bed"
-    
+
     bed_name = "*.bed"
 
     for index, row in df.iterrows():
         # attempt to find vcf and bed files
         try:
             project_id = row["id"]
-            vcf = find_dx_file(project_id, folder_vcf, vcf_name)
-            # TODO: select most recent bed file
+            # final all vcf files matching name glob and pick first
+            vcf = find_dx_file(project_id, "", vcf_name)
             bed = find_dx_file(project_id, folder_bed, bed_name)
         except IOError:
             pass
