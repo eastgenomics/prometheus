@@ -242,7 +242,9 @@ def get_recent_vep_vcf_bed(assay):
         assay (str): name of assay
 
     Raises:
-        Exception: No 002 projects found for assay in past 6 months
+        Exception: no 002 projects found for assay in past 6 months
+        IOError: panel bed not found for assay
+        IOError: vcf not found for assay
 
     Returns:
         vcf: str
