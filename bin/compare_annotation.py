@@ -332,8 +332,37 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     return added_df, deleted_df, changed_df, detailed_df
 
 
-def get_evidence_counts():
-    return
+def get_evidence_counts(info):
+    return_list = [0, 0, 0, 0, 0]
+    split = info.split("&")
+    regex = r"(.+)\(([0-9]+)\)"
+    cat_benign = "Benign"
+    cat_lbenign = "Likely_benign"
+    cat_uncertain = "Uncertain_significance"
+    cat_lpathogenic = "Likely_pathogenic"
+    cat_pathogenic = "Pathogenic"
+    # format is now Name(n)
+    for entry in split:
+        match = re.match(regex, entry)
+        if not match:
+            raise Exception("Info field \"{}\"has invalid format"
+                            .format(info))
+        category = match[0]
+        count = match[1]
+        if category == cat_benign:
+            return_list[0] = count
+        elif category == cat_lbenign:
+            return_list[1] = count
+        elif category == cat_uncertain:
+            return_list[2] = count
+        elif category == cat_lpathogenic:
+            return_list[3] = count
+        elif category == cat_pathogenic:
+            return_list[4] = count
+        else:
+            raise Exception("Info field \"{}\"has invalid format"
+                            .format(info))
+    return return_list
 
 
 def get_categories(dataframe_extract):
@@ -346,16 +375,18 @@ def get_categories(dataframe_extract):
         list: list of updated category names
     """
     updated_categories = []
+    with open(regex_config_location, "r") as file:
+        regex_dict = json.load(file)
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
         info = row["info"]
-        full_name = get_full_category_name(base_name, info)
+        full_name = get_full_category_name(base_name, info, regex_dict)
         updated_categories.append(full_name)
 
     return updated_categories
 
 
-def get_full_category_name(base_name, info):
+def get_full_category_name(base_name, info, regex_dict):
     """get full category name from category and info columns for single entry
 
     Args:
@@ -369,9 +400,6 @@ def get_full_category_name(base_name, info):
     Returns:
         str: full category name
     """
-    with open(regex_config_location, "r") as file:
-        regex_dict = json.load(file)
-
     difference_regex = regex_dict["difference_regex"]
     evidence_regex = regex_dict["evidence_regex"]
 
@@ -395,7 +423,6 @@ def get_full_category_name(base_name, info):
                     # try to parse info
                     split_info = info.split("&")
                     # remove numbers in brackets
-                    # TODO: extract numbers for final report table
                     new_info = []
                     for my_str in split_info:
                         match = re.match(r"(.+)\([0-9]+\)", my_str).groups()[0]

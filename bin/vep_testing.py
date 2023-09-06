@@ -39,16 +39,6 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
         job_report: str
             path to txt file report for vep jobs run
     """
-    # TODO: automatically get recent vcf files for twe and tso500
-    # Should also get bed file ID
-    # Must be from most recent 002 project that is not archived and
-    # contains vcf and bed files
-    # Also check with Jethro for recent 002 folder structure
-    twe_vcf_id = "file-GPJ4xzQ4BG0j66gZyGZX2Bb2"
-    tso_vcf_id = "file-GXB0qxj47QVbX6Gz507Fz7Yx"
-    twe_bed_id = "file-G2V8k90433GVQ7v07gfj0ggX"
-    tso_bed_id = "file-G4F6jX04ZFVV3JZJG62ZQ5yJ"
-
     twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE")
     tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500")
 
@@ -268,17 +258,11 @@ def get_recent_vep_vcf_bed(assay):
     df = df.sort(["created"], ascending=[False])
 
     if assay == "TSO500":
-        # output/{TSO500 name}/TSO500_reports_workflow_v1.1.3/vcf_rescue_1.1.0
-        # folder_vcf = ("/output/TSO500-*/TSO500_reports_workflow_v*"
-        #              + "/vcf_rescue_*/")
         folder_bed = "/bed_files/b37/kits/tso500/"
         vcf_name = "*Hotspots.vcf.gz"
     else:
-        # /output/{TWE name}/sentieon-dnaseq-4.2.1
-        # folder_vcf = ("/output/TWE-/sentieon-dnaseq-4.2.1/")
         folder_bed = "/bed_files/b37/kits/twist_exome/"
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
-    # --manifest "/opt/illumina/resources/TST500C_manifest.bed"
 
     bed_name = "*.bed"
 
