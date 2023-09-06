@@ -169,6 +169,14 @@ def load_config():
 
 
 def announce_manual_check(slack_handler, channel, dev_project, update_folder):
+    """announces that manual check of evidence files must be performed
+
+    Args:
+        slack_handler (SlackHandler): slack handler for Prometheus
+        channel (str): name of slack channel to post message to
+        dev_project (str): DNAnexus project ID for dev project
+        update_folder (str): DNAnexus folder path for current update folder
+    """
     # send slack message announcing manual check must be made for evidence
     slack_handler.send_message(channel,
                                "Latest ClinVar annotation resource file update"
@@ -179,6 +187,8 @@ def announce_manual_check(slack_handler, channel, dev_project, update_folder):
 
 
 def exit_prometheus():
+    """safely exits Prometheus
+    """
     logger.info("Exiting prometheus")
     exit()
 

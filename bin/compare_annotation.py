@@ -333,6 +333,18 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
 
 
 def get_evidence_counts(info):
+    """gets the evidence count per category for a given variant
+
+    Args:
+        info (str): string of info column of a given variant
+
+    Raises:
+        Exception: info has invalid format
+        Exception: info has invalid categories
+
+    Returns:
+        list: list of ints in format benign l_benign uncertain l_path path
+    """
     return_list = [0, 0, 0, 0, 0]
     split = info.split("&")
     regex = r"(.+)\(([0-9]+)\)"
@@ -360,7 +372,7 @@ def get_evidence_counts(info):
         elif category == cat_pathogenic:
             return_list[4] = count
         else:
-            raise Exception("Info field \"{}\"has invalid format"
+            raise Exception("Info field \"{}\"has invalid categories"
                             .format(info))
     return return_list
 

@@ -154,6 +154,19 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
 
 def find_dx_file(project_id, folder_path, file_name):
+    """gets file ID of DNAnexus file from file name
+
+    Args:
+        project_id (str): DNAnexus project ID to search in
+        folder_path (str): DNAnexus folder path to search in
+        file_name (str): DNAnexus file name to search for
+
+    Raises:
+        IOError: DNAnexus file does not exist
+
+    Returns:
+        str: DNAnexus file ID
+    """
     if folder_path == "":
         file_list = list(dxpy.find_data_objects(
                 name=file_name,

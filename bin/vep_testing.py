@@ -236,6 +236,20 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
 
 
 def get_recent_vep_vcf_bed(assay):
+    """gets most recent vcf and panel bed files in use for given assay
+
+    Args:
+        assay (str): name of assay
+
+    Raises:
+        Exception: No 002 projects found for assay in past 6 months
+
+    Returns:
+        vcf: str
+            DNAnexus file ID for most recent VCF file found
+        bed: str
+            DNAnexus file ID for most recent panel bed file found
+    """
     # get 002 projects matching assay name in past 6 months
     assay_response = list(dxpy.find_projects(
             level='VIEW',
@@ -250,7 +264,7 @@ def get_recent_vep_vcf_bed(assay):
         ))
     if len(assay_response) < 1:
         raise Exception("No 002 projects found for assay {}"
-                        .format(assay))
+                        .format(assay) + " in past 6 months")
     # get most recent 002 in search and return project id
     df = pd.DataFrame.from_records(data=assay_response,
                                    columns=["id", "name", "created"])
@@ -265,6 +279,8 @@ def get_recent_vep_vcf_bed(assay):
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"
+    vcf = ""
+    bed = ""
 
     for index, row in df.iterrows():
         # attempt to find vcf and bed files
@@ -275,5 +291,12 @@ def get_recent_vep_vcf_bed(assay):
             bed = find_dx_file(project_id, folder_bed, bed_name)
         except IOError:
             pass
+
+    if bed == "":
+        raise IOError("Panel bed file not found in 001"
+                      + "ref proejct for assay {}".format(assay))
+    if vcf == "":
+        raise IOError("VCF file not found in recent 002 "
+                      + "project for assay {}".format(assay))
 
     return vcf, bed

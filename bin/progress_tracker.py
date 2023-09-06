@@ -49,6 +49,8 @@ class ClinvarProgressTracker:
         self.check_clinvar_deployed()
 
     def check_clinvar_fetched(self):
+        """checks if clinvar files have been uploaded to 003 dev project
+        """
         # check .vcf and .tbi files exist for update in DNAnexus
         folder = self.evidence_uploaded + "/Testing"
         if not utils.check_proj_folder_exists(self.dev_proj_id, folder):
@@ -69,6 +71,8 @@ class ClinvarProgressTracker:
             self.clinvar_fetched = False
 
     def check_configs_made(self):
+        """checks if VEP config files have been uploaded to dev project
+        """
         # check dev and prod vep config files exist for update in DNAnexus
         try:
             folder = self.evidence_folder + "/Testing"
@@ -85,6 +89,8 @@ class ClinvarProgressTracker:
             self.configs_made = False
 
     def check_evidence_uploaded(self):
+        """checks if evidence of VEP testing has been uploaded
+        """
         # check evidence files have been uploaded to DNAnexus
         try:
             folder = self.evidence_folder + "/Evidence"
@@ -109,6 +115,8 @@ class ClinvarProgressTracker:
             self.evidence_uploaded = False
 
     def check_changes_status(self):
+        """checks if evidence passes validation checks
+        """
         # check if manual or automatic review has been performed
         # for testing purposes, this is a text file named "manual_review.txt"
         # for manual review or "auto_review.txt" for automatic.
@@ -166,6 +174,8 @@ class ClinvarProgressTracker:
         self.changes_status = self.STATUS_PASSED
 
     def check_clinvar_deployed(self):
+        """checks if clinvar files have been deployed to 001 reference project
+        """
         # check that clinvar files have been deployed to 001
         try:
             folder = self.ref_deploy_folder
