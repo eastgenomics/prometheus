@@ -2,6 +2,7 @@ from .context import compare_annotation as ca
 import unittest
 
 import pandas
+import json
 import os
 os.chdir("..")
 os.chdir("..")
@@ -10,23 +11,32 @@ os.chdir("..")
 class testCase(unittest.TestCase):
 
     def test_regex(self):
-        assert ca.get_full_category_name("Benign", ".") == "benign"
-        assert (ca.get_full_category_name("Benign/Likely_benign", ".")
+        with open(ca.regex_config_location, "r") as file:
+            regex_dict = json.load(file)
+
+        assert ca.get_full_category_name("Benign", ".", regex_dict) == "benign"
+        assert (ca.get_full_category_name("Benign/Likely_benign", ".",
+                                          regex_dict)
                 == "benign/likely benign")
-        assert ca.get_full_category_name("not_provided", ".") == "not provided"
-        assert ca.get_full_category_name("Pathogenic", ".") == "pathogenic"
-        assert (ca.get_full_category_name("Uncertain_significance", ".")
+        assert (ca.get_full_category_name("not_provided", ".", regex_dict)
+               == "not provided")
+        assert (ca.get_full_category_name("Pathogenic", ".", regex_dict)
+               == "pathogenic")
+        assert (ca.get_full_category_name("Uncertain_significance", ".",
+                                          regex_dict)
                 == "uncertain significance")
-        assert (ca.get_full_category_name("Pathogenic/Likely_pathogenic", ".")
+        assert (ca.get_full_category_name("Pathogenic/Likely_pathogenic", ".",
+                                          regex_dict)
                 == "pathogenic/likely pathogenic")
-        assert ca.get_full_category_name("risk_factor", ".") == "risk factor"
+        assert (ca.get_full_category_name("risk_factor", ".", regex_dict)
+               == "risk factor")
 
         # complex cases
         conflicting = "Conflicting_interpretations_of_pathogenicity"
         with self.assertRaises(Exception):
-            ca.get_full_category_name(conflicting, ".")
+            ca.get_full_category_name(conflicting, ".", regex_dict)
         with self.assertRaises(Exception):
-            ca.get_full_category_name(conflicting, ".")
+            ca.get_full_category_name(conflicting, ".", regex_dict)
 
     def test_parse_line_count(self):
         no_commas = "223c223"
@@ -65,6 +75,10 @@ class testCase(unittest.TestCase):
 > 1:215916563:G:A 48377 Benign .
 370a365
 > 1:247587997:G:A 1985408 Uncertain_significance .
+23c22
+< 1:11854476:T:G 3521 Conflicting_interpretations_of_pathogenicity Benign(500)&Likely_benign(1)
+---
+> 1:11854476:T:G 3521 Conflicting_interpretations_of_pathogenicity Likely_pathogenic(1)&Uncertain_significance(2)&Benign(5)
         """
 
         with open("test_diff.txt", "w") as f:
@@ -73,36 +87,40 @@ class testCase(unittest.TestCase):
 
         (added_df,
          deleted_df,
-         changed_df) = ca.parse_diff("test_diff.txt")
+         changed_df,
+         detailed_df) = ca.parse_diff("test_diff.txt")
 
         # check output type is correct
         assert ((type(added_df) == pandas.DataFrame)
                 and (type(deleted_df) == pandas.DataFrame)
+                and (type(changed_df) == pandas.DataFrame)
                 and (type(changed_df) == pandas.DataFrame))
 
         # check contents are correct
         assert len(added_df) == 1
         assert len(deleted_df) == 4
-        assert len(changed_df) == 4
+        assert len(changed_df) == 5
 
         os.remove("test_diff.txt")
 
     def test_get_full_category_name(self):
+        with open(ca.regex_config_location, "r") as file:
+            regex_dict = json.load(file)
         name = "Benign"
         info = "."
-        assert ca.get_full_category_name(name, info) == "benign"
+        assert ca.get_full_category_name(name, info, regex_dict) == "benign"
 
         name = "2134793ryh02735607"
         with self.assertRaises(Exception):
-            ca.get_full_category_name(name, info)
+            ca.get_full_category_name(name, info, regex_dict)
 
         conflict = "conflicting interpretations of pathogenicity"
         conflict_other = ("conflicting interpretations of "
                           + "pathogenicity and other")
         with self.assertRaises(Exception):
-            ca.get_full_category_name(conflict, info)
+            ca.get_full_category_name(conflict, info, regex_dict)
         with self.assertRaises(Exception):
-            ca.get_full_category_name(conflict_other, info)
+            ca.get_full_category_name(conflict_other, info, regex_dict)
 
     def test_split_variant_info(self):
         input = ["< 1:10689814:G:C 2125983 Uncertain_significance .",
@@ -113,6 +131,14 @@ class testCase(unittest.TestCase):
         assert output[0][1] == "2125983"
         assert output[0][2] == "Uncertain_significance"
         assert output[0][3] == "."
+
+    def test_get_evidence_counts(self):
+        input = ("Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
+                 + "&Likely_pathogenic(3)&Pathogenic(4)")
+        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4]
+
+        input = "Benign(1)&Likely_pathogenic(31)&Pathogenic(46)"
+        assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46]
 
 
 if __name__ == "__main__":

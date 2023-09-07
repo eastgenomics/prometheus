@@ -283,50 +283,50 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     detailed_df["from info"] = changed_from_df["info"]
     detailed_df["to info"] = changed_to_df["info"]
     # filter to only changes with from or to having evidence
-    detailed_df.drop(detailed_df[detailed_df["from info"] == "."
-                                 & detailed_df["to info"]].index,
+    detailed_df.drop(detailed_df[(detailed_df["from info"] == ".")
+                                 & (detailed_df["to info"])].index,
                      inplace=True)
     # get list of counts per evidence type (5) for from and to
     # format: benign, likely benign, uncertain,
     #         likely pathogenic, pathogenic
-    evidence_list = []
+    evidence_list = [[]]
     for index, row in detailed_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
         all_evidence = from_evidence + to_evidence
         evidence_list.append(all_evidence)
 
-    evidence_df = pandas.DataFrame(data=all_evidence,
-                                   columns=["benign prod",
-                                            "likely benign prod",
-                                            "uncertain prod",
-                                            "likely pathogenic prod",
-                                            "pathogenic prod",
-                                            "benign dev",
-                                            "likely benign dev",
-                                            "uncertain dev",
-                                            "likely pathogenic dev",
-                                            "pathogenic dev"])
+    evidence_df = pandas.DataFrame(data=evidence_list,
+                                   columns=["benign_prod",
+                                            "likely_benign_prod",
+                                            "uncertain_prod",
+                                            "likely_pathogenic_prod",
+                                            "pathogenic_prod",
+                                            "benign_dev",
+                                            "likely_benign_dev",
+                                            "uncertain_dev",
+                                            "likely_pathogenic_dev",
+                                            "pathogenic_dev"])
 
-    detailed_df["benign prod",
-                "benign dev",
-                "likely benign prod",
-                "likely benign dev",
-                "uncertain prod",
-                "uncertain dev",
-                "likely pathogenic prod",
-                "likely pathogenic dev",
-                "pathogenic prod",
-                "pathogenic dev"] = evidence_df["benign prod",
-                                                "benign dev",
-                                                "likely benign prod",
-                                                "likely benign dev",
-                                                "uncertain prod",
-                                                "uncertain dev",
-                                                "likely pathogenic prod",
-                                                "likely pathogenic dev",
-                                                "pathogenic prod",
-                                                "pathogenic dev"]
+    detailed_df[["benign_prod",
+                 "benign_dev",
+                 "likely_benign_prod",
+                 "likely_benign_dev",
+                 "uncertain_prod",
+                 "uncertain_dev",
+                 "likely_pathogenic_prod",
+                 "likely_pathogenic_dev",
+                 "pathogenic_prod",
+                 "pathogenic_dev"]] = evidence_df[["benign_prod",
+                                                   "benign_dev",
+                                                   "likely_benign_prod",
+                                                   "likely_benign_dev",
+                                                   "uncertain_prod",
+                                                   "uncertain_dev",
+                                                   "likely_pathogenic_prod",
+                                                   "likely_pathogenic_dev",
+                                                   "pathogenic_prod",
+                                                   "pathogenic_dev"]]
     detailed_df.drop(columns=["from info", "to info"])
 
     return added_df, deleted_df, changed_df, detailed_df
@@ -355,12 +355,18 @@ def get_evidence_counts(info):
     cat_pathogenic = "Pathogenic"
     # format is now Name(n)
     for entry in split:
-        match = re.match(regex, entry)
+        match = re.search(regex, entry)
         if not match:
             raise Exception("Info field \"{}\"has invalid format"
                             .format(info))
-        category = match[0]
-        count = match[1]
+        category = match.group(1)
+        try:
+            count = int(match.group(2))
+        except Exception:
+            raise Exception("Info field \"{}\"has invalid categories"
+                            .format(info)
+                            + ". The category {} has an invalid evidence count"
+                            .format(category))
         if category == cat_benign:
             return_list[0] = count
         elif category == cat_lbenign:
@@ -373,7 +379,9 @@ def get_evidence_counts(info):
             return_list[4] = count
         else:
             raise Exception("Info field \"{}\"has invalid categories"
-                            .format(info))
+                            .format(info)
+                            + ". The category {} does not have a match"
+                            .format(category))
     return return_list
 
 
