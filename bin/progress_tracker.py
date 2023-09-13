@@ -24,7 +24,7 @@ class ClinvarProgressTracker:
         self.ref_deploy_folder = ref_deploy_folder
         self.genome_build = genome_build
         self.dev_version = dev_version
-        self.perform_checks()
+        # self.perform_checks()
 
     def perform_checks(self):
         self.clinvar_fetched = False
@@ -52,7 +52,7 @@ class ClinvarProgressTracker:
         """checks if clinvar files have been uploaded to 003 dev project
         """
         # check .vcf and .tbi files exist for update in DNAnexus
-        folder = self.evidence_uploaded + "/Testing"
+        folder = (self.evidence_folder + "/Testing")
         if not utils.check_proj_folder_exists(self.dev_proj_id, folder):
             self.clinvar_fetched = False
             return

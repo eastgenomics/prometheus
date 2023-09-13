@@ -42,6 +42,7 @@ def run_prometheus(bin_folder):
     # check if any steps have already been completed
     tracker_b37 = Tracker(dev_proj_id, ref_proj_id, update_folder,
                           b37_folder, "b37", clinvar_version)
+    tracker_b37.perform_checks()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     if not tracker_b37.clinvar_fetched:

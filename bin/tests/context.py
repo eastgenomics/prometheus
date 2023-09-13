@@ -11,3 +11,4 @@ import make_vep_test_configs
 import slack_handler
 import utils
 import vep_testing
+import progress_tracker

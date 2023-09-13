@@ -6,6 +6,7 @@ import re
 from ftplib import FTP
 from datetime import datetime
 import dxpy
+import time
 
 from utils import check_jobs_finished
 
@@ -53,6 +54,9 @@ def get_ftp_files():
 
         # get corresponding .vcf.gz.tbi file based on vcf name
         recent_tbi_file = recent_vcf_file + ".tbi"
+
+    # safety feature to prevent too many requests to server
+    time.sleep(1)
 
     return recent_vcf_file, recent_tbi_file, latest_time, recent_vcf_version
 
@@ -136,6 +140,9 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
                                 + "DNAnexus project {} in folder {}"
                                 .format(project_id, project_folder))
 
+    # safety feature to prevent too many requests to server
+    time.sleep(1)
+
     return vcf_id, tbi_id
 
 
@@ -182,5 +189,7 @@ def connect_to_website():
         print("Error: cannot connect to ncbi website")
         print(error)
         exit
+    # safety feature to prevent too many requests to server
+        time.sleep(1)
 
     return ftp

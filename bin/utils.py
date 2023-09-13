@@ -4,7 +4,7 @@ Contains utility functions used in multiple modules
 
 import time
 import re
-import datetime
+from datetime import datetime
 
 import dxpy
 from dxpy.bindings.dxproject import DXProject
@@ -171,16 +171,14 @@ def find_dx_file(project_id, folder_path, file_name):
         file_list = list(dxpy.find_data_objects(
                 name=file_name,
                 name_mode='glob',
-                project=project_id,
-                tags=["id", "modified"]
+                project=project_id
             ))
     else:
         file_list = list(dxpy.find_data_objects(
                 name=file_name,
                 name_mode='glob',
                 project=project_id,
-                folder=folder_path,
-                tags=["id", "modified"]
+                folder=folder_path
             ))
     if len(file_list) < 1:
         raise IOError("DNAnexus file "
