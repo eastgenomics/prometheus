@@ -21,10 +21,10 @@ class SlackHandler:
             version (_type_): version of Clinvar file
             date (str): date of ClinVar file version
         """
-        update_message = "The new version of the ClinVar "
-        + "annotation resource file"
-        + " {} ({}) has been deployed into 001_reference".format(version,
-                                                                 date)
+        update_message = ("The new version of the ClinVar "
+                          + "annotation resource file"
+                          + " {} ({}) has been deployed".format(version, date)
+                          + " into 001_reference")
         self.send_message(channel, update_message)
 
     def send_message(self, channel, message):

@@ -62,8 +62,8 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
         job_report_id: str
             DNAnexus file ID for txt file containing job IDs
     """
-    subfolder = "ClinVar_version_{}".format(clinvar_version)
-    + "_annotation_resource_update"
+    subfolder = ("ClinVar_version_{}".format(clinvar_version)
+                 + "_annotation_resource_update")
     folder_path = "/{}/Evidence".format(subfolder)
 
     # make new subfolder for documenting evidence

@@ -17,7 +17,7 @@ from utils import find_dx_file
 
 
 def perform_vep_testing(project_id, dev_config_id, prod_config_id,
-                        clinvar_version, bin_folder):
+                        clinvar_version, bin_folder, ref_proj_id):
     """compares vep output for dev and prod files and outputs reports
 
     Args:
@@ -39,11 +39,11 @@ def perform_vep_testing(project_id, dev_config_id, prod_config_id,
         job_report: str
             path to txt file report for vep jobs run
     """
-    twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE")
-    tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500")
+    twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE", ref_proj_id)
+    tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500", ref_proj_id)
 
-    update_folder = "ClinVar_version_{}".format(clinvar_version)
-    + "_annotation_resource_update"
+    update_folder = ("/ClinVar_version_{}".format(clinvar_version)
+                     + "_annotation_resource_update")
 
     # Run on Dev TWE VCF
     dev_twe_folder = "clinvar_testing_dev_twe"
@@ -117,7 +117,7 @@ def parse_vep_output(project_id, folder, label, update_folder):
         str: path to parsed vep output
     """
     # Download files output from vep
-    folder_path = "/{0}/{1}".format(update_folder, folder)
+    folder_path = "{0}/{1}".format(update_folder, folder)
     if not check_proj_folder_exists(project_id, folder_path):
         raise Exception("Folder {} not found in {}".format(project_id,
                                                            folder_path))
@@ -133,17 +133,22 @@ def parse_vep_output(project_id, folder, label, update_folder):
         vcf_input_path = glob.glob(glob_path)[0]
     except IndexError:
         raise IOError("File matching glob {} not found".format(glob_path))
-    vcf_output_path = "parsed_vcf_{}.txt".format(label)
-    vcf_reader = vcfpy.Reader(open(vcf_input_path, 'rb'))
+    vcf_output_path = "temp/parsed_vcf_{}.txt".format(label)
+    vcf_reader = vcfpy.Reader.from_path(vcf_input_path)
 
     with open(vcf_output_path, "w") as file:
         for record in vcf_reader:
+            csq_fields = (record.INFO["CSQ"][0]).split("|")
+            info = "."
+            if csq_fields[4] != "":
+                info = csq_fields[4]
+
             new_record = ("{}:{}:{}:{} {} {} {}\n"
                           .format(record.CHROM, record.POS,
-                                  record.REF, record.ALT,
-                                  record.INFO["Clinvar"],
-                                  record.INFO["ClinVar_CLNSIG"],
-                                  record.INFO["ClinVar_CLNSIGCONF"]))
+                                  record.REF, record.ALT[0].value,
+                                  csq_fields[2],
+                                  csq_fields[3],
+                                  info))
             file.write(new_record)
 
     return vcf_output_path
@@ -235,7 +240,7 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
     return job_id
 
 
-def get_recent_vep_vcf_bed(assay):
+def get_recent_vep_vcf_bed(assay, ref_proj_id):
     """gets most recent vcf and panel bed files in use for given assay
 
     Args:
@@ -254,30 +259,40 @@ def get_recent_vep_vcf_bed(assay):
     """
     # get 002 projects matching assay name in past 6 months
     assay_response = list(dxpy.find_projects(
-            level='VIEW',
-            created_after="-6m",
             name=f"002*{assay}",
             name_mode="glob",
             describe={
                 'fields': {
-                    'id': True, 'name': True, 'created': True
+                    'id': True,
+                    'name': True,
+                    "created": True
                 }
             }
         ))
     if len(assay_response) < 1:
         raise Exception("No 002 projects found for assay {}"
                         .format(assay) + " in past 6 months")
+
+    assay_info = [[]]
+    for entry in assay_response:
+        info = [entry["describe"]["id"],
+                entry["describe"]["name"],
+                entry["describe"]["created"]]
+        assay_info.append(info)
+
     # get most recent 002 in search and return project id
-    df = pd.DataFrame.from_records(data=assay_response,
-                                   columns=["id", "name", "created"])
+    df = pd.DataFrame.from_records(data=assay_info,
+                                   columns=["id",
+                                            "name",
+                                            "created"])
     # sort by date
-    df = df.sort(["created"], ascending=[False])
+    df = df.sort_values(["created"], ascending=[False])
 
     if assay == "TSO500":
-        folder_bed = "/bed_files/b37/kits/tso500/"
+        folder_bed = "/bed_files/b37/kits/tso500"
         vcf_name = "*Hotspots.vcf.gz"
     else:
-        folder_bed = "/bed_files/b37/kits/twist_exome/"
+        folder_bed = "/bed_files/b37/kits/twist_exome"
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"
@@ -290,15 +305,20 @@ def get_recent_vep_vcf_bed(assay):
             project_id = row["id"]
             # final all vcf files matching name glob and pick first
             vcf = find_dx_file(project_id, "", vcf_name)
-            bed = find_dx_file(project_id, folder_bed, bed_name)
         except IOError:
             pass
 
+    if vcf == "":
+        raise IOError("VCF file not found in recent 002"
+                      + " project for assay {}".format(assay))
+
+    try:
+        bed = find_dx_file(ref_proj_id, folder_bed, bed_name)
+    except IOError:
+        pass
+
     if bed == "":
         raise IOError("Panel bed file not found in 001"
-                      + "ref proejct for assay {}".format(assay))
-    if vcf == "":
-        raise IOError("VCF file not found in recent 002 "
-                      + "project for assay {}".format(assay))
+                      + " ref project for assay {}".format(assay))
 
     return vcf, bed

@@ -90,15 +90,15 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
                         + "retrieve_clinvar_files is invalid")
 
     build_number = genome_build[1:]
-    vcf_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-    + "{}/weekly/{}".format(build_number, recent_vcf_file)
-    tbi_link = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-    + "{}/weekly/{}".format(build_number, recent_tbi_file)
+    vcf_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+                + "{}/weekly/{}".format(build_number, recent_vcf_file))
+    tbi_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+                + "{}/weekly/{}".format(build_number, recent_tbi_file))
     vcf_base_name = recent_vcf_file.split(".")[0]
     renamed_vcf = "{}_{}.vcf.gz".format(vcf_base_name, genome_build)
     renamed_tbi = "{}_{}.vcf.gz.tbi".format(vcf_base_name, genome_build)
-    subfolder = "ClinVar_version_{}".format(clinvar_version)
-    + "annotation_resource_update"
+    subfolder = ("ClinVar_version_{}".format(clinvar_version)
+                 + "_annotation_resource_update")
     project_folder = "/{}/Testing".format(subfolder)
 
     # start url fetcher jobs

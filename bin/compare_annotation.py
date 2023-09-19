@@ -208,7 +208,7 @@ def parse_line_count(line):
         return num_commas/2 + 1
     else:
         raise Exception("Invalid (odd) number of commas found"
-                        + "when parsing diff file")
+                        + " when parsing diff file")
 
 
 def split_variant_info(raw_list):
@@ -284,11 +284,13 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     detailed_df["to info"] = changed_to_df["info"]
     # filter to only changes with from or to having evidence
     detailed_df.drop(detailed_df[(detailed_df["from info"] == ".")
-                                 & (detailed_df["to info"])].index,
+                                 | (detailed_df["to info"] == ".")].index,
                      inplace=True)
     # get list of counts per evidence type (5) for from and to
     # format: benign, likely benign, uncertain,
     #         likely pathogenic, pathogenic
+    if len(detailed_df) == 0:
+        return added_df, deleted_df, changed_df, detailed_df
     evidence_list = [[]]
     for index, row in detailed_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
@@ -296,6 +298,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         all_evidence = from_evidence + to_evidence
         evidence_list.append(all_evidence)
 
+    # TODO: handle case for only evidence count changing (e.g., (1) to (2))
     evidence_df = pandas.DataFrame(data=evidence_list,
                                    columns=["benign_prod",
                                             "likely_benign_prod",

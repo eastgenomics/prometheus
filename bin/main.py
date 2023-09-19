@@ -12,7 +12,7 @@ import vep_testing
 import deployer
 from login_handler import LoginHandler
 from slack_handler import SlackHandler
-from bin.progress_tracker import ClinvarProgressTracker as Tracker
+from progress_tracker import ClinvarProgressTracker as Tracker
 
 logger = logging.getLogger("main log")
 
@@ -35,14 +35,14 @@ def run_prometheus(bin_folder):
      recent_tbi_file,
      earliest_time,
      clinvar_version) = get_ftp_files()
-    update_folder = ("ClinVar_version_{}_annotation_resource_update"
+    update_folder = ("/ClinVar_version_{}_annotation_resource_update"
                      .format(clinvar_version))
     b37_folder = "/annotation/b37/clinvar"
 
     # check if any steps have already been completed
     tracker_b37 = Tracker(dev_proj_id, ref_proj_id, update_folder,
                           b37_folder, "b37", clinvar_version)
-    tracker_b37.perform_checks()
+    # tracker_b37.perform_checks()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     if not tracker_b37.clinvar_fetched:
@@ -101,7 +101,8 @@ def run_prometheus(bin_folder):
                                                        vep_config_dev,
                                                        vep_config_prod,
                                                        clinvar_version,
-                                                       bin_folder)
+                                                       bin_folder,
+                                                       ref_proj_id)
 
         # step 4 - upload .csv files to DNAnexus
         logger.info("Documenting testing on DNAnexus")
@@ -112,6 +113,8 @@ def run_prometheus(bin_folder):
     else:
         logger.info("Clinvar VEP evidence already uploaded to DNAnexus")
 
+    # Verification that steps 3 and 4 have been completed
+    tracker_b37.check_evidence_uploaded()
     if not tracker_b37.evidence_uploaded:
         raise Exception("Evidence not uploaded to DNAnexus")
 
@@ -140,6 +143,8 @@ def run_prometheus(bin_folder):
     else:
         logger.info("Clinvar files already deployed to 001 reference project")
 
+    # Verification that step 5 has been completed
+    tracker_b37.check_clinvar_deployed()
     if not tracker_b37.clinvar_deployed:
         raise Exception("Clinvar files not deployed to 001 reference project")
 

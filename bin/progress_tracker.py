@@ -24,6 +24,14 @@ class ClinvarProgressTracker:
         self.ref_deploy_folder = ref_deploy_folder
         self.genome_build = genome_build
         self.dev_version = dev_version
+
+        self.clinvar_fetched = False
+        self.configs_made = False
+        self.evidence_uploaded = False
+        # unchecked, passed, awaiting manual review
+        self.changes_status = self.STATUS_UNCHECKED
+        self.clinvar_deployed = False
+
         # self.perform_checks()
 
     def perform_checks(self):
@@ -195,5 +203,5 @@ class ClinvarProgressTracker:
         # upload txt file to 003 evidence folder
         with open("temp/auto_review.txt", "w") as file:
             file.write("ClinVar changes have passed automatic review")
-        dxpy.upload_local_file("auto_review.txt",
-                               "temp/auto_review.txt")
+        dxpy.upload_local_file("temp/auto_review.txt",
+                               "auto_review.txt")

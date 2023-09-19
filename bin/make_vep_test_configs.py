@@ -30,22 +30,22 @@ def generate_config_files(dev_version, dev_annotation_file_id,
         prod_index_file_id) = utils.get_prod_version(ref_proj_id,
                                                      "/annotation/b37/clinvar",
                                                      "b37")
-    prod_filename = "Clinvar_annotation_vep_config_prod_"
-    + "{}.json".format(prod_version)
+    prod_filename = ("Clinvar_annotation_vep_config_prod_"
+                     + "{}.json".format(prod_version))
     prod_output_path = "temp/{}".format(prod_filename)
     path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id,
                                     prod_index_file_id)
 
     # make dev testing file from template
-    dev_filename = "Clinvar_annotation_vep_config_dev_"
-    + "{}.json".format(dev_version)
+    dev_filename = ("Clinvar_annotation_vep_config_dev_"
+                    + "{}.json".format(dev_version))
     dev_output_path = "temp/{}".format(dev_filename)
     path_to_dev = make_config_file(dev_output_path, dev_annotation_file_id,
                                    dev_index_file_id)
 
     # upload prod and dev files to DNAnexus via dxpy
-    subfolder = "ClinVar_version_{}".format(dev_version)
-    + "_annotation_resource_update"
+    subfolder = ("ClinVar_version_{}".format(dev_version)
+                 + "_annotation_resource_update")
     folder_path = "/{}/Testing".format(subfolder)
 
     dev_file = dxpy.upload_local_file(filename=path_to_dev,
