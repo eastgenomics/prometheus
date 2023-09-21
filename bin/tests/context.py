@@ -6,7 +6,7 @@ import compare_annotation
 import deployer
 import get_clinvar_files
 import login_handler
-import main
+import annotation_update as annotation_update
 import make_vep_test_configs
 import slack_handler
 import utils

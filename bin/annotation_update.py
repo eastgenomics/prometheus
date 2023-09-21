@@ -1,5 +1,5 @@
 """
-Runs prometheus
+Runs prometheus ClinVar annotation resource update
 This program is to be run on a DNAnexus node once a week as
 new clinvar updates come in
 """
@@ -17,15 +17,15 @@ from progress_tracker import ClinvarProgressTracker as Tracker
 logger = logging.getLogger("main log")
 
 
-def run_prometheus(bin_folder):
-    """runs all steps of prometheus
+def run_annotation_update(bin_folder):
+    """runs all steps of prometheus ClinVar annotation resource update
 
     Args:
         bin_folder (str): folder scripts are run from
     """
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
-    login_handler = LoginHandler()
+    login_handler = LoginHandler(dev_proj_id)
     login_handler.login_DNAnexus()
     slack_handler = SlackHandler(login_handler.slack_token)
 
@@ -211,4 +211,4 @@ if __name__ == "__main__":
     # on where program is run
     # This will either be "bin" for local, or "nextflow-bin" for running it as
     # a DNAnexus app/applet
-    run_prometheus("bin")
+    run_annotation_update("bin")

@@ -2,7 +2,7 @@ import unittest
 
 from .context import progress_tracker
 from progress_tracker import ClinvarProgressTracker as Tracker
-from .context import main
+from .context import annotation_update
 from .context import get_clinvar_files
 
 import os
@@ -13,7 +13,7 @@ os.chdir("..")
 class testCase(unittest.TestCase):
 
     def test_perform_checks(self):
-        ref_proj_id, dev_proj_id, slack_channel = main.load_config()
+        ref_proj_id, dev_proj_id, slack_channel = annotation_update.load_config()
 
         (recent_vcf_file,
          recent_tbi_file,
