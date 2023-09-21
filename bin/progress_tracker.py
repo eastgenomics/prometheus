@@ -32,7 +32,10 @@ class ClinvarProgressTracker:
         self.changes_status = self.STATUS_UNCHECKED
         self.clinvar_deployed = False
 
-        # self.perform_checks()
+        self.clinvar_vcf_id = ""
+        self.clinvar_tbi_id = ""
+        self.vep_config_dev = ""
+        self.vep_config_prod = ""
 
     def perform_checks(self):
         self.clinvar_fetched = False
@@ -68,13 +71,15 @@ class ClinvarProgressTracker:
         try:
             vcf_name = ("clinvar_{}_{}.vcf.gz"
                         .format(self.dev_version, self.genome_build))
-            utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
-                               vcf_name)
+            vcf = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
+                                     vcf_name)
             tbi_name = ("clinvar_{}_{}.vcf.gz.tbi"
                         .format(self.dev_version, self.genome_build))
-            utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
-                               tbi_name)
+            tbi = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
+                                     tbi_name)
             self.clinvar_fetched = True
+            self.clinvar_vcf_id = vcf
+            self.clinvar_tbi_id = tbi
         except IOError:
             self.clinvar_fetched = False
 
@@ -86,13 +91,15 @@ class ClinvarProgressTracker:
             folder = self.evidence_folder + "/Testing"
             dev_filename = "Clinvar_annotation_vep_config_dev_*.json"
             prod_filename = "Clinvar_annotation_vep_config_prod_*.json"
-            utils.find_dx_file(self.dev_proj_id,
-                               folder,
-                               dev_filename)
-            utils.find_dx_file(self.dev_proj_id,
-                               folder,
-                               prod_filename)
+            dev = utils.find_dx_file(self.dev_proj_id,
+                                     folder,
+                                     dev_filename)
+            prod = utils.find_dx_file(self.dev_proj_id,
+                                      folder,
+                                      prod_filename)
             self.configs_made = True
+            self.vep_config_dev = dev
+            self.vep_config_prod = prod
         except IOError:
             self.configs_made = False
 
@@ -201,7 +208,10 @@ class ClinvarProgressTracker:
 
     def upload_check_passed(self):
         # upload txt file to 003 evidence folder
-        with open("temp/auto_review.txt", "w") as file:
+        file_name = "temp/auto_review.txt"
+        with open(file_name, "w") as file:
             file.write("ClinVar changes have passed automatic review")
-        dxpy.upload_local_file("temp/auto_review.txt",
-                               "auto_review.txt")
+        folder = self.evidence_folder + "/Evidence"
+        dxpy.upload_local_file(filename=file_name,
+                               project=self.dev_proj_id,
+                               folder=folder)

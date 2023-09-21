@@ -42,7 +42,7 @@ def run_prometheus(bin_folder):
     # check if any steps have already been completed
     tracker_b37 = Tracker(dev_proj_id, ref_proj_id, update_folder,
                           b37_folder, "b37", clinvar_version)
-    # tracker_b37.perform_checks()
+    tracker_b37.perform_checks()
 
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     if not tracker_b37.clinvar_fetched:
@@ -58,6 +58,8 @@ def run_prometheus(bin_folder):
                                                   clinvar_version,
                                                   genome_build)
     else:
+        clinvar_vcf_id = tracker_b37.clinvar_vcf_id
+        clinvar_tbi_id = tracker_b37.clinvar_tbi_id
         logger.info("The clinvar annotation resource files "
                     + "{} and {} from {}".format(recent_vcf_file,
                                                  recent_tbi_file,
@@ -81,6 +83,8 @@ def run_prometheus(bin_folder):
                                                       dev_proj_id,
                                                       ref_proj_id)
     else:
+        vep_config_dev = tracker_b37.vep_config_dev
+        vep_config_prod = tracker_b37.vep_config_prod
         logger.info("Development and production "
                     + "config files already created")
 
@@ -149,8 +153,11 @@ def run_prometheus(bin_folder):
         raise Exception("Clinvar files not deployed to 001 reference project")
 
     # Step 6 - announce update to team
-    slack_handler.announce_clinvar_update(slack_channel, recent_vcf_file,
-                                          earliest_time)
+    genome_build = "b37"
+    vcf_name = ("clinvar_{}_{}.vcf.gz"
+                .format(clinvar_version, genome_build))
+    slack_handler.announce_clinvar_update(slack_channel, vcf_name,
+                                          earliest_time, genome_build)
 
 
 def load_config():

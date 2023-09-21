@@ -13,17 +13,18 @@ class SlackHandler:
     def __init__(self, slack_token):
         self.slack_token = slack_token
 
-    def announce_clinvar_update(self, channel, version, date):
+    def announce_clinvar_update(self, channel, file_name, date, genome_build):
         """announces Clinvar update to team
 
         Args:
             channel (str): name of slack channel to post to
-            version (_type_): version of Clinvar file
+            file_name (_type_): file name of Clinvar file
             date (str): date of ClinVar file version
         """
-        update_message = ("The new version of the ClinVar "
-                          + "annotation resource file"
-                          + " {} ({}) has been deployed".format(version, date)
+        update_message = ("The new version of the ClinVar"
+                          + " {} annotation resource file".format(genome_build)
+                          + " {} ({}) has been deployed".format(file_name,
+                                                                date)
                           + " into 001_reference")
         self.send_message(channel, update_message)
 
@@ -38,6 +39,8 @@ class SlackHandler:
             Exception: Error sending post request for slack
             Exception: Error sending slack notification
         """
+        full_message = "🔥 Prometheus: " + message
+
         http = requests.Session()
         retries = Retry(total=5, backoff_factor=10, allowed_methods=['POST'])
         http.mount("https://", HTTPAdapter(max_retries=retries))
@@ -47,7 +50,7 @@ class SlackHandler:
                 'https://slack.com/api/chat.postMessage', {
                     'token': self.slack_token,
                     'channel': "#{}".format(channel),
-                    'text': message
+                    'text': full_message
                 }).json()
 
             if not response['ok']:

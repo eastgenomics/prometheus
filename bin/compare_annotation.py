@@ -282,7 +282,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     # add info columns
     detailed_df["from info"] = changed_from_df["info"]
     detailed_df["to info"] = changed_to_df["info"]
-    # filter to only changes with from or to having evidence
+    # filter to only changes with from and to having evidence
     detailed_df.drop(detailed_df[(detailed_df["from info"] == ".")
                                  | (detailed_df["to info"] == ".")].index,
                      inplace=True)
