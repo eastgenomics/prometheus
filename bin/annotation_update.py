@@ -3,7 +3,6 @@ Runs prometheus ClinVar annotation resource update
 This program is to be run on a DNAnexus node once a week as
 new clinvar updates come in
 """
-import json
 import logging
 
 from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
@@ -13,6 +12,7 @@ import deployer
 from login_handler import LoginHandler
 from slack_handler import SlackHandler
 from progress_tracker import ClinvarProgressTracker as Tracker
+from utils import load_config
 
 logger = logging.getLogger("main log")
 
@@ -158,27 +158,6 @@ def run_annotation_update(bin_folder):
                 .format(clinvar_version, genome_build))
     slack_handler.announce_clinvar_update(slack_channel, vcf_name,
                                           earliest_time, genome_build)
-
-
-def load_config():
-    """loads config file
-
-    Returns:
-        ref_proj_id: str
-            DNAnexus project ID for 001 reference project
-        dev_proj_id: str
-            DNAnexus project ID for 003 development project
-        slack_channel: str
-            Slack API token
-    """
-    with open("resources/config.json", "r", encoding="utf8") as json_file:
-        config = json.load(json_file)
-
-    ref_proj_id = config.get('001_REFERENCE_PROJ_ID')
-    dev_proj_id = config.get('003_DEV_CLINVAR_UPDATE_PROJ_ID')
-    slack_channel = config.get('SLACK_CHANNEL')
-
-    return ref_proj_id, dev_proj_id, slack_channel
 
 
 def announce_manual_check(slack_handler, channel, dev_project, update_folder):

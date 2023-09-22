@@ -5,6 +5,7 @@ Contains utility functions used in multiple modules
 import time
 import re
 from datetime import datetime
+import json
 
 import dxpy
 from dxpy.bindings.dxproject import DXProject
@@ -210,3 +211,24 @@ def find_dx_file(project_id, folder_path, file_name):
             if file["describe"]["created"] > latest["describe"]["created"]:
                 latest = file
         return latest["id"]
+
+
+def load_config():
+    """loads config file
+
+    Returns:
+        ref_proj_id: str
+            DNAnexus project ID for 001 reference project
+        dev_proj_id: str
+            DNAnexus project ID for 003 development project
+        slack_channel: str
+            Slack API token
+    """
+    with open("resources/config.json", "r", encoding="utf8") as json_file:
+        config = json.load(json_file)
+
+    ref_proj_id = config.get('001_REFERENCE_PROJ_ID')
+    dev_proj_id = config.get('003_DEV_CLINVAR_UPDATE_PROJ_ID')
+    slack_channel = config.get('SLACK_CHANNEL')
+
+    return ref_proj_id, dev_proj_id, slack_channel
