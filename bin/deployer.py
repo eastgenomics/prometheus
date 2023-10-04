@@ -9,6 +9,10 @@ from dxpy import upload_local_file
 import utils
 
 
+def deploy_config_to_production():
+    pass
+
+
 def deploy_clinvar_to_production(reference_project_id, dev_project_id,
                                  vcf_file_id, tbi_file_id, deploy_folder):
     """move vcf file and vcf.tbi file to 001 reference project

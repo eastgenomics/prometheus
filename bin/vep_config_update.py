@@ -98,9 +98,18 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # fetch a valid panel bed and vcf file to run VEP for a given assay
     # run vep using updated config file and record results to 003 project
     git_handler = GitHandler(repo_dir, invalid_test_url, "main")
-    updated_config = glob.glob("temp/*_vep_config_*.json")[0]
-    # TODO: upload to specific 003 test directory
-    #dxpy.upload_local_file(updated_config)
+    updated_config = glob.glob("{}/*_vep_config_*.json".format(repo_dir))[0]
+    # upload to specific 003 test directory
+    folder_path = "{}/Testing".format(config_subfolder)
+    dev_config_id = dxpy.upload_local_file(filename=updated_config,
+                                           project=dev_proj_id,
+                                           folder=folder_path)
+    vep_config_folder = (vep_testing.
+                         vep_testing_config(dev_proj_id,
+                                            dev_config_id,
+                                            config_subfolder,
+                                            ref_proj_id,
+                                            assay))
 
     # test results automatically to ensure results are valid
     # output human readable evidence to 003 project
@@ -110,7 +119,14 @@ def run_vep_config_update(bin_folder, assay, genome_build):
 
     # Make github release of current config version
     # deploy new config from 003 to 001 reference project
-    pass
+    comment = ("Updated config version from \"config_version\": \"1.1.6\" to"
+               + " \"config_version\": \"1.1.7\"\n"
+               + "\n"
+               + "Updated ClinVar annotation reference file source:\n"
+               + "\"file_id\":\"{}\"\n".format(vcf_id)
+               + "\"index_id\":\"{}\"\n".format(index_id))
+    git_handler.make_release(version, comment)
+    deployer.deploy_config_to_production()
 
     # notify team of completed vep config update
     config_name = ("{}_test_config_v1.0.0.json"

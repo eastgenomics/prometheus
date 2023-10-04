@@ -16,8 +16,22 @@ from utils import check_proj_folder_exists
 from utils import find_dx_file
 
 
-def perform_vep_testing(project_id, dev_config_id, prod_config_id,
-                        clinvar_version, bin_folder, ref_proj_id):
+def vep_testing_config(project_id, dev_config_id,
+                       dx_update_folder, ref_proj_id, assay):
+    vcf_id, bed_id = get_recent_vep_vcf_bed(assay, ref_proj_id)
+    # Run vep
+    vep_job_folder = "vep_run_{}".format(assay)
+    vep_job = run_vep(project_id, vep_job_folder, dev_config_id,
+                      vcf_id, bed_id, dx_update_folder)
+    # Pause until jobs have finished
+    job_list = [vep_job]
+    check_jobs_finished(job_list, 2, 20)
+
+    return vep_job_folder
+
+
+def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
+                           clinvar_version, bin_folder, ref_proj_id):
     """compares vep output for dev and prod files and outputs reports
 
     Args:

@@ -50,3 +50,6 @@ class GitHandler:
 
     def merge_pull_request(self, branch_name, merge_into_branch):
         pass
+
+    def make_release(self, version, comment):
+        pass

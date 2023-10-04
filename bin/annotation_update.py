@@ -101,12 +101,12 @@ def run_annotation_update(bin_folder):
          deleted_csv,
          changed_csv,
          detailed_csv,
-         job_report) = vep_testing.perform_vep_testing(dev_proj_id,
-                                                       vep_config_dev,
-                                                       vep_config_prod,
-                                                       clinvar_version,
-                                                       bin_folder,
-                                                       ref_proj_id)
+         job_report) = vep_testing.vep_testing_annotation(dev_proj_id,
+                                                          vep_config_dev,
+                                                          vep_config_prod,
+                                                          clinvar_version,
+                                                          bin_folder,
+                                                          ref_proj_id)
 
         # step 4 - upload .csv files to DNAnexus
         logger.info("Documenting testing on DNAnexus")
