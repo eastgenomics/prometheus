@@ -1,5 +1,9 @@
 {
     "001_REFERENCE_PROJ_ID": "project-GXZ0qvj4kbfjZ2fKpKZbxy8q",
     "003_DEV_CLINVAR_UPDATE_PROJ_ID": "project-GXXb2K04FK2bGyvV5GVxpYFf",
-    "SLACK_CHANNEL": "egg-test"
+    "SLACK_CHANNEL": "egg-test",
+    "TSO500_CONFIG_REPO": "sample_url",
+    "TWE_CONFIG_REPO": "sample_url",
+    "CEN_CONFIG_REPO": "sample_url",
+    "TSO500_WORKFLOW_REPO": "sample_url"
 }

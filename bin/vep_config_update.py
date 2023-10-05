@@ -3,22 +3,22 @@ Runs prometheus ClinVar vep config
 This program is to be run on a DNAnexus node once a week as
 new clinvar updates come in
 """
-import json
 import logging
 import dxpy
 import os
 import re
 import glob
 
-from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
-import make_vep_test_configs as vep
 import vep_testing
 import deployer
 from login_handler import LoginHandler
 from slack_handler import SlackHandler
-from progress_tracker import ClinvarProgressTracker as Tracker
-from utils import get_prod_version, load_config, check_proj_folder_exists
+from utils import (get_prod_version,
+                   load_config,
+                   load_config_repo,
+                   check_proj_folder_exists)
 from git_handler import GitHandler
+import utils
 
 logger = logging.getLogger("main log")
 
@@ -26,6 +26,7 @@ logger = logging.getLogger("main log")
 def run_vep_config_update(bin_folder, assay, genome_build):
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
+    assay_repo = load_config_repo(assay)
     login_handler = LoginHandler(dev_proj_id)
     login_handler.login_DNAnexus()
     slack_handler = SlackHandler(login_handler.slack_token)
@@ -57,9 +58,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # create pull request
     # merge pull request to main branch
     repo_dir = "temp/vep_repo_{}".format(assay)
-    remote_url = "https://github.com/org/repo_name"
-    invalid_test_url = "invalid"
-    git_handler = GitHandler(repo_dir, invalid_test_url, "main")
+    git_handler = GitHandler(repo_dir, assay_repo, "main")
     git_handler.pull_repo()
     # switch to new branch
     branch_name = "prometheus_dev_branch"
@@ -97,6 +96,10 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # upload config file to DNAnexus
     # fetch a valid panel bed and vcf file to run VEP for a given assay
     # run vep using updated config file and record results to 003 project
+    # test results automatically to ensure results are valid
+    # output human readable evidence to 003 project
+    # format of evidence is expected, pasted results, compariosn, pass/fail
+    # fail, record evidence, exit prometheus, notify team if test fails
     git_handler = GitHandler(repo_dir, invalid_test_url, "main")
     updated_config = glob.glob("{}/*_vep_config_*.json".format(repo_dir))[0]
     # upload to specific 003 test directory
@@ -104,18 +107,24 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     dev_config_id = dxpy.upload_local_file(filename=updated_config,
                                            project=dev_proj_id,
                                            folder=folder_path)
-    vep_config_folder = (vep_testing.
-                         vep_testing_config(dev_proj_id,
-                                            dev_config_id,
-                                            config_subfolder,
-                                            ref_proj_id,
-                                            assay))
+    testing_results = (vep_testing.
+                       vep_testing_config(dev_proj_id,
+                                          dev_config_id,
+                                          config_subfolder,
+                                          ref_proj_id,
+                                          assay))
 
-    # test results automatically to ensure results are valid
-    # output human readable evidence to 003 project
-    # format of evidence is expected, pasted results, compariosn, pass/fail
-    # fail, record evidence, exit prometheus, notify team if test fails
-    pass
+    # Check if test passed or failed based on presence of DXFile
+    evidence_folder = "{}/Evidence".format(folder_path)
+    output_filename = ("*_{}_testing_summary.txt".format(assay))
+    try:
+        utils.find_dx_file(dev_project, evidence_folder, output_filename)
+    except Exception:
+        error_message = ("Error: Testing failed for VEP config file update for"
+                         + ("{} with clinvar version {}"
+                            .format(assay, clinvar_version)))
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
 
     # Make github release of current config version
     # deploy new config from 003 to 001 reference project
@@ -129,10 +138,17 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     deployer.deploy_config_to_production()
 
     # notify team of completed vep config update
-    config_name = ("{}_test_config_v1.0.0.json"
-                   .format(assay))
+    config_name = ("{}_test_config_v{}.json"
+                   .format(assay, new_version))
     slack_handler.announce_config_update(slack_channel, config_name,
                                          assay, genome_build, clinvar_version)
+
+
+def exit_prometheus():
+    """safely exits Prometheus
+    """
+    logger.info("Exiting prometheus")
+    exit()
 
 
 if __name__ == "__main__":

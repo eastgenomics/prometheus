@@ -232,3 +232,27 @@ def load_config():
     slack_channel = config.get('SLACK_CHANNEL')
 
     return ref_proj_id, dev_proj_id, slack_channel
+
+
+def load_config_repo(assay):
+    """loads config file for VEP config update
+
+    Returns:
+        tso_config: str
+            URL to github repo for TSO500 config file
+        twe_config: str
+            URL to github repo for TWE config file
+        cen_config: str
+            URL to github repo for CEN config file
+    """
+    with open("resources/config.json", "r", encoding="utf8") as json_file:
+        config = json.load(json_file)
+
+    if assay == "TSO500":
+        repo = config.get('TSO500_CONFIG_REPO')
+    elif assay == "TWE":
+        repo = config.get('TWE_CONFIG_REPO')
+    elif assay == "CEN":
+        repo = config.get('CEN_CONFIG_REPO')
+
+    return repo
