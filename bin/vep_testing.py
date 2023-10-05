@@ -6,6 +6,8 @@ import dxpy
 import subprocess
 import glob
 from dxpy.bindings.dxfile_functions import download_folder
+from dxpy.bindings.dxfile import DXFile
+from dxpy.api import job_get_log
 import vcfpy
 import pandas as pd
 
@@ -14,6 +16,7 @@ import compare_annotation
 from utils import check_jobs_finished
 from utils import check_proj_folder_exists
 from utils import find_dx_file
+import inspect_vep_logs
 
 
 def vep_testing_config(project_id, dev_config_id,
@@ -27,7 +30,21 @@ def vep_testing_config(project_id, dev_config_id,
     job_list = [vep_job]
     check_jobs_finished(job_list, 2, 20)
 
-    return vep_job_folder
+    # TODO: find return type of job_get_log
+    log = job_get_log(vep_job)
+    config_name = DXFile(dxid=dev_config_id,
+                         project=project_id).describe()["name"]
+    vcf_name = DXFile(dxid=vcf_id,
+                      project=project_id).describe()["name"]
+    results_file = inspect_vep_logs(log, vep_job, config_name, vcf_name, assay)
+
+    # upload file to DNAnexus
+    evidence_folder = "{}/evidence".format(dx_update_folder)
+    test_summary_id = dxpy.upload_local_file(filename=results_file,
+                                             project=project_id,
+                                             folder=evidence_folder)
+
+    return test_summary_id
 
 
 def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
