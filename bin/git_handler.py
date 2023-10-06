@@ -3,10 +3,20 @@
 
 from git import Repo
 import subprocess
+from github import Github
+from github import Auth
+from github_release import gh_release_create
 
 
 class GitHandler:
-    def __init__(self, repo_directory, remote_repo_url, branch_name):
+    def __init__(self, repo_directory, github_repo_name, remote_repo_url,
+                 branch_name, github_token):
+        # github setup
+        self.open_github_instance(github_token)
+        self.set_github_repo(github_repo_name)
+        self.github_token = github_token
+        self.github_repo_name = github_repo_name
+        # git setup
         self.repo = Repo.init(repo_directory, bare=True)
         self.origin = self.repo.create_remote("origin",
                                               remote_repo_url)
@@ -39,17 +49,45 @@ class GitHandler:
     def commit_changes(self, commit_message):
         self.repo.index.commit(commit_message)
 
-    def make_branch(self):
-        pass
+    def make_branch(self, branch_name):
+        new_branch = self.repo.create_head(branch_name)
+        self.repo.head.reference = new_branch
 
-    def switch_branch(self):
-        pass
+    def switch_branch(self, branch_name):
+        self.repo.heads[branch_name].checkout()
 
-    def make_pull_request(self, branch_name):
-        pass
+    def make_pull_request(self, branch_name, base_name, title, body):
+        pr = self.github_repo.create_pull(title=title,
+                                          body=body,
+                                          head=branch_name,
+                                          base=base_name)
+        return pr["number"]
 
-    def merge_pull_request(self, branch_name, merge_into_branch):
-        pass
+    def merge_pull_request(self, pr_number):
+        pr = self.github_repo.get_pull(pr_number)
+        pr.merge()
 
     def make_release(self, version, comment):
-        pass
+        gh_release_create(self.github_repo_name,
+                          "v{}".format(version),
+                          publish=True,
+                          name="v{}".format(version),
+                          body=comment,
+                          asset_pattern="dist/*")
+
+    def open_github_instance(self, github_token):
+        # auth token
+        self.auth = Auth.Token(github_token)
+        # github instance
+        self.github = Github(auth=self.auth)
+
+    def set_github_repo(self, repo_name):
+        repo = self.github.get_repo(repo_name)
+        if repo:
+            self.github_repo = repo
+        else:
+            raise Exception("Github repo {} not found"
+                            .format(repo_name))
+
+    def exit_github(self):
+        self.github.close()

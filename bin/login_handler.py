@@ -13,7 +13,9 @@ class LoginHandler:
     """Handles all logins for Prometheus
     """
     def __init__(self, dev_proj_id):
-        self.dx_token, self.slack_token = self.load_credentials(dev_proj_id)
+        (self.dx_token,
+         self.slack_token,
+         self.github_token) = self.load_credentials(dev_proj_id)
 
     def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
@@ -56,5 +58,6 @@ class LoginHandler:
 
         dx_token = creds.get('DX_TOKEN')
         slack_token = creds.get('SLACK_TOKEN')
+        github_token = creds.get('GITHUB_TOKEN')
 
-        return dx_token, slack_token
+        return dx_token, slack_token, github_token

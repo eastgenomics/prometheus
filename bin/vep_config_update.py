@@ -50,16 +50,24 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     dev_project.new_folder(config_subfolder)
 
     # download git repo for latest vep config for genome build and assay
+    # check old clinvar version is less recent than new clinvar version
     # make branch on repo and switch to new branch
     # git mv to rename config with incremented version (e.g., v1.0.1 to v1.0.2)
-    # check old clinvar version is less recent than new clinvar version
     # replace old clinvar version with new version and increment version number
     # push repo to github
     # create pull request
     # merge pull request to main branch
     repo_dir = "temp/vep_repo_{}".format(assay)
-    git_handler = GitHandler(repo_dir, assay_repo, "main")
+    split_assay_url = assay_repo.split["/"]
+    repo_name = "{}/{}".format(split_assay_url[1],
+                               split_assay_url[2])
+    git_handler = GitHandler(repo_dir,
+                             repo_name,
+                             assay_repo,
+                             "main",
+                             login_handler.github_token)
     git_handler.pull_repo()
+    # TODO: check if production clinvar files are already in config
     # switch to new branch
     branch_name = "prometheus_dev_branch"
     git_handler.make_branch(branch_name)
@@ -83,7 +91,6 @@ def run_vep_config_update(bin_folder, assay, genome_build):
         raise Exception("No file matching config regex was found in repo")
     git_handler.rename_file(old_config, new_config)
     # TODO: edit file contents to update version and config files
-    # TODO: check old clinvar version is older than new version
     git_handler.add_file("{}/{}".format(repo_dir, new_config))
     commit_message = ("Updated clinvar file and index IDs and incremented"
                       + " version number for"
@@ -100,19 +107,18 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # output human readable evidence to 003 project
     # format of evidence is expected, pasted results, compariosn, pass/fail
     # fail, record evidence, exit prometheus, notify team if test fails
-    git_handler = GitHandler(repo_dir, invalid_test_url, "main")
+    git_handler = GitHandler(repo_dir, repo_dir, "main")
     updated_config = glob.glob("{}/*_vep_config_*.json".format(repo_dir))[0]
     # upload to specific 003 test directory
     folder_path = "{}/Testing".format(config_subfolder)
     dev_config_id = dxpy.upload_local_file(filename=updated_config,
                                            project=dev_proj_id,
                                            folder=folder_path)
-    testing_results = (vep_testing.
-                       vep_testing_config(dev_proj_id,
-                                          dev_config_id,
-                                          config_subfolder,
-                                          ref_proj_id,
-                                          assay))
+    vep_testing.vep_testing_config(dev_proj_id,
+                                   dev_config_id,
+                                   config_subfolder,
+                                   ref_proj_id,
+                                   assay)
 
     # Check if test passed or failed based on presence of DXFile
     evidence_folder = "{}/Evidence".format(folder_path)
