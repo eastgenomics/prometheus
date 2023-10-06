@@ -9,8 +9,15 @@ from dxpy import upload_local_file
 import utils
 
 
-def deploy_config_to_production():
-    pass
+def deploy_config_to_production(reference_project_id, dev_project_id,
+                                config_id, deploy_folder):
+    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(deploy_folder, reference_project_id))
+
+    with open_dxfile(dxid=config_id, project=dev_project_id) as file:
+        file.clone(project=reference_project_id, folder=deploy_folder)
+        file.close()
 
 
 def deploy_clinvar_to_production(reference_project_id, dev_project_id,

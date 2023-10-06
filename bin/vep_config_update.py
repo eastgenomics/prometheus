@@ -141,7 +141,9 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                + "\"file_id\":\"{}\"\n".format(vcf_id)
                + "\"index_id\":\"{}\"\n".format(index_id))
     git_handler.make_release(version, comment)
-    deployer.deploy_config_to_production()
+    deploy_folder = "/dynamic_files/vep_configs"
+    deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
+                                         dev_config_id, deploy_folder)
 
     # notify team of completed vep config update
     config_name = ("{}_test_config_v{}.json"
