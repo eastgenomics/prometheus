@@ -19,7 +19,8 @@ class GitHandler:
         # git setup
         self.repo = Repo.init(repo_directory, bare=True)
         self.origin = self.repo.create_remote("origin",
-                                              remote_repo_url)
+                                              url=remote_repo_url)
+        self.origin.fetch()
         # Setup a local tracking branch of a remote branch
         # create local branch branch_name from remote branch_name
         self.repo.create_head(branch_name, self.origin.refs[branch_name])

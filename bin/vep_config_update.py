@@ -27,17 +27,17 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
     assay_repo = load_config_repo(assay)
-    login_handler = LoginHandler(dev_proj_id)
-    login_handler.login_DNAnexus()
+    login_handler = LoginHandler()
+    login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
     # find latest clinvar name and ID from 001 reference project
     # check that update folder for this version exists in DNAnexus
     # make new vep update folder in overall update folder
+    ref_clinvar_folder = "/annotation/b37/clinvar/"
     (clinvar_version, vcf_id, index_id) = get_prod_version(ref_proj_id,
-                                                           dev_proj_id,
+                                                           ref_clinvar_folder,
                                                            genome_build)
-    clinvar_version = ""
     clinvar_subfolder = ("/ClinVar_version_{}".format(clinvar_version)
                          + "_annotation_resource_update")
     if not check_proj_folder_exists(dev_proj_id, clinvar_subfolder):
@@ -47,7 +47,8 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     config_subfolder = ("/ClinVar_version_{}".format(clinvar_version)
                         + "_vep_config_update_{}").format(assay)
     dev_project = dxpy.bindings.dxproject.DXProject(dxid=dev_proj_id)
-    dev_project.new_folder(config_subfolder)
+    if not check_proj_folder_exists(dev_proj_id, config_subfolder):
+        dev_project.new_folder(config_subfolder)
 
     # download git repo for latest vep config for genome build and assay
     # check old clinvar version is less recent than new clinvar version
@@ -58,18 +59,45 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # create pull request
     # merge pull request to main branch
     repo_dir = "temp/vep_repo_{}".format(assay)
-    split_assay_url = assay_repo.split["/"]
-    repo_name = "{}/{}".format(split_assay_url[1],
-                               split_assay_url[2])
+    split_assay_url = assay_repo.split("/")
+    repo_name = "{}/{}".format(split_assay_url[3],
+                               split_assay_url[4])
     git_handler = GitHandler(repo_dir,
                              repo_name,
                              assay_repo,
                              "main",
                              login_handler.github_token)
     git_handler.pull_repo()
-    # TODO: check if production clinvar files are already in config
+
+    # check if production clinvar files are already in config
+    filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
+    match_regex = "\"name\": \"ClinVar\""
+    file_id_regex = "\"file_id\":\"{(.*)}\""
+    is_different = utils.is_json_clinvar_different(filename_glob,
+                                                   match_regex,
+                                                   file_id_regex,
+                                                   vcf_id)
+    if not is_different:
+        error_message = ("Error: The clinvar vcf id in the current VEP config"
+                         + (" is identical to the new clinvar vcf ID {}"
+                            .format(vcf_id)))
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
+
+    file_id_regex = "\"index_id\":\"{(.*)}\""
+    is_different = utils.is_json_clinvar_different(filename_glob,
+                                                   match_regex,
+                                                   file_id_regex,
+                                                   index_id)
+    if not is_different:
+        error_message = ("Error: The clinvar vcf index id in the current VEP"
+                         + " config is identical to the new clinvar vcf index"
+                         + (" ID {}".format(index_id)))
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
+
     # switch to new branch
-    branch_name = "prometheus_dev_branch"
+    branch_name = "prometheus_dev_branch_{}".format(clinvar_version)
     git_handler.make_branch(branch_name)
     git_handler.switch_branch(branch_name)
     # search through pulled dir, get old version, update to new
@@ -90,7 +118,18 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     if old_config == "":
         raise Exception("No file matching config regex was found in repo")
     git_handler.rename_file(old_config, new_config)
-    # TODO: edit file contents to update version and config files
+    # edit file contents to update version and config files
+    filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
+    match_regex = "\"name\": \"ClinVar\""
+    replace_regex = "\"file_id\":\"{(.*)}\""
+    utils.update_json(filename_glob, match_regex, replace_regex, vcf_id)
+    replace_regex = "\"index_id\":\"{(.*)}\""
+    utils.update_json(filename_glob, match_regex, replace_regex, index_id)
+    # replace version
+    match_regex = "\"config_information\":"
+    replace_regex = "\"config_version\":\"(.*)\""
+    utils.update_json(filename_glob, match_regex, replace_regex, version)
+
     git_handler.add_file("{}/{}".format(repo_dir, new_config))
     commit_message = ("Updated clinvar file and index IDs and incremented"
                       + " version number for"

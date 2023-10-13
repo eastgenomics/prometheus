@@ -39,7 +39,7 @@ def vep_testing_config(project_id, dev_config_id,
     results_file = inspect_vep_logs(log, vep_job, config_name, vcf_name, assay)
 
     # upload file to DNAnexus
-    evidence_folder = "{}/evidence".format(dx_update_folder)
+    evidence_folder = "{}/Evidence".format(dx_update_folder)
     test_summary_id = dxpy.upload_local_file(filename=results_file,
                                              project=project_id,
                                              folder=evidence_folder)

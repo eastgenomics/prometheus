@@ -12,10 +12,10 @@ import json
 class LoginHandler:
     """Handles all logins for Prometheus
     """
-    def __init__(self, dev_proj_id):
+    def __init__(self):
         (self.dx_token,
          self.slack_token,
-         self.github_token) = self.load_credentials(dev_proj_id)
+         self.github_token) = self.load_credentials()
 
     def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
