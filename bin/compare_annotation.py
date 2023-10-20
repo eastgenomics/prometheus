@@ -181,6 +181,25 @@ def parse_diff(diff_filename):
     changed_from_split = split_variant_info(changed_list_from)
     changed_to_split = split_variant_info(changed_list_to)
 
+    # if name == "" or " " in changed_from, add changed_to entry to added
+    # and delete entry in changed_from and changed_to
+    # if name == "" or " " in changed_to, add changed_from entry to deleted
+    # and delete entry in changed_from and changed_to
+    delete_indices = []
+    for i in range(0, len(changed_from_split)):
+        from_name = changed_from_split[i][2]
+        to_name = changed_to_split[i][2]
+        if from_name == "" or from_name == " ":
+            delete_indices.append(i)
+            added_split.append(changed_to_split[i])
+        elif to_name == "" or to_name == " ":
+            delete_indices.append(i)
+            deleted_split.append(changed_from_split[i])
+
+    for index in sorted(delete_indices, reverse=True):
+        del changed_from_split[index]
+        del changed_to_split[index]
+
     added_df, deleted_df, changed_df, detailed_df = make_dataframes(
         added_split,
         deleted_split,
@@ -276,63 +295,69 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
 
     # generate variant evidence report
     # get all changed variants
-    detailed_df = changed_from_df[["changed from",
-                                   "changed to",
-                                   "clinvar ID"]]
+    det_df = changed_from_df[["changed from",
+                              "changed to",
+                              "clinvar ID"]]
     # add info columns
-    detailed_df["from info"] = changed_from_df["info"]
-    detailed_df["to info"] = changed_to_df["info"]
+    det_df["from info"] = changed_from_df["info"]
+    det_df["to info"] = changed_to_df["info"]
     # filter to only changes with from and to having evidence
-    detailed_df.drop(detailed_df[(detailed_df["from info"] == ".")
-                                 | (detailed_df["to info"] == ".")].index,
-                     inplace=True)
+    det_df.drop(det_df[(det_df["from info"] == ".")
+                | (det_df["to info"] == ".")].index,
+                inplace=True)
     # get list of counts per evidence type (5) for from and to
     # format: benign, likely benign, uncertain,
     #         likely pathogenic, pathogenic
-    if len(detailed_df) == 0:
-        return added_df, deleted_df, changed_df, detailed_df
+    if len(det_df) == 0:
+        return added_df, deleted_df, changed_df, det_df
     evidence_list = [[]]
-    for index, row in detailed_df.iterrows():
+    for index, row in det_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
         all_evidence = from_evidence + to_evidence
         evidence_list.append(all_evidence)
 
     # TODO: handle case for only evidence count changing (e.g., (1) to (2))
-    evidence_df = pandas.DataFrame(data=evidence_list,
-                                   columns=["benign_prod",
-                                            "likely_benign_prod",
-                                            "uncertain_prod",
-                                            "likely_pathogenic_prod",
-                                            "pathogenic_prod",
-                                            "benign_dev",
-                                            "likely_benign_dev",
-                                            "uncertain_dev",
-                                            "likely_pathogenic_dev",
-                                            "pathogenic_dev"])
+    ev_df = pandas.DataFrame(data=evidence_list,
+                             columns=["benign_prod",
+                                      "likely_benign_prod",
+                                      "uncertain_prod",
+                                      "likely_pathogenic_prod",
+                                      "pathogenic_prod",
+                                      "path_low_penetrance_prod",
+                                      "benign_dev",
+                                      "likely_benign_dev",
+                                      "uncertain_dev",
+                                      "likely_pathogenic_dev",
+                                      "pathogenic_dev",
+                                      "path_low_penetrance_dev"])
 
-    detailed_df[["benign_prod",
-                 "benign_dev",
-                 "likely_benign_prod",
-                 "likely_benign_dev",
-                 "uncertain_prod",
-                 "uncertain_dev",
-                 "likely_pathogenic_prod",
-                 "likely_pathogenic_dev",
-                 "pathogenic_prod",
-                 "pathogenic_dev"]] = evidence_df[["benign_prod",
-                                                   "benign_dev",
-                                                   "likely_benign_prod",
-                                                   "likely_benign_dev",
-                                                   "uncertain_prod",
-                                                   "uncertain_dev",
-                                                   "likely_pathogenic_prod",
-                                                   "likely_pathogenic_dev",
-                                                   "pathogenic_prod",
-                                                   "pathogenic_dev"]]
-    detailed_df.drop(columns=["from info", "to info"])
+    det_df[["benign_prod",
+            "benign_dev",
+            "likely_benign_prod",
+            "likely_benign_dev",
+            "uncertain_prod",
+            "uncertain_dev",
+            "likely_pathogenic_prod",
+            "likely_pathogenic_dev",
+            "pathogenic_prod",
+            "pathogenic_dev",
+            "path_low_penetrance_prod",
+            "path_low_penetrance_dev"]] = ev_df[["benign_prod",
+                                                 "benign_dev",
+                                                 "likely_benign_prod",
+                                                 "likely_benign_dev",
+                                                 "uncertain_prod",
+                                                 "uncertain_dev",
+                                                 "likely_pathogenic_prod",
+                                                 "likely_pathogenic_dev",
+                                                 "pathogenic_prod",
+                                                 "pathogenic_dev",
+                                                 "path_low_penetrance_prod",
+                                                 "path_low_penetrance_dev"]]
+    det_df.drop(columns=["from info", "to info"])
 
-    return added_df, deleted_df, changed_df, detailed_df
+    return added_df, deleted_df, changed_df, det_df
 
 
 def get_evidence_counts(info):
@@ -348,17 +373,22 @@ def get_evidence_counts(info):
     Returns:
         list: list of ints in format benign l_benign uncertain l_path path
     """
-    return_list = [0, 0, 0, 0, 0]
-    split = info.split("&")
-    regex = r"(.+)\(([0-9]+)\)"
+    return_list = [0, 0, 0, 0, 0, 0]
+    # TODO: handle case in which "&" is in the middle of string
+    # e.g., Pathogenic&_low_penetrance(1)
+    regex = r"^[A-Z][\(\)0-9-]+\([0-9]+\)"
+    match_regex = r"(^[A-Z].+)\(([0-9]+)\)"
+    split = re.findall(regex, info)
+
     cat_benign = "Benign"
     cat_lbenign = "Likely_benign"
     cat_uncertain = "Uncertain_significance"
     cat_lpathogenic = "Likely_pathogenic"
     cat_pathogenic = "Pathogenic"
+    cat_lpenetrance = "Pathogenic&_low_penetrance"
     # format is now Name(n)
     for entry in split:
-        match = re.search(regex, entry)
+        match = re.search(match_regex, entry)
         if not match:
             raise Exception("Info field \"{}\"has invalid format"
                             .format(info))
@@ -380,6 +410,8 @@ def get_evidence_counts(info):
             return_list[3] = count
         elif category == cat_pathogenic:
             return_list[4] = count
+        elif category == cat_lpenetrance:
+            return_list[5] = count
         else:
             raise Exception("Info field \"{}\"has invalid categories"
                             .format(info)

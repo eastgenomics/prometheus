@@ -5,16 +5,20 @@
     "not provided": "^not_provided$",
     "pathogenic": "^Pathogenic$",
     "uncertain significance": "^Uncertain_significance$",
+    "likely pathogenic": "^Likely_pathogenic$",
     "pathogenic/likely pathogenic": "^Pathogenic/Likely_pathogenic$",
     "conflicting interpretations of pathogenicity": "^Conflicting_interpretations_of_pathogenicity$",
     "conflicting interpretations of pathogenicity and other": "^Conflicting_interpretations_of_pathogenicity&other$",
-    "risk factor": "^risk_factor$"
+    "risk factor": "^risk_factor$",
+    "conflicting interpretations of pathogenicity and other and risk factor": "^Conflicting_interpretations_of_pathogenicity&other&risk_factor$",
+    "conflicting interpretations of pathogenicity and risk factor": "^Conflicting_interpretations_of_pathogenicity&risk_factor$"
   },
   "evidence_regex":{
     "benign": "Benign",
     "likely benign": "Likely_benign",
     "uncertain significance": "Uncertain_significance",
     "likely pathogenic": "Likely_pathogenic",
-    "pathogenic": "Pathogenic"
+    "pathogenic": "Pathogenic",
+    "pathogenic and low penetrance": "Pathogenic&_low_penetrance"
   }
 }

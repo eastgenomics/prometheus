@@ -111,12 +111,12 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
     prod_tso_output = parse_vep_output(project_id, prod_tso_folder,
                                        "prod_tso500", update_folder)
 
-    # Perform comparison of differences when using dev vs. prod
+    # Perform comparison of differences when using prod vs. dev
     # Get diff for twe
-    twe_diff_filename = get_diff_output(dev_twe_output, prod_twe_output,
+    twe_diff_filename = get_diff_output(prod_twe_output, dev_twe_output,
                                         "twe", bin_folder)
     # Get diff for tso500
-    tso_diff_filename = get_diff_output(dev_tso_output, prod_tso_output,
+    tso_diff_filename = get_diff_output(prod_tso_output, dev_tso_output,
                                         "tso500", bin_folder)
 
     # Get detailed table of differences for twe and tso500
@@ -150,8 +150,8 @@ def parse_vep_output(project_id, folder, label, update_folder):
     # Download files output from vep
     folder_path = "{0}/{1}".format(update_folder, folder)
     if not check_proj_folder_exists(project_id, folder_path):
-        raise Exception("Folder {} not found in {}".format(project_id,
-                                                           folder_path))
+        raise Exception("Folder {} not found in {}".format(folder_path,
+                                                           project_id))
     download_folder(project_id,
                     "temp/{}".format(label),
                     folder=folder_path,
@@ -278,7 +278,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
         assay (str): name of assay
 
     Raises:
-        Exception: no 002 projects found for assay in past 6 months
+        Exception: no 002 projects found for assay in past 12 months
         IOError: panel bed not found for assay
         IOError: vcf not found for assay
 
@@ -288,7 +288,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
         bed: str
             DNAnexus file ID for most recent panel bed file found
     """
-    # get 002 projects matching assay name in past 6 months
+    # get 002 projects matching assay name in past 12 months
     assay_response = list(dxpy.find_projects(
             name=f"002*{assay}",
             name_mode="glob",
@@ -298,11 +298,12 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
                     'name': True,
                     "created": True
                 }
-            }
+            },
+            created_after="-12M",
         ))
     if len(assay_response) < 1:
         raise Exception("No 002 projects found for assay {}"
-                        .format(assay) + " in past 6 months")
+                        .format(assay) + " in past 12 months")
 
     assay_info = [[]]
     for entry in assay_response:
@@ -336,6 +337,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
             project_id = row["id"]
             # final all vcf files matching name glob and pick first
             vcf = find_dx_file(project_id, "", vcf_name)
+            break
         except IOError:
             pass
 

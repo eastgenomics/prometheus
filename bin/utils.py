@@ -284,7 +284,7 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
 
 def is_json_clinvar_different(json_path_glob, first_match,
                               file_id_regex, new_file_id):
-    old_config_filename = glob(json_path_glob)[0]
+    old_config_filename = glob.glob(json_path_glob)[0]
     with open(old_config_filename, "r") as f:
         match_found = False
         for line in f:

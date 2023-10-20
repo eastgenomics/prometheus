@@ -17,7 +17,7 @@ class GitHandler:
         self.github_token = github_token
         self.github_repo_name = github_repo_name
         # git setup
-        self.repo = Repo.init(repo_directory, bare=True)
+        self.repo = Repo.init(repo_directory, bare=False)
         self.origin = self.repo.create_remote("origin",
                                               url=remote_repo_url)
         self.origin.fetch()

@@ -78,9 +78,12 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                                    file_id_regex,
                                                    vcf_id)
     if not is_different:
-        error_message = ("Error: The clinvar vcf id in the current VEP config"
-                         + (" is identical to the new clinvar vcf ID {}"
-                            .format(vcf_id)))
+        error_message = ("Error: The ClinVar vcf ID in the production"
+                         + " {} VEP config".format(assay)
+                         + (" is identical to the new ClinVar vcf ID {}"
+                            .format(vcf_id))
+                         + ". Therefore, this config file does not need to"
+                         + " be updated")
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 
@@ -90,9 +93,11 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                                    file_id_regex,
                                                    index_id)
     if not is_different:
-        error_message = ("Error: The clinvar vcf index id in the current VEP"
-                         + " config is identical to the new clinvar vcf index"
-                         + (" ID {}".format(index_id)))
+        error_message = ("Error: The ClinVar vcf index ID in the current VEP"
+                         + " config is identical to the new ClinVar vcf index"
+                         + (" ID {}".format(index_id))
+                         + ". Therefore, this config file does not need to"
+                         + " be updated")
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 

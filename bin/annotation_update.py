@@ -25,8 +25,8 @@ def run_annotation_update(bin_folder):
     """
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
-    login_handler = LoginHandler(dev_proj_id)
-    login_handler.login_DNAnexus()
+    login_handler = LoginHandler()
+    login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
     # check which clinvar version is most recent
