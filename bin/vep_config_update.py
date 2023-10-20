@@ -71,8 +71,8 @@ def run_vep_config_update(bin_folder, assay, genome_build):
 
     # check if production clinvar files are already in config
     filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
-    match_regex = "\"name\": \"ClinVar\""
-    file_id_regex = "\"file_id\":\"{(.*)}\""
+    match_regex = r"\"name\": \"ClinVar\""
+    file_id_regex = r"\"file_id\":\"(.*)\""
     is_different = utils.is_json_clinvar_different(filename_glob,
                                                    match_regex,
                                                    file_id_regex,
@@ -87,7 +87,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 
-    file_id_regex = "\"index_id\":\"{(.*)}\""
+    file_id_regex = r"\"index_id\":\"(.*)\""
     is_different = utils.is_json_clinvar_different(filename_glob,
                                                    match_regex,
                                                    file_id_regex,
@@ -111,28 +111,32 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     new_config = ""
     new_version = ""
     for file in repo_files:
-        match = re.match(r".*_vep_config_v(.*).json")
+        match = re.match(r"(.*_vep_config_v)(.*).json", file)
         if match:
             old_config = file
-            version = match.group(1)
-            new_version_end = int(version.split(".")[2]) + 1
-            search = r".*_vep_config_v.*\..*\.(.*).json"
-            new_config = re.sub(search, new_version_end, old_config)
-            new_version = re.sub(r".*\..*\.(.*)", new_version_end, version)
+            version = match.group(2)
+            split_version = version.split(".")
+            new_version_end = str(int(split_version[2]) + 1)
+            new_version = "{}.{}.{}".format(split_version[1],
+                                            split_version[2],
+                                            new_version_end)
+            new_config = "{}{}.json".format(match.group(1), new_version)
             break
     if old_config == "":
         raise Exception("No file matching config regex was found in repo")
-    git_handler.rename_file(old_config, new_config)
+    git_handler.rename_file(repo_dir,
+                            old_config,
+                            new_config)
     # edit file contents to update version and config files
     filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
-    match_regex = "\"name\": \"ClinVar\""
-    replace_regex = "\"file_id\":\"{(.*)}\""
+    match_regex = r"\"name\": \"ClinVar\""
+    replace_regex = r"\"file_id\":\"(.*)\""
     utils.update_json(filename_glob, match_regex, replace_regex, vcf_id)
-    replace_regex = "\"index_id\":\"{(.*)}\""
+    replace_regex = r"\"index_id\":\"(.*)\""
     utils.update_json(filename_glob, match_regex, replace_regex, index_id)
     # replace version
-    match_regex = "\"config_information\":"
-    replace_regex = "\"config_version\":\"(.*)\""
+    match_regex = r"\"config_information\":"
+    replace_regex = r"\"config_version\": \"(.*)\""
     utils.update_json(filename_glob, match_regex, replace_regex, version)
 
     git_handler.add_file("{}/{}".format(repo_dir, new_config))

@@ -36,7 +36,7 @@ class GitHandler:
 
     def rename_file(self, folder, old_name, new_name):
         mv_input = ["git",
-                    "mv"
+                    "mv",
                     "{}/{}".format(folder, old_name),
                     "{}/{}".format(folder, new_name)]
         subprocess.run(mv_input, stderr=subprocess.STDOUT)

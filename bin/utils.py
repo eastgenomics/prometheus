@@ -260,23 +260,32 @@ def load_config_repo(assay):
 
 
 def update_json(json_path_glob, first_match, replace_regex, replace_with):
-    old_config_filename = glob(json_path_glob)[0]
+    old_config_filename = glob.glob(json_path_glob)[0]
     new_lines = []
     with open(old_config_filename, "r") as f:
         match_found = False
+        regex_found = False
         for line in f:
             if not match_found:
                 # find first match regex
                 new_lines.append(line)
-                if re.match(first_match, line):
+                if re.search(first_match, line):
                     match_found = True
             else:
-                match = re.match(replace_regex)
-                if match:
-                    modified = re.sub(replace_regex, replace_with, line)
+                match = re.search(replace_regex, line)
+                if match and not regex_found:
+                    regex_found = True
+                    replace_string = match[1]
+                    modified = re.sub(replace_string, replace_with, line)
                     new_lines.append(modified)
                 else:
                     new_lines.append(line)
+    if not match_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(first_match, old_config_filename))
+    elif not regex_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(replace_regex, old_config_filename))
     os.remove(old_config_filename)
     with open(old_config_filename, "w") as f:
         f.writelines(new_lines)
@@ -287,16 +296,25 @@ def is_json_clinvar_different(json_path_glob, first_match,
     old_config_filename = glob.glob(json_path_glob)[0]
     with open(old_config_filename, "r") as f:
         match_found = False
+        regex_found = False
         for line in f:
             if not match_found:
                 # find first match regex
-                if re.match(first_match, line):
+                if re.search(first_match, line):
                     match_found = True
             else:
-                match = re.match(file_id_regex)
-                # get file ID portion of match in parentheses
-                file_id = match[1]
-                if file_id == new_file_id:
-                    return False
-                else:
-                    return True
+                match = re.search(file_id_regex, line)
+                if match:
+                    regex_found = True
+                    # get file ID portion of match in parentheses
+                    file_id = match[1]
+                    if file_id == new_file_id:
+                        return False
+                    else:
+                        return True
+    if not match_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(first_match, old_config_filename))
+    elif not regex_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(file_id_regex, old_config_filename))
