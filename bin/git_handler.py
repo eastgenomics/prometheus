@@ -3,6 +3,7 @@
 
 from git import Repo
 import subprocess
+import os
 from github import Github
 from github import Auth
 from github_release import gh_release_create
@@ -35,11 +36,15 @@ class GitHandler:
         self.origin.pull()
 
     def rename_file(self, folder, old_name, new_name):
+        # TODO: replace subprocess with gitpython API call
         mv_input = ["git",
                     "mv",
-                    "{}/{}".format(folder, old_name),
-                    "{}/{}".format(folder, new_name)]
+                    old_name,
+                    new_name]
+        os.chdir("temp/vep_repo_TWE")
         subprocess.run(mv_input, stderr=subprocess.STDOUT)
+        os.chdir("..")
+        os.chdir("..")
 
     def push_to_remote(self):
         self.origin.push()
@@ -54,6 +59,15 @@ class GitHandler:
         new_branch = self.repo.create_head(branch_name)
         self.repo.head.reference = new_branch
 
+    def make_branch_github(self, branch_name, source_branch):
+        sb = self.github_repo.get_branch(source_branch)
+        self.github_repo.create_git_ref(ref='refs/heads/' + branch_name,
+                                        sha=sb.commit.sha)
+        # set local branch_name to track remote branch_name
+        self.origin.fetch()
+        (self.repo.heads[branch_name]
+         .set_tracking_branch(self.origin.refs[branch_name]))
+
     def switch_branch(self, branch_name):
         self.repo.heads[branch_name].checkout()
 
@@ -62,7 +76,7 @@ class GitHandler:
                                           body=body,
                                           head=branch_name,
                                           base=base_name)
-        return pr["number"]
+        return pr.number
 
     def merge_pull_request(self, pr_number):
         pr = self.github_repo.get_pull(pr_number)

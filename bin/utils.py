@@ -239,12 +239,8 @@ def load_config_repo(assay):
     """loads config file for VEP config update
 
     Returns:
-        tso_config: str
-            URL to github repo for TSO500 config file
-        twe_config: str
-            URL to github repo for TWE config file
-        cen_config: str
-            URL to github repo for CEN config file
+        repo: str
+            URL to github repo for assay config file
     """
     with open("resources/config.json", "r", encoding="utf8") as json_file:
         config = json.load(json_file)
@@ -255,6 +251,21 @@ def load_config_repo(assay):
         repo = config.get('TWE_CONFIG_REPO')
     elif assay == "CEN":
         repo = config.get('CEN_CONFIG_REPO')
+
+    return repo
+
+
+def load_config_reports_workflow():
+    """loads config file for TSO500 reports workflow update
+
+    Returns:
+        repo: str
+            URL to github repo for TSO500 reports workflow
+    """
+    with open("resources/config.json", "r", encoding="utf8") as json_file:
+        config = json.load(json_file)
+
+    repo = config.get('TSO500_WORKFLOW_REPO')
 
     return repo
 
