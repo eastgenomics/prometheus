@@ -83,12 +83,12 @@ class GitHandler:
         pr.merge()
 
     def make_release(self, version, comment):
+        os.environ["GITHUB_TOKEN"] = self.github_token
         gh_release_create(self.github_repo_name,
                           "v{}".format(version),
                           publish=True,
                           name="v{}".format(version),
-                          body=comment,
-                          asset_pattern="dist/*")
+                          body=comment)
 
     def open_github_instance(self, github_token):
         # auth token

@@ -23,7 +23,8 @@ def inspect_logs(log_file, job_id, config_name, vcf_name, assay):
         pass_fail = "pass"
     else:
         pass_fail = "fail"
-    output_filename = ("{}_{}_testing_summary.txt".format(pass_fail, assay))
+    output_filename = ("temp/{}_{}_testing_summary.txt".format(pass_fail,
+                                                               assay))
     output_file = generate_test_summary(output_filename,
                                         test_passed,
                                         config_name,
@@ -42,7 +43,7 @@ def generate_test_summary(filename, test_passed, config_name, vcf_name,
             test_results = "Pass"
         else:
             test_results = "Fail"
-        f.write("Overall testing results: {}\n\n".format(test_results))
+        f.write("Overall testing result: {}\n\n".format(test_results))
         f.write("DNAnexus Job ID: {}\n\n".format(job_id))
         f.write("Name of new config file: {}\n".format(config_name))
         config_line_count = len(config_results)
@@ -77,4 +78,7 @@ def search_for_regex(log_file, regex):
     results = []
     with open(log_file) as f:
         for line in f:
-            results.append(regex.search(line))
+            result = regex.search(line)
+            if result:
+                results.append(line)
+    return results

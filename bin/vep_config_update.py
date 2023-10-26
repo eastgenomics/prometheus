@@ -184,26 +184,27 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                    assay)
 
     # Check if test passed or failed based on presence of DXFile
-    evidence_folder = "{}/Evidence".format(folder_path)
-    output_filename = ("{}_testing_summary.txt".format(assay))
+    evidence_folder = "{}/Evidence".format(config_subfolder)
+    output_filename = ("pass_{}_testing_summary.txt".format(assay))
     try:
-        utils.find_dx_file(dev_project, evidence_folder, output_filename)
+        utils.find_dx_file(dev_proj_id, evidence_folder, output_filename)
     except Exception:
         error_message = ("Error: Testing failed for VEP config file update for"
-                         + ("{} with clinvar version {}"
+                         + (" {} with clinvar version {}"
                             .format(assay, clinvar_version)))
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 
     # Make github release of current config version
     # deploy new config from 003 to 001 reference project
-    comment = ("Updated config version from \"config_version\": \"1.1.6\" to"
-               + " \"config_version\": \"1.1.7\"\n"
+    comment = (("Updated config version from \"config_version\": \"{}\" to"
+                .format(version[1:]))
+               + " \"config_version\": \"{}\"\n".format(new_version[1:])
                + "\n"
                + "Updated ClinVar annotation reference file source:\n"
                + "\"file_id\":\"{}\"\n".format(vcf_id)
                + "\"index_id\":\"{}\"\n".format(index_id))
-    git_handler.make_release(version, comment)
+    git_handler.make_release(new_version, comment)
     deploy_folder = "/dynamic_files/vep_configs"
     deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
                                          dev_config_id, deploy_folder)

@@ -185,7 +185,8 @@ def run_workflow_config_update(bin_folder, genome_build):
                + "Updated TSO500 vep config file source:\n"
                + "\"file_id\":\"{}\"\n".format(vep_config_id))
     git_handler.make_release(version, comment)
-    deploy_folder = "/dynamic_files/vep_configs"
+    deploy_folder = "/apps_workflows"
+    # TODO: rename config to "TSO500_reports_workflow_v*"
     deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
                                          dev_config_id, deploy_folder)
 

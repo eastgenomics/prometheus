@@ -155,6 +155,68 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
     return recent_version, vcf_id, index_id
 
 
+# TODO: finish implementing this function
+def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
+    """gets information on latest production ClinVar file
+
+    Args:
+        ref_proj_id (str): DNAnexus project ID for 001 reference project
+        ref_proj_folder (str): folder path containing ClinVar files
+        genome_build (str): genome build of ClinVar file
+
+    Raises:
+        Exception: no ClinVar files could be found in ref project folder
+        Exception: project folder does not exist
+
+    Returns:
+        recent_version: str
+            version of production Clinvar file
+        vcf_id: str
+            DNAnexus file ID for production vcf file
+        index_id: str
+            DNAnexus file ID for production vcf index file
+    """
+    if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(ref_proj_folder, ref_proj_id))
+    assay = assay.lower()
+    name_regex = "{}_vep_config_v*.json".format(assay)
+    config_files = list(dxpy.find_data_objects(
+            name=name_regex,
+            name_mode='glob',
+            project=ref_proj_id,
+            folder=ref_proj_folder
+        ))
+
+    # Error handling if files are not found in 001 reference
+    if not config_files:
+        raise Exception("No clinvar files matching {} ".format(name_regex)
+                        + "were found in 001 reference project")
+
+    # TODO: take list of config dx files, sort in descending order by date created
+    # get version from regex
+
+    latest_time = datetime.strptime("20200101", '%Y%m%d').date()
+    recent_version = ""
+    vcf_id = ""
+    index_id = ""
+    version = ""
+
+    for file in config_files:
+        name = dxpy.describe(
+                    file['id']
+                )['name']
+        version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
+        version_date = datetime.strptime(version, '%Y%m%d').date()
+        if version_date > latest_time:
+            latest_time = version_date
+            recent_version = version
+            vcf_id = file['id']
+
+    # return latest production version
+    return recent_version, vcf_id, index_id
+
+
 def find_dx_file(project_id, folder_path, file_name):
     """gets file ID of DNAnexus file from file name
 
