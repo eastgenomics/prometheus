@@ -49,6 +49,21 @@ class SlackHandler:
                           .format(vcf_name, tbi_name))
         self.send_message(channel, update_message)
 
+    def announce_workflow_update(self, channel, file_name, vep_config_name):
+        """announces workflow update to team
+
+        Args:
+            channel (str): name of slack channel to post to
+            file_name (_type_): file name of workflow
+        """
+        update_message = ("The latest version of the Helios reports workflow"
+                          + " has been deployed into the 001"
+                          + " reference project as {}.".format(file_name)
+                          + "\nThe update consists of updating the Helios VEP"
+                          + (" config file specificed to {}"
+                             .format(vep_config_name)))
+        self.send_message(channel, update_message)
+
     def send_message(self, channel, message):
         """sends message to specified slack channel
 

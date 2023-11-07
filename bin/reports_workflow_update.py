@@ -19,6 +19,7 @@ from utils import (get_prod_version,
                    check_proj_folder_exists)
 from git_handler import GitHandler
 import utils
+import workflow_handler
 
 logger = logging.getLogger("main log")
 
@@ -35,8 +36,10 @@ def run_workflow_config_update(bin_folder, genome_build):
     # find latest TSO500 vep config from 001 reference project
     # find latest clinvar annotation resource version
     # make new vep update folder in overall update folder
-    # TODO: add this function
-    vep_config_id = get_prod_vep_config(assay)
+    ref_vep_config_folder = "/dynamic_files/vep_configs"
+    vep_config_id = get_prod_vep_config(ref_proj_id,
+                                        ref_vep_config_folder,
+                                        assay)
     ref_clinvar_folder = "/annotation/b37/clinvar/"
     (clinvar_version, vcf_id, index_id) = get_prod_version(ref_proj_id,
                                                            ref_clinvar_folder,
@@ -49,8 +52,6 @@ def run_workflow_config_update(bin_folder, genome_build):
 
     # download git repo for latest TSO500 reports workflow
     # make branch on repo and switch to new branch
-    # git mv to rename workflow config with incremented version
-    # (e.g., v1.0.1 to v1.0.2)
     # check old vep config ID is different to new vep config ID
     # replace old vep config ID with new ID
     # push repo to github
@@ -69,13 +70,12 @@ def run_workflow_config_update(bin_folder, genome_build):
 
     # check if production vep config file is already in config
     filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
-    match_regex = r"\"name\": \"ClinVar\""
-    file_id_regex = r"\"file_id\":\"(.*)\""
-    # TODO: add function
-    is_different = utils.is_workflow_config_different(filename_glob,
-                                                      match_regex,
-                                                      file_id_regex,
-                                                      vep_config_id)
+    match_regex = r"\"executable\": \"app-eggd_vep/.+\""
+    file_id_regex = r"\"id\": \"(.*)\""
+    is_different = utils.is_json_content_different(filename_glob,
+                                                   match_regex,
+                                                   file_id_regex,
+                                                   vep_config_id)
     if not is_different:
         error_message = ("Error: The TSO500 VEP config ID in the production"
                          + " TSO500 reports workflow config"
@@ -103,18 +103,32 @@ def run_workflow_config_update(bin_folder, genome_build):
         raise Exception("No file matching config name {}".format(config_name)
                         + " was found in repo")
     # edit file contents to update version and config files
-    # TODO: update to use correct regex for vep config file ID
+    # replace VEP config file pointed to in workflow config
     filename_glob = "{}/{}".format(repo_dir, config_name)
-    match_regex = r"\"name\": \"ClinVar\""
-    replace_regex = r"\"file_id\":\"(.*)\""
+    match_regex = r"\"executable\": \"app-eggd_vep/.+\""
+    replace_regex = r"\"id\": \"(.*)\""
     utils.update_json(filename_glob, match_regex, replace_regex, vep_config_id)
-    # replace version
-    # TODO: find current version, increment version, provide to function
-    version = "TODO"
-    old_version = "TODO"
-    match_regex = r"\"config_information\":"
-    replace_regex = r"\"config_version\": \"(.*)\""
-    utils.update_json(filename_glob, match_regex, replace_regex, version)
+    # replace version in name and title of workflow config
+    old_version = utils.search_json()
+
+    try:
+        version = utils.increment_version(old_version)
+    except Exception:
+        error_message = ("Error: The helios workflow config file {}"
+                         .format(config_name)
+                         + " contains a version with invalid format")
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
+
+    match_regex = r"\{"
+    replace_regex_name = r"\"name\": \"(.*)\""
+    replace_regex_title = r"\"title\": \"(.*)\""
+    old_workflow_title = "TSO500_reports_workflow_v{}".format(old_version)
+    new_workflow_title = "TSO500_reports_workflow_v{}".format(version)
+    utils.update_json(filename_glob, match_regex,
+                      replace_regex_name, new_workflow_title)
+    utils.update_json(filename_glob, match_regex,
+                      replace_regex_title, new_workflow_title)
 
     git_handler.add_file(config_name)
     commit_message = ("Updated vep config ID and incremented"
@@ -150,16 +164,10 @@ def run_workflow_config_update(bin_folder, genome_build):
     folder_path = "{}/Testing".format(config_subfolder)
     if not check_proj_folder_exists(dev_proj_id, folder_path):
         dev_project.new_folder(folder_path, parents=True)
-    dev_config_id = (dxpy.upload_local_file(filename=updated_config,
-                                            project=dev_proj_id,
-                                            folder=folder_path)
-                     .describe().get('id'))
-    # TODO: implement workflow_testing module and function
-    workflow_testing.workflow_testing(dev_proj_id,
-                                      dev_config_id,
-                                      config_subfolder,
-                                      ref_proj_id,
-                                      assay)
+    # TODO: implement build_workflow function
+    workflow_id = workflow_handler.build_workflow(updated_config)
+    # TODO: implement test_workflow function
+    workflow_handler.test_reports_workflow(workflow_id)
 
     # Check if test passed or failed based on presence of DXFile
     evidence_folder = "{}/Evidence".format(folder_path)
@@ -175,30 +183,29 @@ def run_workflow_config_update(bin_folder, genome_build):
         exit_prometheus()
 
     # Make github release of current config version
-    # deploy new config from 003 to 001 reference project
-    # TODO: add correct names for placeholders "config_version" and "file_id"
-    comment = (("Updated config version from \"config_version\": \"{}\" to"
-                .format(old_version))
-               + (" \"config_version\": \"{}\"\n"
-                  .format(version))
+    # deploy new workflow from 003 to 001 reference project
+    comment = (("Updated config name from \"name\": \"{}\" to"
+                .format(old_workflow_title))
+               + (" \"name\": \"{}\"\n"
+                  .format(new_workflow_title))
                + "\n"
-               + "Updated TSO500 vep config file source:\n"
-               + "\"file_id\":\"{}\"\n".format(vep_config_id))
+               + ("Updated config title from \"title\": \"{}\" to"
+                  .format(old_workflow_title))
+               + (" \"title\": \"{}\"\n"
+                  .format(new_workflow_title))
+               + "\n"
+               + "Updated TSO500 vep config file source to"
+               + "  \"id\":\"{}\"\n".format(vep_config_id))
     git_handler.make_release(version, comment)
     deploy_folder = "/apps_workflows"
-    # TODO: rename config to "TSO500_reports_workflow_v*"
+    # deploy new workflow to production
     deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
-                                         dev_config_id, deploy_folder)
+                                         workflow_id, deploy_folder)
 
-    # notify team of completed vep config update
-    # TODO: implement announce_workflow_update function
-    config_name = ("{}_test_config_v{}.json"
-                   .format(assay, version))
+    # notify team of completed workflow update
     slack_handler.announce_workflow_update(slack_channel,
-                                           config_name,
-                                           assay,
-                                           genome_build,
-                                           clinvar_version)
+                                           new_workflow_title,
+                                           vep_config_id)
 
 
 def exit_prometheus():

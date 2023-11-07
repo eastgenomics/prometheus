@@ -155,26 +155,21 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
     return recent_version, vcf_id, index_id
 
 
-# TODO: finish implementing this function
 def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
     """gets information on latest production ClinVar file
 
     Args:
         ref_proj_id (str): DNAnexus project ID for 001 reference project
-        ref_proj_folder (str): folder path containing ClinVar files
-        genome_build (str): genome build of ClinVar file
+        ref_proj_folder (str): folder path containing vep config files
+        assay (str): name of assay of vep config (e.g., TWE, TSO500)
 
     Raises:
-        Exception: no ClinVar files could be found in ref project folder
+        Exception: no vep config files could be found in ref project folder
         Exception: project folder does not exist
 
     Returns:
-        recent_version: str
-            version of production Clinvar file
-        vcf_id: str
-            DNAnexus file ID for production vcf file
-        index_id: str
-            DNAnexus file ID for production vcf index file
+        id: str
+            DNAnexus file ID of vep config file
     """
     if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
         raise Exception("Folder {} does not exist in project {}"
@@ -185,36 +180,31 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
             name=name_regex,
             name_mode='glob',
             project=ref_proj_id,
-            folder=ref_proj_folder
+            folder=ref_proj_folder,
+            describe={
+                "fields": {
+                    "id": True,
+                    "name": True,
+                    "created": True,
+                    "archivalState": True
+                }
+            }
         ))
 
     # Error handling if files are not found in 001 reference
     if not config_files:
-        raise Exception("No clinvar files matching {} ".format(name_regex)
+        raise Exception("No vep config files matching {} ".format(name_regex)
                         + "were found in 001 reference project")
 
-    # TODO: take list of config dx files, sort in descending order by date created
-    # get version from regex
-
-    latest_time = datetime.strptime("20200101", '%Y%m%d').date()
-    recent_version = ""
-    vcf_id = ""
-    index_id = ""
-    version = ""
-
-    for file in config_files:
-        name = dxpy.describe(
-                    file['id']
-                )['name']
-        version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
-        version_date = datetime.strptime(version, '%Y%m%d').date()
-        if version_date > latest_time:
-            latest_time = version_date
-            recent_version = version
-            vcf_id = file['id']
-
-    # return latest production version
-    return recent_version, vcf_id, index_id
+    # return the most recent file uploaded found
+    if len(config_files) == 1:
+        return config_files[0]["id"]
+    else:
+        latest = config_files[0]
+        for file in config_files:
+            if file["describe"]["created"] > latest["describe"]["created"]:
+                latest = file
+        return latest["id"]
 
 
 def find_dx_file(project_id, folder_path, file_name):
@@ -234,14 +224,14 @@ def find_dx_file(project_id, folder_path, file_name):
     if folder_path == "":
         file_list = list(dxpy.find_data_objects(
                 name=file_name,
-                name_mode='glob',
+                name_mode="glob",
                 project=project_id,
                 describe={
-                    'fields': {
-                        'id': True,
-                        'name': True,
+                    "fields": {
+                        "id": True,
+                        "name": True,
                         "created": True,
-                        'archivalState': True
+                        "archivalState": True
                     }
                 }
             ))
@@ -252,11 +242,11 @@ def find_dx_file(project_id, folder_path, file_name):
                 project=project_id,
                 folder=folder_path,
                 describe={
-                    'fields': {
-                        'id': True,
-                        'name': True,
+                    "fields": {
+                        "id": True,
+                        "name": True,
                         "created": True,
-                        'archivalState': True
+                        "archivalState": True
                     }
                 }
             ))
@@ -364,10 +354,10 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
         f.writelines(new_lines)
 
 
-def is_json_clinvar_different(json_path_glob, first_match,
+def is_json_content_different(json_path_glob, first_match,
                               file_id_regex, new_file_id):
-    old_config_filename = glob.glob(json_path_glob)[0]
-    with open(old_config_filename, "r") as f:
+    config_filename = glob.glob(json_path_glob)[0]
+    with open(config_filename, "r") as f:
         match_found = False
         regex_found = False
         for line in f:
@@ -387,7 +377,47 @@ def is_json_clinvar_different(json_path_glob, first_match,
                         return True
     if not match_found:
         raise Exception("Regex {} had no match in file {}"
-                        .format(first_match, old_config_filename))
+                        .format(first_match, config_filename))
     elif not regex_found:
         raise Exception("Regex {} had no match in file {}"
-                        .format(file_id_regex, old_config_filename))
+                        .format(file_id_regex, config_filename))
+
+
+def search_json(json_path_glob, first_match,
+                search_regex):
+    config_filename = glob.glob(json_path_glob)[0]
+    with open(config_filename, "r") as f:
+        match_found = False
+        regex_found = False
+        for line in f:
+            if not match_found:
+                # find first match regex
+                if re.search(first_match, line):
+                    match_found = True
+            else:
+                match = re.search(search_regex, line)
+                if match:
+                    regex_found = True
+                    # get portion of match in parentheses
+                    return match[1]
+    if not match_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(first_match, config_filename))
+    elif not regex_found:
+        raise Exception("Regex {} had no match in file {}"
+                        .format(search_regex, config_filename))
+
+
+def increment_version(version):
+    # string format: x.y.z
+    regex = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
+    matched = re.search(regex, version)
+    if not matched:
+        raise Exception("Version {} has invalid format. Format must be x.y.z"
+                        .format(version)
+                        + " where x y and z are integers")
+    new_version_end = int(matched[3]) + 1
+    return_version = "{}.{}.{}".format(matched[1],
+                                       matched[2],
+                                       new_version_end)
+    return return_version

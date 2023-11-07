@@ -73,7 +73,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
     match_regex = r"\"name\": \"ClinVar\""
     file_id_regex = r"\"file_id\":\"(.*)\""
-    is_different = utils.is_json_clinvar_different(filename_glob,
+    is_different = utils.is_json_content_different(filename_glob,
                                                    match_regex,
                                                    file_id_regex,
                                                    vcf_id)
@@ -88,7 +88,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
         exit_prometheus()
 
     file_id_regex = r"\"index_id\":\"(.*)\""
-    is_different = utils.is_json_clinvar_different(filename_glob,
+    is_different = utils.is_json_content_different(filename_glob,
                                                    match_regex,
                                                    file_id_regex,
                                                    index_id)
