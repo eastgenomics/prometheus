@@ -8,7 +8,6 @@ import glob
 from dxpy.bindings.dxfile_functions import download_folder
 from dxpy.bindings.dxfile import DXFile
 import vcfpy
-import pandas as pd
 import os
 
 # local modules
@@ -17,6 +16,7 @@ from utils import check_jobs_finished
 from utils import check_proj_folder_exists
 from utils import find_dx_file
 from inspect_vep_logs import inspect_logs
+from utils import get_recent_002_projects
 
 
 def vep_testing_config(project_id, dev_config_id,
@@ -30,7 +30,6 @@ def vep_testing_config(project_id, dev_config_id,
     job_list = [vep_job]
     check_jobs_finished(job_list, 2, 20)
 
-    # TODO: implement getting log
     log = "temp/vep_job_log.txt"
     os.system("dx watch {} > {}".format(vep_job, log))
 
@@ -297,37 +296,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
         bed: str
             DNAnexus file ID for most recent panel bed file found
     """
-    # get 002 projects matching assay name in past 12 months
-    assay_response = list(dxpy.find_projects(
-            name=f"002*{assay}",
-            name_mode="glob",
-            describe={
-                'fields': {
-                    'id': True,
-                    'name': True,
-                    "created": True
-                }
-            },
-            created_after="-12M",
-        ))
-    if len(assay_response) < 1:
-        raise Exception("No 002 projects found for assay {}"
-                        .format(assay) + " in past 12 months")
-
-    assay_info = [[]]
-    for entry in assay_response:
-        info = [entry["describe"]["id"],
-                entry["describe"]["name"],
-                entry["describe"]["created"]]
-        assay_info.append(info)
-
-    # get most recent 002 in search and return project id
-    df = pd.DataFrame.from_records(data=assay_info,
-                                   columns=["id",
-                                            "name",
-                                            "created"])
-    # sort by date
-    df = df.sort_values(["created"], ascending=[False])
+    df = get_recent_002_projects(assay, 12)
 
     if assay == "TSO500":
         folder_bed = "/bed_files/b37/kits/tso500"

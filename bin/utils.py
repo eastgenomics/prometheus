@@ -10,6 +10,7 @@ import glob
 import os
 import dxpy
 from dxpy.bindings.dxproject import DXProject
+import pandas as pd
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -18,7 +19,7 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
     Args:
         job_id_list (str): DNAnexus job IDs to check if completed
         timer (int): interval to check in (minutes)
-        max_wait_time (int): max wait time
+        max_wait_time (int): max wait time (minutes)
     """
     job_list = []
 
@@ -48,6 +49,11 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
             # wait for [timer] minutes
             time.sleep(timer*60)
             time_elapsed += timer
+
+    # fail if jobs took too long to finish
+    if time_elapsed >= max_wait_time:
+        raise Exception("Jobs took longer than max wait time of"
+                        + " {} minutes to complete".format(max_wait_time))
 
 
 def check_project_exists(project_id):
@@ -421,3 +427,37 @@ def increment_version(version):
                                        matched[2],
                                        new_version_end)
     return return_version
+
+
+def get_recent_002_projects(assay, months):
+    # get 002 projects matching assay name in past 12 months
+    assay_response = list(dxpy.find_projects(
+            name=f"002*{assay}",
+            name_mode="glob",
+            describe={
+                'fields': {
+                    'id': True,
+                    'name': True,
+                    "created": True
+                }
+            },
+            created_after="-{}M".format(months),
+        ))
+    if len(assay_response) < 1:
+        raise Exception("No 002 projects found for assay {}"
+                        .format(assay) + " in past 12 months")
+
+    assay_info = [[]]
+    for entry in assay_response:
+        info = [entry["describe"]["id"],
+                entry["describe"]["name"],
+                entry["describe"]["created"]]
+        assay_info.append(info)
+
+    # get most recent 002 in search and return project id
+    df = pd.DataFrame.from_records(data=assay_info,
+                                   columns=["id",
+                                            "name",
+                                            "created"])
+    # sort by date
+    df = df.sort_values(["created"], ascending=[False])

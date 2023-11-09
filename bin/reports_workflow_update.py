@@ -159,13 +159,13 @@ def run_workflow_config_update(bin_folder, genome_build):
                              workflow_repo,
                              "main",
                              login_handler.github_token)
-    updated_config = glob.glob("{}/{}".format(repo_dir, config_name))[0]
     # upload to specific 003 test directory
     folder_path = "{}/Testing".format(config_subfolder)
     if not check_proj_folder_exists(dev_proj_id, folder_path):
         dev_project.new_folder(folder_path, parents=True)
-    # TODO: implement build_workflow function
-    workflow_id = workflow_handler.build_workflow(updated_config)
+    workflow_id = workflow_handler.build_reports_workflow(repo_dir,
+                                                          ref_proj_id,
+                                                          folder_path)
     # TODO: implement test_workflow function
     workflow_handler.test_reports_workflow(workflow_id)
 
