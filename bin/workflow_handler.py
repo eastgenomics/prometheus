@@ -72,7 +72,6 @@ def test_reports_workflow(bin_folder, workflow_id,
 
 
 def launch_workflow_jobs(workflow_id, project_id, workflow_version):
-    # TODO: get helios folder name in project
     basePath = "/output"
     folder_regex = r"TSO500-.+"
     # TODO: write utils function to find folder in folder from regex

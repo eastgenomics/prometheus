@@ -146,11 +146,14 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     git_handler.commit_changes(commit_message)
     git_handler.make_branch_github(branch_name, "main")
     git_handler.push_to_remote()
-    # TODO: replace title and body
+
+    pr_title = ("VEP config update for assay {}".format(assay)
+                + (" and clinvar annotation resource version {}"
+                   .format(clinvar_version)))
     pr_num = git_handler.make_pull_request(branch_name,
                                            "main",
-                                           "my_pull_request",
-                                           "test body")
+                                           pr_title,
+                                           commit_message)
     git_handler.merge_pull_request(pr_num)
     git_handler.exit_github()
 

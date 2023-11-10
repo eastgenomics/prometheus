@@ -461,3 +461,9 @@ def get_recent_002_projects(assay, months):
                                             "created"])
     # sort by date
     df = df.sort_values(["created"], ascending=[False])
+
+
+def find_file_name_from_id(file_id):
+    file = dxpy.bindings.dxfile.DXFile(file_id)
+    name = file["describe"]["name"]
+    return name

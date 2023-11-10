@@ -137,11 +137,14 @@ def run_workflow_config_update(bin_folder, genome_build):
     git_handler.commit_changes(commit_message)
     git_handler.make_branch_github(branch_name, "main")
     git_handler.push_to_remote()
-    # TODO: replace title and body
+
+    vep_config_name = utils.find_file_name_from_id(vep_config_id)
+    pr_title = ("TSO500 reports workflow config update to use VEP config"
+                + " {}".format(vep_config_name))
     pr_num = git_handler.make_pull_request(branch_name,
                                            "main",
-                                           "my_pull_request",
-                                           "test body")
+                                           pr_title,
+                                           commit_message)
     git_handler.merge_pull_request(pr_num)
     git_handler.exit_github()
 
