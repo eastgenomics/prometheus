@@ -7,7 +7,6 @@ import logging
 import dxpy
 import os
 import re
-import glob
 
 import deployer
 from login_handler import LoginHandler
@@ -169,7 +168,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     workflow_id = workflow_handler.build_reports_workflow(repo_dir,
                                                           ref_proj_id,
                                                           folder_path)
-    # TODO: implement test_workflow function
+
     workflow_handler.test_reports_workflow(workflow_id)
 
     # Check if test passed or failed based on presence of DXFile

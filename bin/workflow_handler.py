@@ -3,22 +3,17 @@ Handles building and running the helios reports workflow
 """
 
 import dxpy
-import subprocess
-import glob
 from dxpy.bindings.dxfile_functions import download_folder
-from dxpy.bindings.dxfile import DXFile
 from dxpy.app_builder import upload_applet
 import re
 import os
 
 # local modules
-import compare_annotation
 from utils import check_jobs_finished
-from utils import check_proj_folder_exists
 from utils import find_dx_file
 from utils import match_folder_name
-from inspect_vep_logs import inspect_logs
 from utils import get_recent_002_projects
+from inspect_workflow_logs import inspect_logs
 
 
 def build_reports_workflow(source_dir, project, proj_folder):
@@ -27,8 +22,10 @@ def build_reports_workflow(source_dir, project, proj_folder):
                   override_folder=proj_folder)
 
 
-def test_reports_workflow(bin_folder, workflow_id,
-                          project_id, workflow_version):
+def test_reports_workflow(workflow_id,
+                          project_id,
+                          workflow_version,
+                          evidence_folder):
     # version must have full or partial name, i.e., v1.3.3 or 1.3.3
     workflow_version = workflow_version.lower()
     version_regex = r"v([0-9]+)\.([0-9]+)\.([0-9]+)"
@@ -60,15 +57,33 @@ def test_reports_workflow(bin_folder, workflow_id,
 
     # wait until each job has finished
     check_jobs_finished(job_IDs, 2, 30)
-    # TODO: record that these jobs have been set off successfully
-    # make text file containing job list
+    # record that these jobs have been set off successfully
+    jobs_launched_path = "temp/jobs_launched.txt"
+    with open(jobs_launched_path, "w") as f:
+        f.writelines(job_IDs)
     # upload text file to 003 workflow update evidence folder
+    dxpy.upload_local_file(filename=jobs_launched_path,
+                           project=project_id,
+                           folder=evidence_folder)
 
     # TODO: read workflow log file to confirm the new workflow name is used
+    workflow_job_id = job_IDs[0]
+    workflow_job = dxpy.bindings.dxjob.DXJob(workflow_job_id)
+    job_info = workflow_job.describe()
+    log = "temp/reports_workflow_job_log.txt"
+    os.system("dx watch {} > {}".format(workflow_job, log))
+    (passed, test_results) = inspect_logs()
 
-    # TODO: download log file from a vep run set off by the workflow
+    # TODO: find vep run from workflow job
+    job_info = workflow_job.describe()
+    vep_run = job_info["subjob"]
+    # download log file from a vep run set off by the workflow
+    log = "temp/reports_workflow_vep_log.txt"
+    os.system("dx watch {} > {}".format(vep_run, log))
     # TODO: check that correct version of vep config is present in log
+    (passed, test_results) = inspect_logs()
     # TODO: check that correct version of clinvar file is present in log
+    (passed, test_results) = inspect_logs()
 
 
 def launch_workflow_jobs(workflow_id, project_id, workflow_version):
