@@ -124,7 +124,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
             break
     if old_config == "":
         raise Exception("No file matching config regex was found in repo")
-    git_handler.rename_file("vep_repo_{}".format(assay),
+    git_handler.rename_file("temp/vep_repo_{}".format(assay),
                             old_config,
                             new_config)
     # edit file contents to update version and config files
@@ -201,8 +201,8 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # Make github release of current config version
     # deploy new config from 003 to 001 reference project
     comment = (("Updated config version from \"config_version\": \"{}\" to"
-                .format(version[1:]))
-               + " \"config_version\": \"{}\"\n".format(new_version[1:])
+                .format(version))
+               + " \"config_version\": \"{}\"\n".format(new_version)
                + "\n"
                + "Updated ClinVar annotation reference file source:\n"
                + "\"file_id\":\"{}\"\n".format(vcf_id)
@@ -232,4 +232,4 @@ if __name__ == "__main__":
     # This will either be "bin" for local, or "nextflow-bin" for running it as
     # a DNAnexus app/applet
     # TODO: send the assay name from nextflow script
-    run_vep_config_update("bin", "TWE", "b37")
+    run_vep_config_update("bin", "TSO500", "b37")

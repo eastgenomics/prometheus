@@ -19,12 +19,22 @@ class GitHandler:
         self.github_repo_name = github_repo_name
         # git setup
         self.repo = Repo.init(repo_directory, bare=False)
-        self.origin = self.repo.create_remote("origin",
-                                              url=remote_repo_url)
+        try:
+            self.origin = self.repo.create_remote("origin",
+                                                  url=remote_repo_url)
+        except Exception:
+            # ignore if origin already exists
+            # TODO: find a way to get repo origin, test below code works
+            self.origin = self.repo.remotes["origin"]
+            pass
         self.origin.fetch()
         # Setup a local tracking branch of a remote branch
         # create local branch branch_name from remote branch_name
-        self.repo.create_head(branch_name, self.origin.refs[branch_name])
+        try:
+            self.repo.create_head(branch_name, self.origin.refs[branch_name])
+        except OSError:
+            # ignore if main branch already exists
+            pass
         # set local branch_name to track remote branch_name
         (self.repo.heads[branch_name]
          .set_tracking_branch(self.origin.refs[branch_name]))
@@ -35,13 +45,13 @@ class GitHandler:
         # pull remote repo
         self.origin.pull()
 
-    def rename_file(self, folder, old_name, new_name):
+    def rename_file(self, filepath, old_name, new_name):
         # TODO: replace subprocess with gitpython API call
         mv_input = ["git",
                     "mv",
                     old_name,
                     new_name]
-        os.chdir("temp/vep_repo_TWE")
+        os.chdir(filepath)
         subprocess.run(mv_input, stderr=subprocess.STDOUT)
         os.chdir("..")
         os.chdir("..")

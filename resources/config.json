@@ -5,5 +5,5 @@
     "TSO500_CONFIG_REPO": "https://github.com/PolarisAstrum-NHS/dummy_vep_helios_config",
     "TWE_CONFIG_REPO": "https://github.com/PolarisAstrum-NHS/dummy_vep_TWE_config",
     "CEN_CONFIG_REPO": "https://github.com/PolarisAstrum-NHS/dummy_vep_CEN_config",
-    "TSO500_WORKFLOW_REPO": "sample_url"
+    "TSO500_WORKFLOW_REPO": "https://github.com/PolarisAstrum-NHS/dummy_TSO500_reports_workflow"
 }

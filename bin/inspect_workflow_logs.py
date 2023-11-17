@@ -3,72 +3,112 @@ Inspects the contents of reports workflow log files for specific strings
 """
 
 import re
+import dxpy
+import utils
 
 regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
 
 
-def inspect_logs(log_file, job_id, config_name, vcf_name, assay):
-    # check config_name is present in logs
-    # output all lines containing config_name as human-readable text
-    config_results = search_for_regex(log_file, config_name)
-    vcf_results = search_for_regex(log_file, vcf_name)
-
-    if (len(config_results) > 0 and len(vcf_results) > 0):
+def inspect_workflow_info(analysis_id, workflow_name):
+    analysis = dxpy.bindings.dxanalysis.DXAnalysis(analysis_id)
+    workflow_name_found = analysis.describe()["name"]
+    if workflow_name == workflow_name_found:
         test_passed = True
-    else:
-        test_passed = False
-
-    if test_passed:
         pass_fail = "pass"
     else:
+        test_passed = False
         pass_fail = "fail"
-    output_filename = ("temp/{}_{}_testing_summary.txt".format(pass_fail,
-                                                               assay))
-    output_file = generate_test_summary(output_filename,
+
+    output_filename = ("temp/{}_helios_workflow_testing_summary.txt"
+                       .format(pass_fail))
+    summary = generate_workflow_summary(output_filename,
                                         test_passed,
-                                        config_name,
-                                        vcf_name,
-                                        config_results,
-                                        vcf_results,
-                                        job_id)
-
-    return test_passed, output_file
+                                        workflow_name)
+    return summary
 
 
-def generate_test_summary(filename, test_passed, config_name, vcf_name,
-                          config_results, vcf_results, job_id):
+def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
+    vep_job = dxpy.bindings.dxapplet.DXJob(job_id)
+    description = vep_job.describe(io=True)
+    # TODO: get inputs from description
+    config_matched = False
+    inputs = description["inputs"]
+    for input in inputs:
+        name = utils.find_file_name_from_id(input)
+        if name == vep_config_name:
+            config_matched = True
+
+    clinvar_regex = ("\\usr\\bin\\time -v docker run.+clinvar_{}_b37.vcf.gz"
+                     .format(clinvar_version))
+    clinvar_results = search_for_regex(log_file, clinvar_regex)
+
+    clinvar_line = ""
+    if (len(clinvar_results) > 0 and config_matched):
+        pass_fail = "pass"
+        clinvar_line = clinvar_results[0]
+    else:
+        pass_fail = "fail"
+
+    output_filename = ("temp/{}_helios_workflow_testing_summary.txt"
+                       .format(pass_fail))
+    summary = generate_vep_summary(output_filename,
+                                   job_id,
+                                   config_matched,
+                                   clinvar_line,
+                                   clinvar_version,
+                                   vep_config_name)
+
+    return summary
+
+
+def generate_workflow_summary(filename, test_passed, workflow_name):
     with open(filename, "w") as f:
         if test_passed:
             test_results = "Pass"
         else:
             test_results = "Fail"
-        f.write("Overall testing result: {}\n\n".format(test_results))
-        f.write("DNAnexus Job ID: {}\n\n".format(job_id))
-        f.write("Name of new config file: {}\n".format(config_name))
-        config_line_count = len(config_results)
-        if config_line_count > 0:
-            f.write("Pass: There were {} lines containing \"{}\"\n"
-                    .format(config_line_count, config_name))
-            f.write("Lines containing new config file name:\n\n")
-            for line in config_results:
-                f.write(line)
+        f.write("Testing result: {}\n\n".format(test_results))
+        if test_passed:
+            f.write("Workflow name was found to be {}\n"
+                    .format(workflow_name))
         else:
-            f.write("Fail: There were {} lines containing \"{}\"\n"
-                    .format(config_line_count, config_name))
-        f.write("\n\n")
+            f.write("Workflow name was not found to be {}\n"
+                    .format(workflow_name))
+    return filename
 
-        f.write("Name of new vcf file: {}\n\n".format(vcf_name))
-        vcf_line_count = len(vcf_results)
-        if vcf_line_count > 0:
-            f.write("Pass: There were {} lines containing \"{}\"\n"
-                    .format(vcf_line_count, vcf_name))
-            f.write("Lines containing new vcf file name:\n\n")
-            for line in vcf_results:
-                f.write(line)
+
+def generate_vep_summary(filename,
+                         job_id,
+                         config_matched,
+                         clinvar_line,
+                         clinvar_version,
+                         vep_config_name):
+    with open(filename, "w") as f:
+        if config_matched and clinvar_line != "":
+            test_results = "Pass"
         else:
-            f.write("Fail: There were {} lines containing \"{}\"\n"
-                    .format(vcf_line_count, vcf_name))
+            test_results = "Fail"
+        f.write("Overall testing result: {}\n\n".format(test_results))
+        f.write("Job ID: {}\n\n".format(job_id))
+        f.write("Name of new vep config: {}\n".format(vep_config_name))
+        if config_matched:
+            f.write("Pass: The config file \"{}\" was used as an input\n"
+                    .format(vep_config_name))
+        else:
+            f.write("Fail: The config file \"{}\" was not used as an input\n"
+                    .format(vep_config_name))
+        f.write("\n")
+        f.write("New clinvar version: {}\n"
+                .format(clinvar_version))
+        if clinvar_line != "":
+            f.write("Pass: Clinvar version {} was present in the logs\n"
+                    .format(clinvar_version))
+            f.write("Line containing correct clinvar version:\n")
+            f.write(clinvar_line + "\n")
+        else:
+            f.write("Fail: Clinvar version {} was not present in the logs\n"
+                    .format(clinvar_version))
 
     return filename
 

@@ -11,6 +11,7 @@ import os
 import dxpy
 from dxpy.bindings.dxproject import DXProject
 import pandas as pd
+from dxpy.bindings.dxfile_functions import list_subfolders
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -462,8 +463,29 @@ def get_recent_002_projects(assay, months):
     # sort by date
     df = df.sort_values(["created"], ascending=[False])
 
+    return df
+
 
 def find_file_name_from_id(file_id):
     file = dxpy.bindings.dxfile.DXFile(file_id)
-    name = file["describe"]["name"]
+    name = file.describe()["name"]
     return name
+
+
+def match_folder_name(project_id, basePath, folder_regex):
+    if not check_proj_folder_exists(project_id, basePath):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(basePath, project_id))
+
+    folders = list_subfolders(project=project_id,
+                              path=basePath,
+                              recurse=False)
+    if len(folders) < 1:
+        raise Exception("Folder {} in project {} has no subfolders"
+                        .format(basePath, project_id))
+    match_regex = re.compile(folder_regex)
+    for folder in folders:
+        if match_regex.search(folder):
+            return folder
+    raise Exception("No folder matched the regex {}".format(folder_regex)
+                    + " in path {} of project {}".format(basePath, project_id))

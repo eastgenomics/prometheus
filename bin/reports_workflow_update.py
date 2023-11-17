@@ -68,7 +68,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     git_handler.pull_repo()
 
     # check if production vep config file is already in config
-    filename_glob = "{}/*_vep_config_v*.json".format(repo_dir)
+    filename_glob = "{}/dxworkflow.json".format(repo_dir)
     match_regex = r"\"executable\": \"app-eggd_vep/.+\""
     file_id_regex = r"\"id\": \"(.*)\""
     is_different = utils.is_json_content_different(filename_glob,
@@ -107,8 +107,13 @@ def run_workflow_config_update(bin_folder, genome_build):
     match_regex = r"\"executable\": \"app-eggd_vep/.+\""
     replace_regex = r"\"id\": \"(.*)\""
     utils.update_json(filename_glob, match_regex, replace_regex, vep_config_id)
+
     # replace version in name and title of workflow config
-    old_version = utils.search_json()
+    match_regex = r"\{"
+    replace_regex_name = r"\"name\": \"(.*)\""
+    old_version = utils.search_json(filename_glob,
+                                    match_regex,
+                                    replace_regex_name)
 
     try:
         version = utils.increment_version(old_version)
@@ -166,10 +171,11 @@ def run_workflow_config_update(bin_folder, genome_build):
     if not check_proj_folder_exists(dev_proj_id, folder_path):
         dev_project.new_folder(folder_path, parents=True)
     workflow_id = workflow_handler.build_reports_workflow(repo_dir,
-                                                          ref_proj_id,
+                                                          dev_proj_id,
                                                           folder_path)
 
-    workflow_handler.test_reports_workflow(workflow_id)
+    workflow_handler.test_reports_workflow(workflow_id,
+                                           new_workflow_title)
 
     # Check if test passed or failed based on presence of DXFile
     evidence_folder = "{}/Evidence".format(folder_path)
