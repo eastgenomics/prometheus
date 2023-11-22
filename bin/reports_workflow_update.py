@@ -170,15 +170,22 @@ def run_workflow_config_update(bin_folder, genome_build):
     folder_path = "{}/Testing".format(config_subfolder)
     if not check_proj_folder_exists(dev_proj_id, folder_path):
         dev_project.new_folder(folder_path, parents=True)
-    workflow_id = workflow_handler.build_reports_workflow(repo_dir,
+    workflow_path = repo_dir + "/dxworkflow.json"
+    workflow_id = workflow_handler.build_reports_workflow(workflow_path,
                                                           dev_proj_id,
-                                                          folder_path)
+                                                          folder_path,
+                                                          new_workflow_title)
 
+    evidence_folder = "{}/Evidence".format(config_subfolder)
     workflow_handler.test_reports_workflow(workflow_id,
-                                           new_workflow_title)
+                                           dev_proj_id,
+                                           version,
+                                           evidence_folder,
+                                           new_workflow_title,
+                                           vep_config_name,
+                                           clinvar_version)
 
     # Check if test passed or failed based on presence of DXFile
-    evidence_folder = "{}/Evidence".format(folder_path)
     output_filename = "reports_workflow_testing_summary.txt"
     try:
         utils.find_dx_file(dev_project, evidence_folder, output_filename)
