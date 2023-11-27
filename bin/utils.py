@@ -12,6 +12,50 @@ import dxpy
 from dxpy.bindings.dxproject import DXProject
 import pandas as pd
 from dxpy.bindings.dxfile_functions import list_subfolders
+from dxpy.bindings.dxanalysis import DXAnalysis
+
+
+def check_analyses_finished(id_list, timer, max_wait_time):
+    """checks if analyses have finished or until max time has elapsed
+
+    Args:
+        id_list (str): DNAnexus analysis IDs to check if completed
+        timer (int): interval to check in (minutes)
+        max_wait_time (int): max wait time (minutes)
+    """
+    analysis_list = []
+
+    # check that all jobs exist
+    for analysis_id in id_list:
+        try:
+            analysis_list.append(DXAnalysis(analysis_id))
+        except dxpy.exceptions.DXError:
+            raise IOError("DNAnexus analysis {} not found".format(analysis_id))
+
+    time_elapsed = 0
+
+    # check for job to complete until max wait time is reached
+    while time_elapsed < max_wait_time:
+        analyses_completed = 0
+        for analysis in analysis_list:
+            # check if job is done
+            analysis_state = analysis.describe()["state"]
+            if analysis_state == "done":
+                analyses_completed += 1
+            else:
+                break
+
+        if analyses_completed >= len(analysis_list):
+            break
+        else:
+            # wait for [timer] minutes
+            time.sleep(timer*60)
+            time_elapsed += timer
+
+    # fail if analyses took too long to finish
+    if time_elapsed >= max_wait_time:
+        raise Exception("Analysis took longer than max wait time of"
+                        + " {} minutes to complete".format(max_wait_time))
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -273,6 +317,62 @@ def find_dx_file(project_id, folder_path, file_name):
         return latest["id"]
 
 
+def find_all_dx_files(project_id, folder_path, file_name):
+    """gets file ID of DNAnexus file from file name
+
+    Args:
+        project_id (str): DNAnexus project ID to search in
+        folder_path (str): DNAnexus folder path to search in
+        file_name (str): DNAnexus file name to search for
+
+    Raises:
+        IOError: DNAnexus file does not exist
+
+    Returns:
+        list (str): DNAnexus file IDs
+    """
+    if folder_path == "":
+        file_list = list(dxpy.find_data_objects(
+                name=file_name,
+                name_mode="glob",
+                project=project_id,
+                describe={
+                    "fields": {
+                        "id": True,
+                        "name": True,
+                        "created": True,
+                        "archivalState": True
+                    }
+                }
+            ))
+    else:
+        file_list = list(dxpy.find_data_objects(
+                name=file_name,
+                name_mode='glob',
+                project=project_id,
+                folder=folder_path,
+                describe={
+                    "fields": {
+                        "id": True,
+                        "name": True,
+                        "created": True,
+                        "archivalState": True
+                    }
+                }
+            ))
+    if len(file_list) < 1:
+        raise IOError("DNAnexus file "
+                      + "{} does not exist in project {} folder {}"
+                      .format(file_name, project_id, folder_path))
+
+    # return the most recent file uploaded found
+    file_ids = []
+    for file in file_list:
+        file_ids.append(file["id"])
+
+    return file_ids
+
+
 def load_config():
     """loads config file
 
@@ -480,9 +580,9 @@ def match_folder_name(project_id, basePath, folder_regex):
     folders = list_subfolders(project=project_id,
                               path=basePath,
                               recurse=False)
-    if len(folders) < 1:
-        raise Exception("Folder {} in project {} has no subfolders"
-                        .format(basePath, project_id))
+    # if len(folders) < 1:
+    #     raise Exception("Folder {} in project {} has no subfolders"
+    #                     .format(basePath, project_id))
     match_regex = re.compile(folder_regex)
     for folder in folders:
         if match_regex.search(folder):

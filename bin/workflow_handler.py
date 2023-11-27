@@ -13,34 +13,17 @@ import pandas as pd
 from dxpy.bindings.dxfile_functions import open_dxfile
 
 # local modules
-from utils import check_jobs_finished
-from utils import find_dx_file
-from utils import match_folder_name
-from utils import get_recent_002_projects
-from utils import check_proj_folder_exists
+from utils import (check_analyses_finished,
+                   find_dx_file,
+                   find_all_dx_files,
+                   match_folder_name,
+                   get_recent_002_projects,
+                   check_proj_folder_exists)
 from inspect_workflow_logs import (inspect_workflow_info,
                                    inspect_vep_logs)
 
 
 def build_reports_workflow(source_dir, project, proj_folder, workflow_name):
-    # upload_applet(src_dir=source_dir,
-    #               uploaded_resources=False,
-    #               project=project,
-    #               override_folder=proj_folder)
-
-    # TODO: replace terminal call with dxpy function
-    # run build via dx-toolkit
-    # os.chdir(source_dir)
-    # select_input = ["dx", "select", project]
-    # subprocess.run(select_input, stderr=subprocess.STDOUT)
-    # build_input = ["dx", "build", "--destination", proj_folder]
-    # subprocess.run(build_input, stderr=subprocess.STDOUT)
-    # reset directory
-    # os.chdir("..")
-    # os.chdir("..")
-    # get workflow ID
-    # workflow_id = find_dx_file(project, proj_folder, workflow_name)
-
     with open(source_dir) as f:
         wf_json = json.load(f)
     wf = dxpy.new_dxworkflow(**wf_json,
@@ -76,34 +59,41 @@ def test_reports_workflow(workflow_id,
     # get list of recent helios runs most to least recent
     recent_runs = get_recent_002_projects("TSO500", 12)
     # set off jobs from TSO500 run with at least 1 DNA sample
-    analysis_IDs = []
-    for run in recent_runs.iterrows():
+    analyses = []
+    for index, run in recent_runs.iterrows():
         try:
-            analysis_IDs = launch_workflow_jobs(workflow_id,
-                                                run["id"],
-                                                project_id,
-                                                workflow_version,
-                                                workflow_name)
+            analyses = launch_workflow_jobs(workflow_id,
+                                            run["id"],
+                                            project_id,
+                                            workflow_version,
+                                            workflow_name,
+                                            evidence_folder)
             break
-        except Exception:
-            continue
-    if len(analysis_IDs) < 1:
+        except IOError as ex:
+            print(ex)
+    if len(analyses) < 1:
         raise Exception("No DNA samples were found in TSO500 runs"
                         + " within the past 12 months")
 
-    # wait until each job has finished
-    check_jobs_finished(analysis_IDs, 2, 30)
+    analysis_IDs = []
+    for analysis in analyses:
+        analysis_IDs.append(analysis.describe()["id"])
+
+    # wait until each analysis has finished
+    check_analyses_finished(analysis_IDs, 2, 60)
     # record that these jobs have been set off successfully
-    jobs_launched_path = "temp/jobs_launched.txt"
-    with open(jobs_launched_path, "w") as f:
-        f.writelines(analysis_IDs)
+    analyses_launched_path = "temp/analyses_launched.txt"
+    with open(analyses_launched_path, "w") as f:
+        for id in analysis_IDs:
+            f.write(id + "\n")
     # upload text file to 003 workflow update evidence folder
-    dxpy.upload_local_file(filename=jobs_launched_path,
+    dxpy.upload_local_file(filename=analyses_launched_path,
                            project=project_id,
                            folder=evidence_folder)
 
     # get workflow name to confirm the new workflow name is used
-    (passed, test_results) = inspect_workflow_info(workflow_id, workflow_name)
+    analysis_id = analysis_IDs[0]
+    (passed, test_results) = inspect_workflow_info(analysis_id, workflow_name)
     # upload test results to DNAnexus 003 project
     if passed:
         dxpy.upload_local_file(filename=test_results,
@@ -113,10 +103,19 @@ def test_reports_workflow(workflow_id,
         raise Exception("Workflow did not have new name")
 
     # TODO: find vep run from workflow analysis
-    analysis_id = analysis_IDs[0]
     analysis = dxpy.bindings.dxanalysis.DXAnalysis(analysis_id)
     job_info = analysis.describe()
-    vep_run = job_info["subjob"]
+    vep_stage_id = "stage-GF25PqQ4b0bQjvBVP4Bb5pJ0"
+    stages = job_info["stages"]
+    vep_run = ""
+    for stage in stages:
+        if stage["id"] == vep_stage_id:
+            vep_run = stage["execution"]["id"]
+            break
+    # check vep stage has been found
+    if vep_run == "":
+        raise Exception("Vep stage not found for analysis {}"
+                        .format(analysis_id))
     # download log file from a vep run set off by the workflow
     log = "temp/reports_workflow_vep_log.txt"
     os.system("dx watch {} > {}".format(vep_run, log))
@@ -144,10 +143,16 @@ def launch_workflow_jobs(workflow_id,
     base_path = "/output"
     folder_regex = r"TSO500-.+"
     # find subfolder in folder from regex
-    date_time_folder = match_folder_name(run_project_id,
-                                         base_path,
-                                         folder_regex)
-    sampleSheetFolder = ("/output/{}/eggd_tso500/analysis_folder"
+    try:
+        date_time_folder = match_folder_name(run_project_id,
+                                             base_path,
+                                             folder_regex)
+    except Exception:
+        # no output folder is present, therefore project is still
+        # processing
+        raise IOError("002 project {} is still processing"
+                      .format(run_project_id))
+    sampleSheetFolder = ("{}/eggd_tso500/analysis_folder"
                          .format(date_time_folder))
     sampleSheetName = "SampleSheet.csv"
     sampleSheetID = find_dx_file(run_project_id,
@@ -172,16 +177,18 @@ def launch_workflow_jobs(workflow_id,
 
     # process all DNA samples
     # TODO: check this output path is correct
-    output_path = (("{}/output/{}").format(evidence_path,
-                                           date_time_folder))
-    copy_path = "/output/{}".format(date_time_folder)
+    input_path = date_time_folder
+    output_path = evidence_path
+    # copy_path = "/output/{}".format(date_time_folder)
     # TODO: clone output folder from 002 project to 003 evidence path
-    clone_002_run(run_project_id, copy_path, dev_project_id, evidence_path)
+    # clone_002_run(run_project_id, copy_path, dev_project_id, evidence_path)
     job_IDs = []
     for sample in list_DNA:
         # set off DNA sample job and record job ID
         job_ID = launch_workflow(workflow_id,
                                  dev_project_id,
+                                 run_project_id,
+                                 input_path,
                                  output_path,
                                  workflow_name,
                                  sample)
@@ -191,7 +198,7 @@ def launch_workflow_jobs(workflow_id,
 
 def get_samplesheet_samples(filename):
     # read in sample sheet as file
-    start_regex = re.compile(r"\[data\]")
+    start_regex = re.compile(r"\[Data\]")
     start_found = False
     csv_lines = []
     with open(filename) as sample_sheet:
@@ -206,37 +213,54 @@ def get_samplesheet_samples(filename):
 
 
 def launch_workflow(workflow_id,
-                    project_id,
+                    dev_project_id,
+                    run_project_id,
+                    input_path,
                     output_path,
                     workflow_name,
                     sample_prefix):
     workflow = dxpy.bindings.dxworkflow.DXWorkflow(workflow_id)
 
-    bam_path = ("{}/eggd_tso500/analysis_folder/".format(output_path)
+    bam_path = ("{}/eggd_tso500/analysis_folder/".format(input_path)
                 + "Logs_Intermediates/StitchedRealigned")
-    bam_regex = sample_prefix + r".*\.bam"
-    bam_ID = find_dx_file(project_id, bam_path, bam_regex)
+    bam_regex = sample_prefix + "*.bam"
+    bam_ID = find_dx_file(run_project_id, bam_path, bam_regex)
 
-    index_regex = sample_prefix + r".*\.bai"
-    index_ID = find_dx_file(project_id, bam_path, index_regex)
+    index_regex = sample_prefix + "*.bai"
+    index_ID = find_dx_file(run_project_id, bam_path, index_regex)
 
     name = sample_prefix
 
-    gvcf_path = ("{}/eggd_tso500/analysis_folder/".format(output_path)
+    fastq_path = ("{}/eggd_tso500/".format(input_path)
+                  + "analysis_folder/Logs_Intermediates/FastqGeneration")
+    fastq_regex = "{}*.fastq.gz".format(sample_prefix)
+    fastq_IDs = find_all_dx_files(run_project_id, fastq_path, fastq_regex)
+    if len(fastq_IDs) < 4:
+        raise Exception("Fewer than 4 fastq files found in "
+                        + "project {}".format(run_project_id))
+    gvcf_path = ("{}/eggd_tso500/analysis_folder/".format(input_path)
                  + "Results")
-    gvcf_regex = sample_prefix + r".*\.genome\.vcf"
-    gvcf_ID = find_dx_file(project_id, gvcf_path, gvcf_regex)
+    gvcf_regex = sample_prefix + "*.genome.vcf"
+    gvcf_ID = find_dx_file(run_project_id, gvcf_path, gvcf_regex)
+
+    stage_fq = "stage-GFQZjB84b0bxz4Yg1y3ygKJZ.fastqs"
 
     input_dict = {
+        stage_fq: [{"$dnanexus_link": fastq_IDs[0]},
+                   {"$dnanexus_link": fastq_IDs[1]},
+                   {"$dnanexus_link": fastq_IDs[2]},
+                   {"$dnanexus_link": fastq_IDs[3]}],
         "stage-GF22j384b0bpYgYB5fjkk34X.bam": {"$dnanexus_link": bam_ID},
         "stage-GF22j384b0bpYgYB5fjkk34X.index": {"$dnanexus_link": index_ID},
-        "stage-GF22GJQ4b0bjFFxG4pbgFy5V.name": {"$dnanexus_link": name},
+        "stage-GF22GJQ4b0bjFFxG4pbgFy5V.name": name,
         "stage-GF25f384b0bVZkJ2P46f79xy.gvcf": {"$dnanexus_link": gvcf_ID}
     }
 
-    destination = "{}/{}/{}".format(project_id, output_path, workflow_name)
+    analysis_name = "{}_{}".format(workflow_name, sample_prefix)
     analysis_id = workflow.run(workflow_input=input_dict,
-                               destination=destination)
+                               project=dev_project_id,
+                               folder=output_path,
+                               name=analysis_name)
     return analysis_id
 
 

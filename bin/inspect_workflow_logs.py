@@ -12,7 +12,8 @@ output_location = "temp"
 
 def inspect_workflow_info(analysis_id, workflow_name):
     analysis = dxpy.bindings.dxanalysis.DXAnalysis(analysis_id)
-    workflow_name_found = analysis.describe()["name"]
+    analysis_description = analysis.describe()
+    workflow_name_found = analysis_description["executableName"]
     if workflow_name == workflow_name_found:
         test_passed = True
         pass_fail = "pass"
@@ -25,7 +26,7 @@ def inspect_workflow_info(analysis_id, workflow_name):
     summary = generate_workflow_summary(output_filename,
                                         test_passed,
                                         workflow_name)
-    return summary
+    return test_passed, summary
 
 
 def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
@@ -46,9 +47,11 @@ def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
     clinvar_line = ""
     if (len(clinvar_results) > 0 and config_matched):
         pass_fail = "pass"
+        test_passed = True
         clinvar_line = clinvar_results[0]
     else:
         pass_fail = "fail"
+        test_passed = False
 
     output_filename = ("temp/{}_helios_workflow_testing_summary.txt"
                        .format(pass_fail))
@@ -59,7 +62,7 @@ def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
                                    clinvar_version,
                                    vep_config_name)
 
-    return summary
+    return test_passed, summary
 
 
 def generate_workflow_summary(filename, test_passed, workflow_name):
