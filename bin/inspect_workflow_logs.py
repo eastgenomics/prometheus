@@ -32,16 +32,16 @@ def inspect_workflow_info(analysis_id, workflow_name):
 def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
     vep_job = dxpy.bindings.dxapplet.DXJob(job_id)
     description = vep_job.describe(io=True)
-    # TODO: get inputs from description
+    # get input from description
     config_matched = False
-    inputs = description["inputs"]
-    for input in inputs:
-        name = utils.find_file_name_from_id(input)
-        if name == vep_config_name:
-            config_matched = True
+    input = description["input"]["config_file"]["$dnanexus_link"]
+    name = utils.find_file_name_from_id(input)
+    if name == vep_config_name:
+        config_matched = True
 
-    clinvar_regex = ("\\usr\\bin\\time -v docker run.+clinvar_{}_b37.vcf.gz"
-                     .format(clinvar_version))
+    clinvar_regex = (r"/usr/bin/time -v docker run.+clinvar_"
+                     + clinvar_version
+                     + r"_b37.vcf.gz")
     clinvar_results = search_for_regex(log_file, clinvar_regex)
 
     clinvar_line = ""
@@ -53,7 +53,7 @@ def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
         pass_fail = "fail"
         test_passed = False
 
-    output_filename = ("temp/{}_helios_workflow_testing_summary.txt"
+    output_filename = ("temp/{}_helios_workflow_vep_testing_summary.txt"
                        .format(pass_fail))
     summary = generate_vep_summary(output_filename,
                                    job_id,

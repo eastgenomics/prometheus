@@ -3,22 +3,18 @@ Handles building and running the helios reports workflow
 """
 
 import dxpy
-from dxpy.app_builder import upload_applet
-import subprocess
 import re
 import os
 import io
 import json
 import pandas as pd
-from dxpy.bindings.dxfile_functions import open_dxfile
 
 # local modules
 from utils import (check_analyses_finished,
                    find_dx_file,
                    find_all_dx_files,
                    match_folder_name,
-                   get_recent_002_projects,
-                   check_proj_folder_exists)
+                   get_recent_002_projects)
 from inspect_workflow_logs import (inspect_workflow_info,
                                    inspect_vep_logs)
 
@@ -29,8 +25,6 @@ def build_reports_workflow(source_dir, project, proj_folder, workflow_name):
     wf = dxpy.new_dxworkflow(**wf_json,
                              project=project,
                              folder=proj_folder)
-
-    # Print out the id to check
     workflow_id = wf.get_id()
 
     return workflow_id
@@ -102,7 +96,7 @@ def test_reports_workflow(workflow_id,
     else:
         raise Exception("Workflow did not have new name")
 
-    # TODO: find vep run from workflow analysis
+    # find vep run from workflow analysis
     analysis = dxpy.bindings.dxanalysis.DXAnalysis(analysis_id)
     job_info = analysis.describe()
     vep_stage_id = "stage-GF25PqQ4b0bQjvBVP4Bb5pJ0"
@@ -125,15 +119,11 @@ def test_reports_workflow(workflow_id,
                                               vep_run,
                                               vep_config_name,
                                               clinvar_version)
-    if passed:
-        dxpy.upload_local_file(filename=test_results,
-                               project=project_id,
-                               folder=evidence_folder)
-    else:
-        raise Exception("Vep logs failed testing")
+    dxpy.upload_local_file(filename=test_results,
+                           project=project_id,
+                           folder=evidence_folder)
 
 
-# TODO: finish function
 def launch_workflow_jobs(workflow_id,
                          run_project_id,
                          dev_project_id,
@@ -176,12 +166,8 @@ def launch_workflow_jobs(workflow_id,
         raise Exception("Sample sheet contains 0 DNA samples")
 
     # process all DNA samples
-    # TODO: check this output path is correct
     input_path = date_time_folder
     output_path = evidence_path
-    # copy_path = "/output/{}".format(date_time_folder)
-    # TODO: clone output folder from 002 project to 003 evidence path
-    # clone_002_run(run_project_id, copy_path, dev_project_id, evidence_path)
     job_IDs = []
     for sample in list_DNA:
         # set off DNA sample job and record job ID
@@ -262,13 +248,3 @@ def launch_workflow(workflow_id,
                                folder=output_path,
                                name=analysis_name)
     return analysis_id
-
-
-def clone_002_run(run_project, clone_folder, dest_project, dest_folder):
-    if not check_proj_folder_exists(run_project, clone_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(clone_folder, run_project))
-    # TODO: find way to copy folder from one project to another
-    with open_dxfile(dxid=config_id, project=dev_project_id) as file:
-        file.clone(project=reference_project_id, folder=deploy_folder)
-        file.close()

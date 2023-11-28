@@ -13,6 +13,8 @@ class LoginHandler:
     """Handles all logins for Prometheus
     """
     def __init__(self):
+        """loads credentials
+        """
         (self.dx_token,
          self.slack_token,
          self.github_token) = self.load_credentials()

@@ -1,16 +1,28 @@
 """
-Deploys most recent clinvar annotation resource files to 001
+Deploys files from 003 project to 001 project
 """
 
 from dxpy.bindings.dxfile_functions import open_dxfile
 from dxpy.bindings.dxproject import DXProject
 from dxpy import upload_local_file
+from dxpy.bindings.dxworkflow import DXWorkflow
 
 import utils
 
 
 def deploy_config_to_production(reference_project_id, dev_project_id,
                                 config_id, deploy_folder):
+    """move config file to 001 reference project
+
+    Args:
+        reference_project_id (str): DNAnexus ID of 001 reference project
+        dev_project_id (str): DNAnexus ID of 003 development project
+        config_id (str): DNAnexus ID of config file to upload
+        deploy_folder (str): DNAnexus project folder to upload to
+
+    Raises:
+        Exception: project folder does not exist
+    """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception("Folder {} does not exist in project {}"
                         .format(deploy_folder, reference_project_id))
@@ -18,6 +30,26 @@ def deploy_config_to_production(reference_project_id, dev_project_id,
     with open_dxfile(dxid=config_id, project=dev_project_id) as file:
         file.clone(project=reference_project_id, folder=deploy_folder)
         file.close()
+
+
+def deploy_workflow_to_production(reference_project_id, dev_project_id,
+                                  workflow_id, deploy_folder):
+    """move workflow file to 001 reference project
+
+    Args:
+        reference_project_id (str): DNAnexus ID of 001 reference project
+        dev_project_id (str): DNAnexus ID of 003 development project
+        config_id (str): DNAnexus ID of workflow file to upload
+        deploy_folder (str): DNAnexus project folder to upload to
+
+    Raises:
+        Exception: project folder does not exist
+    """
+    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+        raise Exception("Folder {} does not exist in project {}"
+                        .format(deploy_folder, reference_project_id))
+    workflow = DXWorkflow(dxid=workflow_id, project=dev_project_id)
+    workflow.clone(project=reference_project_id, folder=deploy_folder)
 
 
 def deploy_clinvar_to_production(reference_project_id, dev_project_id,

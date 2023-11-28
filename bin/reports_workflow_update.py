@@ -186,9 +186,13 @@ def run_workflow_config_update(bin_folder, genome_build):
                                            clinvar_version)
 
     # Check if test passed or failed based on presence of DXFile
-    output_filename = "reports_workflow_testing_summary.txt"
+    analyses_test = "analyses_launched.txt"
+    workflow_test = "pass_helios_workflow_testing_summary.txt"
+    vep_test = "pass_helios_workflow_vep_testing_summary.txt"
     try:
-        utils.find_dx_file(dev_project, evidence_folder, output_filename)
+        utils.find_dx_file(dev_project, evidence_folder, analyses_test)
+        utils.find_dx_file(dev_project, evidence_folder, workflow_test)
+        utils.find_dx_file(dev_project, evidence_folder, vep_test)
     except Exception:
         error_message = ("Error: Testing failed for reports workflow"
                          + " config file update for"
@@ -214,8 +218,8 @@ def run_workflow_config_update(bin_folder, genome_build):
     git_handler.make_release(version, comment)
     deploy_folder = "/apps_workflows"
     # deploy new workflow to production
-    deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
-                                         workflow_id, deploy_folder)
+    deployer.deploy_workflow_to_production(ref_proj_id, dev_proj_id,
+                                           workflow_id, deploy_folder)
 
     # notify team of completed workflow update
     slack_handler.announce_workflow_update(slack_channel,
