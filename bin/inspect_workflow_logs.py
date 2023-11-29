@@ -11,6 +11,16 @@ output_location = "temp"
 
 
 def inspect_workflow_info(analysis_id, workflow_name):
+    """checks that correct workflow name is present in analysis
+
+    Args:
+        analysis_id (str): DNAnexus analysis ID
+        workflow_name (str): name of workflow
+
+    Returns:
+        test_passed (bool): has inspection of logs passed
+        output_file (str): path to report summary file generated
+    """
     analysis = dxpy.bindings.dxanalysis.DXAnalysis(analysis_id)
     analysis_description = analysis.describe()
     workflow_name_found = analysis_description["executableName"]
@@ -30,6 +40,18 @@ def inspect_workflow_info(analysis_id, workflow_name):
 
 
 def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
+    """checks that correct vep config name and clinvar version are in log
+
+    Args:
+        log_file (str): path to log file
+        job_id (str): DNAnexus ID of log job
+        vep_config_name (str): vep config name to be searched for
+        clinvar_version (str): version of clinvar to be searched for
+
+    Returns:
+        test_passed (bool): has inspection of logs passed
+        output_file (str): path to report summary file generated
+    """
     vep_job = dxpy.bindings.dxapplet.DXJob(job_id)
     description = vep_job.describe(io=True)
     # get input from description
@@ -66,6 +88,16 @@ def inspect_vep_logs(log_file, job_id, vep_config_name, clinvar_version):
 
 
 def generate_workflow_summary(filename, test_passed, workflow_name):
+    """generates a summary file of workflow testing
+
+    Args:
+        filename (str): path to summary file to be generated
+        test_passed (bool): has testing passed
+        workflow_name (str): name of workflow
+
+    Returns:
+        filename (str): path to summary file generated
+    """
     with open(filename, "w") as f:
         if test_passed:
             test_results = "Pass"
@@ -117,6 +149,15 @@ def generate_vep_summary(filename,
 
 
 def search_for_regex(log_file, regex):
+    """returns all lines containing regex in text file
+
+    Args:
+        log_file (str): path to log file
+        regex (str): regex to search for
+
+    Returns:
+        list (str): all lines in file containing regex
+    """
     regex = re.compile(regex)
     results = []
     with open(log_file) as f:

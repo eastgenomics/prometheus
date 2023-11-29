@@ -24,6 +24,12 @@ logger = logging.getLogger("main log")
 
 
 def run_workflow_config_update(bin_folder, genome_build):
+    """runs all steps in the helios reports workflow update
+
+    Args:
+        bin_folder (str): folder scripts are run from
+        genome_build (str): genome build used for update
+    """
     assay = "TSO500"
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
@@ -99,8 +105,11 @@ def run_workflow_config_update(bin_folder, genome_build):
             config_present = True
             break
     if not config_present:
-        raise Exception("No file matching config name {}".format(config_name)
-                        + " was found in repo")
+        error_message = ("No file matching config name {}"
+                         .format(config_name)
+                         + " was found in repo {}".format(repo_name))
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
     # edit file contents to update version and config files
     # replace VEP config file pointed to in workflow config
     filename_glob = "{}/{}".format(repo_dir, config_name)
@@ -173,8 +182,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     workflow_path = repo_dir + "/dxworkflow.json"
     workflow_id = workflow_handler.build_reports_workflow(workflow_path,
                                                           dev_proj_id,
-                                                          folder_path,
-                                                          new_workflow_title)
+                                                          folder_path)
 
     evidence_folder = "{}/Evidence".format(config_subfolder)
     workflow_handler.test_reports_workflow(workflow_id,
@@ -190,13 +198,13 @@ def run_workflow_config_update(bin_folder, genome_build):
     workflow_test = "pass_helios_workflow_testing_summary.txt"
     vep_test = "pass_helios_workflow_vep_testing_summary.txt"
     try:
-        utils.find_dx_file(dev_project, evidence_folder, analyses_test)
-        utils.find_dx_file(dev_project, evidence_folder, workflow_test)
-        utils.find_dx_file(dev_project, evidence_folder, vep_test)
+        utils.find_dx_file(dev_proj_id, evidence_folder, analyses_test)
+        utils.find_dx_file(dev_proj_id, evidence_folder, workflow_test)
+        utils.find_dx_file(dev_proj_id, evidence_folder, vep_test)
     except Exception:
         error_message = ("Error: Testing failed for reports workflow"
                          + " config file update for"
-                         + ("{} with clinvar version {}"
+                         + (" {} with clinvar version {}"
                             .format(assay, clinvar_version)))
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()

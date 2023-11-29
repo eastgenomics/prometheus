@@ -21,6 +21,18 @@ from utils import get_recent_002_projects
 
 def vep_testing_config(project_id, dev_config_id,
                        dx_update_folder, ref_proj_id, assay):
+    """performs testing for vep config and generates summary file
+
+    Args:
+        project_id (str): DNAnexus project ID for dev project
+        dev_config_id (str): DNAnexus ID of dev config file
+        dx_update_folder (str): dev folder for current vep update
+        ref_proj_id (str): DNAnexus project ID for 001 reference
+        assay (str): vep assay name
+
+    Returns:
+        test_summary_id (str): DNAnexus file ID for summary file
+    """
     vcf_id, bed_id = get_recent_vep_vcf_bed(assay, ref_proj_id)
     # Run vep
     vep_job_folder = "vep_run_{}".format(assay)

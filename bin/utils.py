@@ -430,6 +430,18 @@ def load_config_reports_workflow():
 
 
 def update_json(json_path_glob, first_match, replace_regex, replace_with):
+    """updates json file by replacing specific string from regex
+
+    Args:
+        json_path_glob (str): glob path to json
+        first_match (str): first regex to match before replace pattern
+        replace_regex (str): regex pattern to replace
+        replace_with (str): string to replace the replace regex
+
+    Raises:
+        Exception: first match regex has not match
+        Exception: replace regex has no match
+    """
     old_config_filename = glob.glob(json_path_glob)[0]
     new_lines = []
     with open(old_config_filename, "r") as f:
@@ -463,6 +475,21 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
 
 def is_json_content_different(json_path_glob, first_match,
                               file_id_regex, new_file_id):
+    """checks if specific file ID in json is different to ID provided
+
+    Args:
+        json_path_glob (str): glob path to json
+        first_match (str): regex match before file ID regex
+        file_id_regex (str): regex for json file ID
+        new_file_id (str): new file ID to be compared against
+
+    Raises:
+        Exception: first match regex has no match
+        Exception: file ID regex has no match
+
+    Returns:
+        _type_: _description_
+    """
     config_filename = glob.glob(json_path_glob)[0]
     with open(config_filename, "r") as f:
         match_found = False
@@ -492,6 +519,20 @@ def is_json_content_different(json_path_glob, first_match,
 
 def search_json(json_path_glob, first_match,
                 search_regex):
+    """attempts to find string matching regex in json
+
+    Args:
+        json_path_glob (str): glob path to json
+        first_match (str): regex to match before search regex
+        search_regex (str): regex to search for
+
+    Raises:
+        Exception: first match regex not found
+        Exception: search regex not found
+
+    Returns:
+        str: string matching search regex
+    """
     config_filename = glob.glob(json_path_glob)[0]
     with open(config_filename, "r") as f:
         match_found = False
@@ -516,6 +557,17 @@ def search_json(json_path_glob, first_match,
 
 
 def increment_version(version):
+    """increments version number by 1
+
+    Args:
+        version (str): version to increment
+
+    Raises:
+        Exception: version has invalid format
+
+    Returns:
+        str: incremented version
+    """
     # string format: x.y.z
     regex = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
     matched = re.search(regex, version)
@@ -531,7 +583,18 @@ def increment_version(version):
 
 
 def get_recent_002_projects(assay, months):
-    # get 002 projects matching assay name in past 12 months
+    """get 002 projects matching assay name in past n months
+
+    Args:
+        assay (str): name of assay to check
+        months (int): number of months ago to check from
+
+    Raises:
+        Exception: No projects found for assay in past n months
+
+    Returns:
+        pandas.DataFrame: projects found, cols id, name, created
+    """
     assay_response = list(dxpy.find_projects(
             name=f"002*{assay}",
             name_mode="glob",
@@ -546,7 +609,8 @@ def get_recent_002_projects(assay, months):
         ))
     if len(assay_response) < 1:
         raise Exception("No 002 projects found for assay {}"
-                        .format(assay) + " in past 12 months")
+                        .format(assay)
+                        + " in past {} months".format(months))
 
     assay_info = [[]]
     for entry in assay_response:
@@ -567,18 +631,40 @@ def get_recent_002_projects(assay, months):
 
 
 def find_file_name_from_id(file_id):
+    """returns file name from DNAnexus file ID
+
+    Args:
+        file_id (str): DNAnexus file ID
+
+    Returns:
+        name (str): name of DNAnexus file
+    """
     file = dxpy.bindings.dxfile.DXFile(file_id)
     name = file.describe()["name"]
     return name
 
 
-def match_folder_name(project_id, basePath, folder_regex):
-    if not check_proj_folder_exists(project_id, basePath):
+def match_folder_name(project_id, base_path, folder_regex):
+    """finds path to folder in project from folder name regex
+
+    Args:
+        project_id (str): DNAnexus project ID
+        base_path (str): path to folder
+        folder_regex (str): regex of folder name
+
+    Raises:
+        Exception: base path not found in project
+        Exception: folder matching regex not found
+
+    Returns:
+        _type_: _description_
+    """
+    if not check_proj_folder_exists(project_id, base_path):
         raise Exception("Folder {} does not exist in project {}"
-                        .format(basePath, project_id))
+                        .format(base_path, project_id))
 
     folders = list_subfolders(project=project_id,
-                              path=basePath,
+                              path=base_path,
                               recurse=False)
     # if len(folders) < 1:
     #     raise Exception("Folder {} in project {} has no subfolders"
@@ -587,5 +673,5 @@ def match_folder_name(project_id, basePath, folder_regex):
     for folder in folders:
         if match_regex.search(folder):
             return folder
-    raise Exception("No folder matched the regex {}".format(folder_regex)
-                    + " in path {} of project {}".format(basePath, project_id))
+    raise Exception("No folder matched the regex {} ".format(folder_regex)
+                    + "in path {} of project {}".format(base_path, project_id))

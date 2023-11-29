@@ -19,8 +19,18 @@ from inspect_workflow_logs import (inspect_workflow_info,
                                    inspect_vep_logs)
 
 
-def build_reports_workflow(source_dir, project, proj_folder, workflow_name):
-    with open(source_dir) as f:
+def build_reports_workflow(source, project, proj_folder):
+    """build reports workflow
+
+    Args:
+        source (str): local path to workflow json
+        project (str): DNAnexus project ID to build workflow in
+        proj_folder (str): project folder to build workflow in
+
+    Returns:
+        workflow_id (str): DNAnexus ID of workflow generated
+    """
+    with open(source) as f:
         wf_json = json.load(f)
     wf = dxpy.new_dxworkflow(**wf_json,
                              project=project,
@@ -37,6 +47,23 @@ def test_reports_workflow(workflow_id,
                           workflow_name,
                           vep_config_name,
                           clinvar_version):
+    """perform testing for reports workflow
+
+    Args:
+        workflow_id (str): DNAnexus ID for workflow
+        project_id (str): DNAnexus ID for dev project
+        workflow_version (str): version of workflow
+        evidence_folder (str): path to evildence folder in 003
+        workflow_name (str): name of workflow
+        vep_config_name (str): name of vep config
+        clinvar_version (str): clinvar version being tested
+
+    Raises:
+        Exception: workflow version has invalid format
+        Exception: no DNA samples found in 002 runs
+        Exception: workflow did not have new name
+        Exception: vep stage not found for analysis
+    """
     # version must have full or partial name, i.e., v1.3.3 or 1.3.3
     workflow_version = workflow_version.lower()
     version_regex = r"v([0-9]+)\.([0-9]+)\.([0-9]+)"
@@ -59,7 +86,6 @@ def test_reports_workflow(workflow_id,
             analyses = launch_workflow_jobs(workflow_id,
                                             run["id"],
                                             project_id,
-                                            workflow_version,
                                             workflow_name,
                                             evidence_folder)
             break
@@ -127,9 +153,24 @@ def test_reports_workflow(workflow_id,
 def launch_workflow_jobs(workflow_id,
                          run_project_id,
                          dev_project_id,
-                         workflow_version,
                          workflow_name,
                          evidence_path):
+    """launches workflow jobs
+
+    Args:
+        workflow_id (str): DNAnexus workflow ID
+        run_project_id (str): DNAnexus project ID for 002 run
+        dev_project_id (str): DNAnexus project ID for dev project
+        workflow_name (str): name of workflow
+        evidence_path (str): path to 003 evidence folder
+
+    Raises:
+        IOError: 002 project is still processing
+        IOError: sample sheet contains 0 DNA samples
+
+    Returns:
+        _type_: _description_
+    """
     base_path = "/output"
     folder_regex = r"TSO500-.+"
     # find subfolder in folder from regex
@@ -163,7 +204,7 @@ def launch_workflow_jobs(workflow_id,
     # if no samples are DNA, raise exception and find next run
     if len(list_DNA) < 1:
         os.remove(local_path)
-        raise Exception("Sample sheet contains 0 DNA samples")
+        raise IOError("Sample sheet contains 0 DNA samples")
 
     # process all DNA samples
     input_path = date_time_folder
@@ -183,6 +224,14 @@ def launch_workflow_jobs(workflow_id,
 
 
 def get_samplesheet_samples(filename):
+    """get list of samples from samplesheet
+
+    Args:
+        filename (str): local path to samplesheet
+
+    Returns:
+        sample_list (list (str)): list of sample IDs
+    """
     # read in sample sheet as file
     start_regex = re.compile(r"\[Data\]")
     start_found = False
@@ -205,6 +254,23 @@ def launch_workflow(workflow_id,
                     output_path,
                     workflow_name,
                     sample_prefix):
+    """launch workflow and return its analysis ID
+
+    Args:
+        workflow_id (str): DNAnexus workflow ID
+        dev_project_id (str): DNAnexus project ID for dev project
+        run_project_id (str): DNAnexus project ID for 002 run
+        input_path (str): DNAnexus path to input folder in 002 run
+        output_path (str): DNAnexus path to output folder in 003 run
+        workflow_name (str): name of workflow
+        sample_prefix (str): prefix of sample ID
+
+    Raises:
+        Exception: fewer than 4 fastq files found in 002 run
+
+    Returns:
+        analysis_id (str): DNAnexus analysis ID
+    """
     workflow = dxpy.bindings.dxworkflow.DXWorkflow(workflow_id)
 
     bam_path = ("{}/eggd_tso500/analysis_folder/".format(input_path)

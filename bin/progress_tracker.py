@@ -207,6 +207,8 @@ class ClinvarProgressTracker:
             self.clinvar_deployed = False
 
     def upload_check_passed(self):
+        """upload text file to 003 folder confirming auto-review passed
+        """
         # upload txt file to 003 evidence folder
         file_name = "temp/auto_review.txt"
         with open(file_name, "w") as file:

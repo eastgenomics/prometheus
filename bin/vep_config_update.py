@@ -24,6 +24,13 @@ logger = logging.getLogger("main log")
 
 
 def run_vep_config_update(bin_folder, assay, genome_build):
+    """runs all steps in vep config update
+
+    Args:
+        bin_folder (str): folder scripts are run from
+        assay (str): vep assay being updated
+        genome_build (str): genome build used for update
+    """
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config()
     assay_repo = load_config_repo(assay)
@@ -41,9 +48,11 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     clinvar_subfolder = ("/ClinVar_version_{}".format(clinvar_version)
                          + "_annotation_resource_update")
     if not check_proj_folder_exists(dev_proj_id, clinvar_subfolder):
-        raise Exception("ClinVar annotation resource update folder"
-                        + " for version {}".format(clinvar_version)
-                        + " does not exist")
+        error_message = ("ClinVar annotation resource update folder"
+                         + " for version {}".format(clinvar_version)
+                         + " does not exist")
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
     config_subfolder = ("/ClinVar_version_{}".format(clinvar_version)
                         + "_vep_config_update_{}").format(assay)
     dev_project = dxpy.bindings.dxproject.DXProject(dxid=dev_proj_id)
@@ -123,7 +132,11 @@ def run_vep_config_update(bin_folder, assay, genome_build):
             new_config = "{}{}.json".format(match.group(1), new_version)
             break
     if old_config == "":
-        raise Exception("No file matching config regex was found in repo")
+        error_message = ("Error: No file matching config regex was found in"
+                         + " repo for VEP config update for assay"
+                         + " {}".format(assay))
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
     git_handler.rename_file("temp/vep_repo_{}".format(assay),
                             old_config,
                             new_config)
