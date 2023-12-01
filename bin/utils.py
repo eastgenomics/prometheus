@@ -675,3 +675,23 @@ def match_folder_name(project_id, base_path, folder_regex):
             return folder
     raise Exception("No folder matched the regex {} ".format(folder_regex)
                     + "in path {} of project {}".format(base_path, project_id))
+
+
+def search_for_regex(log_file, regex):
+    """returns all lines containing regex in text file
+
+    Args:
+        log_file (str): path to log file
+        regex (str): regex to search for
+
+    Returns:
+        list (str): all lines in file containing regex
+    """
+    regex = re.compile(regex)
+    results = []
+    with open(log_file) as f:
+        for line in f:
+            result = regex.search(line)
+            if result:
+                results.append(line)
+    return results

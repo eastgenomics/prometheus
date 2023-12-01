@@ -2,9 +2,10 @@
 Inspects the contents of reports workflow log files for specific strings
 """
 
-import re
 import dxpy
 import utils
+
+from utils import search_for_regex
 
 regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
@@ -146,23 +147,3 @@ def generate_vep_summary(filename,
                     .format(clinvar_version))
 
     return filename
-
-
-def search_for_regex(log_file, regex):
-    """returns all lines containing regex in text file
-
-    Args:
-        log_file (str): path to log file
-        regex (str): regex to search for
-
-    Returns:
-        list (str): all lines in file containing regex
-    """
-    regex = re.compile(regex)
-    results = []
-    with open(log_file) as f:
-        for line in f:
-            result = regex.search(line)
-            if result:
-                results.append(line)
-    return results

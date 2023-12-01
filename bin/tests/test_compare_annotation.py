@@ -91,10 +91,10 @@ class testCase(unittest.TestCase):
          detailed_df) = ca.parse_diff("test_diff.txt")
 
         # check output type is correct
-        assert ((type(added_df) == pandas.DataFrame)
-                and (type(deleted_df) == pandas.DataFrame)
-                and (type(changed_df) == pandas.DataFrame)
-                and (type(changed_df) == pandas.DataFrame))
+        assert ((type(added_df) is pandas.DataFrame)
+                and (type(deleted_df) is pandas.DataFrame)
+                and (type(changed_df) is pandas.DataFrame)
+                and (type(changed_df) is pandas.DataFrame))
 
         # check contents are correct
         assert len(added_df) == 1

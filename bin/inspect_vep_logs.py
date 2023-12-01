@@ -2,7 +2,7 @@
 Inspects the contents of VEP log files searching for specific strings
 """
 
-import re
+from utils import search_for_regex
 
 regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
@@ -98,23 +98,3 @@ def generate_test_summary(filename, test_passed, config_name, vcf_name,
                     .format(vcf_line_count, vcf_name))
 
     return filename
-
-
-def search_for_regex(log_file, regex):
-    """returns all lines containing regex in text file
-
-    Args:
-        log_file (str): path to log file
-        regex (str): regex to search for
-
-    Returns:
-        list (str): all lines in file containing regex
-    """
-    regex = re.compile(regex)
-    results = []
-    with open(log_file) as f:
-        for line in f:
-            result = regex.search(line)
-            if result:
-                results.append(line)
-    return results

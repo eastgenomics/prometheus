@@ -36,6 +36,29 @@ class testCase(unittest.TestCase):
         os.remove("test_dev.txt")
         os.remove("test_prod.txt")
 
+    def test_make_job_report(self):
+        dev_twe_job = "job-myjob12345"
+        dev_tso_job = "job-myjob12346"
+        prod_twe_job = "job-myjob12347"
+        prod_tso_job = "job-myjob12348"
+        output = "temp/unittest_file.txt"
+        vt.make_job_report(dev_twe_job,
+                           dev_tso_job,
+                           prod_twe_job,
+                           prod_tso_job,
+                           output)
+        file_exists = os.path.isfile(output)
+        assert file_exists
+        if file_exists:
+            os.remove(output)
+
+    def test_get_recent_vep_vcf_bed(self):
+        assay = "TSO500"
+        ref_proj = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
+        vcf, bed = vt.get_recent_vep_vcf_bed(assay, ref_proj)
+        assert vcf is not None
+        assert bed is not None
+
 
 if __name__ == "__main__":
     unittest.main()

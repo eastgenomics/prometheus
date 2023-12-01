@@ -5,6 +5,7 @@ from bin.utils import check_proj_folder_exists
 from bin.utils import check_jobs_finished
 from bin.utils import get_prod_version
 from bin.utils import find_dx_file
+from .context import utils
 
 import re
 import os
@@ -83,6 +84,47 @@ class testCase(unittest.TestCase):
         file = "clinvar_20230107_b37.vcf.gz"
         file_id = find_dx_file(ref_proj_id, folder, file)
         assert re.match(r"^file-.+$", file_id)
+
+    def test_load_config(self):
+        ref_proj_id, dev_proj_id, slack_channel = utils.load_config()
+        assert ref_proj_id is not None
+        assert dev_proj_id is not None
+        assert slack_channel is not None
+
+    def test_load_config_repo(self):
+        assay = "TSO500"
+        repo = utils.load_config_repo(assay)
+        assert repo is not None
+
+        assay = "TWE"
+        repo = utils.load_config_repo(assay)
+        assert repo is not None
+
+        assay = "CEN"
+        repo = utils.load_config_repo(assay)
+        assert repo is not None
+
+    def test_load_config_reports_workflow(self):
+        repo = utils.load_config_reports_workflow()
+        assert repo is not None
+
+    def test_increment_version(self):
+        ver = "1.1.1"
+        new_ver = utils.increment_version(ver)
+        assert new_ver == "1.1.2"
+
+    def test_search_for_regex(self):
+        path = "temp/unittest_log.txt"
+        # Note: all sample info used is fictional
+        lines = ["This\n",
+                 "sentence\n",
+                 "is\n",
+                 "false\n"]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        regex = ".+e"
+        results = utils.search_for_regex(path, regex)
+        assert len(results) == 2
 
 
 if __name__ == "__main__":

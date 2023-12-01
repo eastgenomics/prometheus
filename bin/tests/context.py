@@ -2,13 +2,18 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+import annotation_update
 import compare_annotation
 import deployer
 import get_clinvar_files
+import git_handler
+import inspect_vep_logs
+import inspect_workflow_logs
 import login_handler
-import annotation_update as annotation_update
 import make_vep_test_configs
+import progress_tracker
 import slack_handler
 import utils
+import vep_config_update
 import vep_testing
-import progress_tracker
+import workflow_handler

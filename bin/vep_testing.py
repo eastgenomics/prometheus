@@ -49,7 +49,8 @@ def vep_testing_config(project_id, dev_config_id,
                          project=project_id).describe()["name"]
     vcf_name = DXFile(dxid=vcf_id,
                       project=project_id).describe()["name"]
-    test_passed, results_file = inspect_logs(log, vep_job,
+    test_passed, results_file = inspect_logs(log,
+                                             vep_job,
                                              config_name,
                                              vcf_name,
                                              assay)
