@@ -113,9 +113,108 @@ class testCase(unittest.TestCase):
         new_ver = utils.increment_version(ver)
         assert new_ver == "1.1.2"
 
+        new_ver = utils.increment_version(new_ver)
+        assert new_ver == "1.1.3"
+
+    def test_update_json(self):
+        path = "temp/unittest_update_json.txt"
+        lines = ["This\n",
+                 "sentence\n",
+                 "is\n",
+                 "false\n"]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_update_json.txt"
+        first_match = "sentence"
+        replace_regex = r"(is)"
+        replace_with = "is not"
+        search_regex = r"(is.+ot)"
+
+        with self.assertRaises(Exception):
+            utils.search_json(json_path_glob,
+                              first_match,
+                              search_regex)
+        utils.update_json(json_path_glob,
+                          first_match,
+                          replace_regex,
+                          replace_with)
+
+        found = utils.search_json(json_path_glob,
+                                  first_match,
+                                  search_regex)
+        assert found == replace_with
+        os.remove(path)
+
+    def test_is_json_content_different(self):
+        path = "temp/unittest_content_different.txt"
+        lines = ["Content\n",
+                 "Header\n",
+                 "File ID: \"file-myfile12345\"\n",
+                 "End\n"]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_content_different.txt"
+        first_match = "Header"
+        file_id_regex = r"File ID: \"(.+)\""
+        new_file_id = "file-myfile23456"
+        old_file_id = "file-myfile12345"
+        assert utils.is_json_content_different(json_path_glob,
+                                               first_match,
+                                               file_id_regex,
+                                               new_file_id)
+
+        assert not utils.is_json_content_different(json_path_glob,
+                                                   first_match,
+                                                   file_id_regex,
+                                                   old_file_id)
+
+        first_match = "Header12345"
+        with self.assertRaises(Exception):
+            utils.is_json_content_different(json_path_glob,
+                                            first_match,
+                                            file_id_regex,
+                                            new_file_id)
+
+        first_match = "Header"
+        file_id_regex = r"File ID Incorrect: \"(.+)\""
+        with self.assertRaises(Exception):
+            utils.is_json_content_different(json_path_glob,
+                                            first_match,
+                                            file_id_regex,
+                                            new_file_id)
+
+    def test_search_json(self):
+        path = "temp/unittest_search_json.txt"
+        lines = ["This\n",
+                 "sentence\n",
+                 "is\n",
+                 "false\n"]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_search_json.txt"
+        first_match = "sentence"
+        search_regex = "(is12345)"
+
+        with self.assertRaises(Exception):
+            utils.search_json(json_path_glob,
+                              first_match,
+                              search_regex)
+
+        search_regex = r"(is)"
+        found = utils.search_json(json_path_glob,
+                                  first_match,
+                                  search_regex)
+        assert found == "is"
+
+        first_match = "sentence12345"
+        with self.assertRaises(Exception):
+            utils.search_json(json_path_glob,
+                              first_match,
+                              search_regex)
+        os.remove(path)
+
     def test_search_for_regex(self):
         path = "temp/unittest_log.txt"
-        # Note: all sample info used is fictional
         lines = ["This\n",
                  "sentence\n",
                  "is\n",
