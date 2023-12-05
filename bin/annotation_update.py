@@ -4,6 +4,7 @@ This program is to be run on a DNAnexus node once a week as
 new clinvar updates come in
 """
 import logging
+import sys
 
 from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
 import make_vep_test_configs as vep
@@ -17,7 +18,7 @@ from utils import load_config
 logger = logging.getLogger("main log")
 
 
-def run_annotation_update(bin_folder):
+def run_annotation_update(bin_folder, genome_build):
     """runs all steps of prometheus ClinVar annotation resource update
 
     Args:
@@ -186,8 +187,15 @@ def exit_prometheus():
 
 
 if __name__ == "__main__":
-    # TODO: send either "bin" or "nextflow-bin" from nextflow script depending
+    # Send either "bin" or "nextflow-bin" from nextflow script depending
     # on where program is run
     # This will either be "bin" for local, or "nextflow-bin" for running it as
     # a DNAnexus app/applet
-    run_annotation_update("bin")
+
+    # validate arguments
+    if len(sys.argv) != 2:
+        logger.error("2 command line args are required"
+                     + " to run annotation_update.py")
+        exit_prometheus()
+
+    run_annotation_update(sys.argv[1])

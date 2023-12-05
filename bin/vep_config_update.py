@@ -8,6 +8,7 @@ import dxpy
 import os
 import re
 import glob
+import sys
 
 import vep_testing
 import deployer
@@ -240,9 +241,17 @@ def exit_prometheus():
 
 
 if __name__ == "__main__":
-    # TODO: send either "bin" or "nextflow-bin" from nextflow script depending
+    # Send either "bin" or "nextflow-bin" from nextflow script depending
     # on where program is run
     # This will either be "bin" for local, or "nextflow-bin" for running it as
     # a DNAnexus app/applet
-    # TODO: send the assay name from nextflow script
-    run_vep_config_update("bin", "TSO500", "b37")
+    # This is followed by the assay name from nextflow script e.g., TSO500
+    # Followed by the genome build e.g., b38
+
+    # validate arguments
+    if len(sys.argv) != 4:
+        logger.error("4 command line args are required"
+                     + " to run vep_config_update.py")
+        exit_prometheus()
+
+    run_vep_config_update(sys.argv[1], sys.argv[2], sys.argv[3])

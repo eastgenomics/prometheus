@@ -7,6 +7,7 @@ import logging
 import dxpy
 import os
 import re
+import sys
 
 import deployer
 from login_handler import LoginHandler
@@ -243,9 +244,16 @@ def exit_prometheus():
 
 
 if __name__ == "__main__":
-    # TODO: send either "bin" or "nextflow-bin" from nextflow script depending
+    # Send either "bin" or "nextflow-bin" from nextflow script depending
     # on where program is run
     # This will either be "bin" for local, or "nextflow-bin" for running it as
     # a DNAnexus app/applet
-    # TODO: send the assay name from nextflow script
-    run_workflow_config_update("bin", "b37")
+    # Followed by the genome build e.g., b38
+
+    # validate arguments
+    if len(sys.argv) != 3:
+        logger.error("3 command line args are required"
+                     + " to run reports_workflow_update.py")
+        exit_prometheus()
+
+    run_workflow_config_update(sys.argv[1], sys.argv[2])

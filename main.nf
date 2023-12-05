@@ -14,19 +14,44 @@ else {
 
 process getClinvarFiles
 {
+    input:
+        val genomeBuild
+
+    output:
+        val genomeBuild
+
     script:
         
         """
-        python ${pathToBin}/annotation_update.py
+        python ${pathToBin}/annotation_update.py ${pathToBin} ${genomeBuild}
         """
 }
 
 process updateVepConfigs
 {
+    input:
+        val assay
+        val genomeBuild
+
+    output:
+        val assay
+
     script:
         
         """
-        python ${pathToBin}/vep_config_update.py
+        python ${pathToBin}/vep_config_update.py ${pathToBin} ${assay} ${genomeBuild}
+        """
+}
+
+process updateReportsWorkflow
+{
+    input:
+        val genomeBuild
+
+    script:
+        
+        """
+        python ${pathToBin}/reports_workflow_update.py ${pathToBin} ${genomeBuild}
         """
 }
 
@@ -35,9 +60,14 @@ workflow
     // run prometheus
     // update clinvar annotation resource files
     // b37 and b38 in parallel
-    getClinvarFiles()
+    genomes = Channel.of("b37", "b38")
+    annotation = getClinvarFiles(genomes)
 
     // update vep config files per assay
     // TSO500, TWE, CEN, and MYE in parallel
-    updateVepConfigs()
+    assays = Channel.of("TSO500", "TWE", "CEN")
+    vep = updateVepConfigs(annotation, assays)
+
+    // update TSO500 reports workflow
+    updateReportsWorkflow(vep.filter {it == "TSO500"})
 }
