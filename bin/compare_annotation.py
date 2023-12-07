@@ -74,7 +74,7 @@ def compare_annotation(diff_twe, diff_tso):
     changed_output = "{}/changed_variants.csv".format(output_location)
     changed.to_csv(changed_output, index=True)
     detailed_out = "{}/detailed_changed_variants.csv".format(output_location)
-    detailed.to_csv(detailed_out, index=True)
+    detailed.to_csv(detailed_out, index=False)
 
     return added_output, deleted_output, changed_output, detailed_out
 
@@ -374,11 +374,14 @@ def get_evidence_counts(info):
         list: list of ints in format benign l_benign uncertain l_path path
     """
     return_list = [0, 0, 0, 0, 0, 0]
-    # TODO: handle case in which "&" is in the middle of string
+    # handles case in which "&" is in the middle of string
     # e.g., Pathogenic&_low_penetrance(1)
-    regex = r"^[A-Z][\(\)0-9-]+\([0-9]+\)"
+    regex = r"[a-zA-Z_]+&*[a-zA-Z_]*\([0-9]+\)"
     match_regex = r"(^[A-Z].+)\(([0-9]+)\)"
     split = re.findall(regex, info)
+    if len(split) < 1:
+        raise Exception("Info field \"{}\" does not contain any valid entries"
+                        .format(info))
 
     cat_benign = "Benign"
     cat_lbenign = "Likely_benign"
@@ -390,8 +393,8 @@ def get_evidence_counts(info):
     for entry in split:
         match = re.search(match_regex, entry)
         if not match:
-            raise Exception("Info field \"{}\"has invalid format"
-                            .format(info))
+            raise Exception("Info field \"{}\" entry \"{}\" has invalid format"
+                            .format(info, entry))
         category = match.group(1)
         try:
             count = int(match.group(2))

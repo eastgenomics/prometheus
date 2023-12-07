@@ -135,10 +135,10 @@ class testCase(unittest.TestCase):
     def test_get_evidence_counts(self):
         input = ("Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
                  + "&Likely_pathogenic(3)&Pathogenic(4)")
-        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4]
+        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 0]
 
         input = "Benign(1)&Likely_pathogenic(31)&Pathogenic(46)"
-        assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46]
+        assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46, 0]
 
 
 if __name__ == "__main__":
