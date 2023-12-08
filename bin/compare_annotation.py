@@ -310,7 +310,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     #         likely pathogenic, pathogenic
     if len(det_df) == 0:
         return added_df, deleted_df, changed_df, det_df
-    evidence_list = [[]]
+    evidence_list = []
     for index, row in det_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
@@ -355,7 +355,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
                                                  "pathogenic_dev",
                                                  "path_low_penetrance_prod",
                                                  "path_low_penetrance_dev"]]
-    det_df.drop(columns=["from info", "to info"])
+    det_df.drop(columns=["from info", "to info"], inplace=True)
 
     return added_df, deleted_df, changed_df, det_df
 
@@ -444,6 +444,7 @@ def get_categories(dataframe_extract):
     return updated_categories
 
 
+# TODO: future-proof category names to include all potential names
 def get_full_category_name(base_name, info, regex_dict):
     """get full category name from category and info columns for single entry
 
@@ -463,51 +464,74 @@ def get_full_category_name(base_name, info, regex_dict):
 
     conflict = "conflicting interpretations of pathogenicity"
     conflict_other = "conflicting interpretations of pathogenicity and other"
+    conflict_risk = ("conflicting interpretations of"
+                     + " pathogenicity and risk factor")
+    conflict_other_risk = ("conflicting interpretations of"
+                           + " pathogenicity and other and risk factor")
 
-    # validate that category is contained in difference regex
-    name_match = False
-    for key in difference_regex:
-        if re.match(difference_regex[key], base_name):
-            # value entered is valid
-            name_match = True
-            if (key != conflict and key != conflict_other):
-                # return simple category, as this does not require modification
-                return key
-            else:
-                # check info
-                if info == ".":
-                    raise Exception("Invalid input format in 'info' field")
+    name_split = base_name.split("/")
+    # loop through name split to parse all name components
+    # then add together to single name
+    full_names = []
+    for name in name_split:
+        # validate that category is contained in difference regex
+        name_match = False
+
+        for key in difference_regex:
+            if re.match(difference_regex[key], name):
+                # value entered is valid
+                name_match = True
+                if (key != conflict
+                        and key != conflict_other
+                        and key != conflict_risk
+                        and key != conflict_other_risk):
+                    # add simple category to list of names
+                    full_names.append(key)
                 else:
-                    # try to parse info
-                    split_info = info.split("&")
-                    # remove numbers in brackets
-                    new_info = []
-                    for my_str in split_info:
-                        match = re.match(r"(.+)\([0-9]+\)", my_str).groups()[0]
-                        if match:
-                            new_info.append(match)
-                        else:
-                            raise Exception("Invalid input format "
-                                            + "in 'info' field")
+                    # check info
+                    if info == ".":
+                        raise Exception("Invalid input format in 'info' field")
+                    else:
+                        # try to parse info
+                        split_info = info.split("&")
+                        # remove numbers in brackets
+                        new_info = []
+                        for my_str in split_info:
+                            match = (re.match(r"(.+)\([0-9]+\)", my_str)
+                                     .groups()[0])
+                            if match:
+                                new_info.append(match)
+                            else:
+                                raise Exception("Invalid input format "
+                                                + "in 'info' field")
 
-                    # we now have a vec (new_info) containing all evidence
-                    # categories for this variant
-                    # order this list of categories so the order is uniform
-                    # for all variants
-                    match_found = False
-                    output_string = base_name + " "
-                    for regex_category in evidence_regex:
-                        for evidence in new_info:
-                            if re.match(evidence_regex[regex_category],
-                                        evidence):
-                                # add category and &
-                                output_string += regex_category + "&"
-                                match_found = True
-                                continue
-                    if not match_found:
-                        raise Exception("Invalid input in 'info' field")
-                    # remove final &
-                    output_string = output_string[:-1]
-                    return output_string
-    if not name_match:
-        raise Exception("Invalid input in 'name' field")
+                        # we now have a vec (new_info) containing all evidence
+                        # categories for this variant
+                        # order this list of categories so the order is uniform
+                        # for all variants
+                        match_found = False
+                        output_string = name + " "
+                        for regex_category in evidence_regex:
+                            for evidence in new_info:
+                                if re.match(evidence_regex[regex_category],
+                                            evidence):
+                                    # add category and &
+                                    output_string += regex_category + "&"
+                                    match_found = True
+                                    continue
+                        if not match_found:
+                            raise Exception("Invalid input in 'info' field")
+                        # remove final &
+                        output_string = output_string[:-1]
+                        return output_string
+        if not name_match:
+            raise Exception("Invalid input in 'name' field")
+    # if name is simple, return
+    # else, build composite name
+    if len(full_names) < 2:
+        return full_names[0]
+    else:
+        full_name = full_names[0]
+        for i in range(1, len(full_names)):
+            full_name += "/{}".format(full_names[i])
+        return full_name

@@ -140,6 +140,29 @@ class testCase(unittest.TestCase):
         input = "Benign(1)&Likely_pathogenic(31)&Pathogenic(46)"
         assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46, 0]
 
+    def test_make_dataframes(self):
+        added_list = []
+        deleted_list = []
+        changed_list_from = [["mutation",
+                              "1234",
+                              "Conflicting_interpretations_of_pathogenicity",
+                              "Benign(1)&Likely_pathogenic(3)&Pathogenic(4)"]]
+        changed_list_to = [["mutation",
+                            "1234",
+                            "Conflicting_interpretations_of_pathogenicity",
+                            "Benign(1)&Likely_benign(1)&Pathogenic(4)"]]
+        (added_df,
+         deleted_df,
+         changed_df,
+         det_df) = ca.make_dataframes(added_list,
+                                    deleted_list, 
+                                    changed_list_from,
+                                    changed_list_to)
+        output_location = "temp"
+        detailed_out = ("{}/detailed_changed_variants.csv"
+                        .format(output_location))
+        det_df.to_csv(detailed_out, index=False)
+
 
 if __name__ == "__main__":
     unittest.main()
