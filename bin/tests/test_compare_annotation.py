@@ -110,13 +110,8 @@ class testCase(unittest.TestCase):
         info = "."
         assert ca.get_full_category_name(name, info, regex_dict) == "benign"
 
-        name = "2134793ryh02735607"
-        with self.assertRaises(Exception):
-            ca.get_full_category_name(name, info, regex_dict)
-
-        conflict = "conflicting interpretations of pathogenicity"
-        conflict_other = ("conflicting interpretations of "
-                          + "pathogenicity and other")
+        conflict = "Conflicting_interpretations_of_pathogenicity"
+        conflict_other = ("Conflicting_interpretations_of_pathogenicity&other")
         with self.assertRaises(Exception):
             ca.get_full_category_name(conflict, info, regex_dict)
         with self.assertRaises(Exception):
@@ -135,10 +130,10 @@ class testCase(unittest.TestCase):
     def test_get_evidence_counts(self):
         input = ("Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
                  + "&Likely_pathogenic(3)&Pathogenic(4)")
-        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 0]
+        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 0, 0]
 
         input = "Benign(1)&Likely_pathogenic(31)&Pathogenic(46)"
-        assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46, 0]
+        assert ca.get_evidence_counts(input) == [1, 0, 0, 31, 46, 0, 0]
 
     def test_make_dataframes(self):
         added_list = []
@@ -155,9 +150,9 @@ class testCase(unittest.TestCase):
          deleted_df,
          changed_df,
          det_df) = ca.make_dataframes(added_list,
-                                    deleted_list, 
-                                    changed_list_from,
-                                    changed_list_to)
+                                      deleted_list,
+                                      changed_list_from,
+                                      changed_list_to)
         output_location = "temp"
         detailed_out = ("{}/detailed_changed_variants.csv"
                         .format(output_location))

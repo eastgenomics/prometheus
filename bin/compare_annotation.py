@@ -314,6 +314,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     for index, row in det_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
+        # length 7 + length 7 = vector of length 14
         all_evidence = from_evidence + to_evidence
         evidence_list.append(all_evidence)
 
@@ -325,12 +326,14 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
                                       "likely_pathogenic_prod",
                                       "pathogenic_prod",
                                       "path_low_penetrance_prod",
+                                      "unknown_prod",
                                       "benign_dev",
                                       "likely_benign_dev",
                                       "uncertain_dev",
                                       "likely_pathogenic_dev",
                                       "pathogenic_dev",
-                                      "path_low_penetrance_dev"])
+                                      "path_low_penetrance_dev",
+                                      "unknown_dev"])
 
     det_df[["benign_prod",
             "benign_dev",
@@ -343,18 +346,22 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
             "pathogenic_prod",
             "pathogenic_dev",
             "path_low_penetrance_prod",
-            "path_low_penetrance_dev"]] = ev_df[["benign_prod",
-                                                 "benign_dev",
-                                                 "likely_benign_prod",
-                                                 "likely_benign_dev",
-                                                 "uncertain_prod",
-                                                 "uncertain_dev",
-                                                 "likely_pathogenic_prod",
-                                                 "likely_pathogenic_dev",
-                                                 "pathogenic_prod",
-                                                 "pathogenic_dev",
-                                                 "path_low_penetrance_prod",
-                                                 "path_low_penetrance_dev"]]
+            "path_low_penetrance_dev",
+            "unknown_prod",
+            "unknown_dev"]] = ev_df[["benign_prod",
+                                     "benign_dev",
+                                     "likely_benign_prod",
+                                     "likely_benign_dev",
+                                     "uncertain_prod",
+                                     "uncertain_dev",
+                                     "likely_pathogenic_prod",
+                                     "likely_pathogenic_dev",
+                                     "pathogenic_prod",
+                                     "pathogenic_dev",
+                                     "path_low_penetrance_prod",
+                                     "path_low_penetrance_dev",
+                                     "unknown_prod",
+                                     "unknown_dev"]]
     det_df.drop(columns=["from info", "to info"], inplace=True)
 
     return added_df, deleted_df, changed_df, det_df
@@ -373,7 +380,7 @@ def get_evidence_counts(info):
     Returns:
         list: list of ints in format benign l_benign uncertain l_path path
     """
-    return_list = [0, 0, 0, 0, 0, 0]
+    return_list = [0, 0, 0, 0, 0, 0, 0]
     # handles case in which "&" is in the middle of string
     # e.g., Pathogenic&_low_penetrance(1)
     regex = r"[a-zA-Z_]+&*[a-zA-Z_]*\([0-9]+\)"
@@ -416,10 +423,8 @@ def get_evidence_counts(info):
         elif category == cat_lpenetrance:
             return_list[5] = count
         else:
-            raise Exception("Info field \"{}\"has invalid categories"
-                            .format(info)
-                            + ". The category {} does not have a match"
-                            .format(category))
+            # record in "unknown" category instead of failing
+            return_list[6] = count
     return return_list
 
 
@@ -454,7 +459,6 @@ def get_full_category_name(base_name, info, regex_dict):
 
     Raises:
         Exception: Invalid input format in 'info' field
-        Exception: Invalid input in 'name' field
 
     Returns:
         str: full category name
@@ -468,6 +472,8 @@ def get_full_category_name(base_name, info, regex_dict):
                      + " pathogenicity and risk factor")
     conflict_other_risk = ("conflicting interpretations of"
                            + " pathogenicity and other and risk factor")
+
+    unknown_key = "unknown"
 
     name_split = base_name.split("/")
     # loop through name split to parse all name components
@@ -525,7 +531,9 @@ def get_full_category_name(base_name, info, regex_dict):
                         output_string = output_string[:-1]
                         return output_string
         if not name_match:
-            raise Exception("Invalid input in 'name' field")
+            # if name does not match records, record as unknown
+            # instead of failing
+            full_names.append(unknown_key)
     # if name is simple, return
     # else, build composite name
     if len(full_names) < 2:
