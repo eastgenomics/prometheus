@@ -292,6 +292,7 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
     return job_id
 
 
+# TODO: take in genome build so b37 or b38 can be used
 def get_recent_vep_vcf_bed(assay, ref_proj_id):
     """gets most recent vcf and panel bed files in use for given assay
 
