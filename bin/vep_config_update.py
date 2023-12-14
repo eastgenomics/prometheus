@@ -224,7 +224,8 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                        dev_config_id,
                                        config_subfolder,
                                        ref_proj_id,
-                                       assay)
+                                       assay,
+                                       genome_build)
     else:
         logger.info("The vep config file for assay"
                     + " {} has already been tested"

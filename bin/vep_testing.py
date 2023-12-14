@@ -20,7 +20,8 @@ from utils import get_recent_002_projects
 
 
 def vep_testing_config(project_id, dev_config_id,
-                       dx_update_folder, ref_proj_id, assay):
+                       dx_update_folder, ref_proj_id,
+                       assay, genome_build):
     """performs testing for vep config and generates summary file
 
     Args:
@@ -33,7 +34,9 @@ def vep_testing_config(project_id, dev_config_id,
     Returns:
         test_summary_id (str): DNAnexus file ID for summary file
     """
-    vcf_id, bed_id = get_recent_vep_vcf_bed(assay, ref_proj_id)
+    vcf_id, bed_id = get_recent_vep_vcf_bed(assay,
+                                            ref_proj_id,
+                                            genome_build)
     # Run vep
     vep_job_folder = "vep_run_{}".format(assay)
     vep_job = run_vep(project_id, vep_job_folder, dev_config_id,
@@ -69,7 +72,8 @@ def vep_testing_config(project_id, dev_config_id,
 
 
 def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
-                           clinvar_version, bin_folder, ref_proj_id):
+                           clinvar_version, bin_folder, ref_proj_id,
+                           genome_build):
     """compares vep output for dev and prod files and outputs reports
 
     Args:
@@ -91,8 +95,12 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
         job_report: str
             path to txt file report for vep jobs run
     """
-    twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE", ref_proj_id)
-    tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500", ref_proj_id)
+    twe_vcf_id, twe_bed_id = get_recent_vep_vcf_bed("TWE",
+                                                    ref_proj_id,
+                                                    genome_build)
+    tso_vcf_id, tso_bed_id = get_recent_vep_vcf_bed("TSO500",
+                                                    ref_proj_id,
+                                                    genome_build)
 
     update_folder = ("/ClinVar_version_{}".format(clinvar_version)
                      + "_annotation_resource_update")
@@ -292,8 +300,7 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
     return job_id
 
 
-# TODO: take in genome build so b37 or b38 can be used
-def get_recent_vep_vcf_bed(assay, ref_proj_id):
+def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
     """gets most recent vcf and panel bed files in use for given assay
 
     Args:
@@ -313,10 +320,10 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id):
     df = get_recent_002_projects(assay, 12)
 
     if assay == "TSO500":
-        folder_bed = "/bed_files/b37/kits/tso500"
+        folder_bed = "/bed_files/{}/kits/tso500".format(genome_build)
         vcf_name = "*Hotspots.vcf.gz"
     else:
-        folder_bed = "/bed_files/b37/kits/twist_exome"
+        folder_bed = "/bed_files/{}/kits/twist_exome".format(genome_build)
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"

@@ -449,7 +449,6 @@ def get_categories(dataframe_extract):
     return updated_categories
 
 
-# TODO: future-proof category names to include all potential names
 def get_full_category_name(base_name, info, regex_dict):
     """get full category name from category and info columns for single entry
 
