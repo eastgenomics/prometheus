@@ -272,7 +272,23 @@ def run_vep_config_update(bin_folder, assay, genome_build):
         deploy_folder = "/dynamic_files/vep_configs"
         deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
                                              dev_config_id, deploy_folder)
+    else:
+        error_message = ("The vep config update update for assay"
+                         + "{} config version {}".format(assay, new_version)
+                         + " clinvar version {}".format(clinvar_version)
+                         + " has already been completed")
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
 
+    # Verification that vep config has been deployed to 001
+    tracker.check_config_deployed()
+    if not tracker.config_deployed:
+        error_message = ("Vep config testing evidence for assay {}"
+                         .format(assay)
+                         + " was not deployed to 001")
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
+    else:
         # notify team of completed vep config update
         config_name = ("{}_test_config_v{}.json"
                        .format(assay, new_version))
@@ -281,13 +297,6 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                              assay,
                                              genome_build,
                                              clinvar_version)
-        exit_prometheus()
-    else:
-        error_message = ("The vep config update update for assay"
-                         + "{} config version {}".format(assay, new_version)
-                         + " clinvar version {}".format(clinvar_version)
-                         + " has already been completed")
-        slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 
 
