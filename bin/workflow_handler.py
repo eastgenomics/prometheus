@@ -42,7 +42,6 @@ def build_reports_workflow(source, project, proj_folder):
 
 def test_reports_workflow(workflow_id,
                           project_id,
-                          workflow_version,
                           evidence_folder,
                           workflow_name,
                           vep_config_name,
@@ -52,7 +51,6 @@ def test_reports_workflow(workflow_id,
     Args:
         workflow_id (str): DNAnexus ID for workflow
         project_id (str): DNAnexus ID for dev project
-        workflow_version (str): version of workflow
         evidence_folder (str): path to evildence folder in 003
         workflow_name (str): name of workflow
         vep_config_name (str): name of vep config
@@ -64,18 +62,6 @@ def test_reports_workflow(workflow_id,
         Exception: workflow did not have new name
         Exception: vep stage not found for analysis
     """
-    # version must have full or partial name, i.e., v1.3.3 or 1.3.3
-    workflow_version = workflow_version.lower()
-    version_regex = r"v([0-9]+)\.([0-9]+)\.([0-9]+)"
-    ver_match = re.search(version_regex, workflow_version)
-    if not ver_match:
-        version_regex_partial = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
-        par_match = re.search(version_regex_partial, workflow_version)
-        if par_match:
-            workflow_version = "v" + workflow_version
-        else:
-            raise Exception("Workflow version provided has invalid format"
-                            + ". Use format vx.y.z where x y and z are ints")
 
     # get list of recent helios runs most to least recent
     recent_runs = get_recent_002_projects("TSO500", 12)

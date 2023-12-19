@@ -192,9 +192,10 @@ if __name__ == "__main__":
     # a DNAnexus app/applet
 
     # validate arguments
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 3:
         logger.error("2 command line args are required"
-                     + " to run annotation_update.py")
+                     + " to run annotation_update.py"
+                     + " but {} were provided".format(len(sys.argv)))
         exit_prometheus()
 
-    run_annotation_update(sys.argv[1])
+    run_annotation_update(sys.argv[1], sys.argv[2])

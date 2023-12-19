@@ -47,7 +47,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     vep_config_id = get_prod_vep_config(ref_proj_id,
                                         ref_vep_config_folder,
                                         assay)
-    ref_clinvar_folder = "/annotation/{}/clinvar/".format(assay)
+    ref_clinvar_folder = "/annotation/{}/clinvar/".format(genome_build)
     (clinvar_version, vcf_id, index_id) = get_prod_version(ref_proj_id,
                                                            ref_clinvar_folder,
                                                            genome_build)
@@ -56,11 +56,14 @@ def run_workflow_config_update(bin_folder, genome_build):
     dev_project = dxpy.bindings.dxproject.DXProject(dxid=dev_proj_id)
     if not check_proj_folder_exists(dev_proj_id, config_subfolder):
         dev_project.new_folder(config_subfolder)
+    vep_config_name = utils.find_file_name_from_id(vep_config_id)
 
     # check if any steps have already been completed
     evidence_folder = "{}/Evidence".format(config_subfolder)
+    testing_folder = "{}/Testing".format(config_subfolder)
+    deploy_folder = "/apps_workflows"
     tracker = Tracker(dev_proj_id, ref_proj_id, evidence_folder,
-                      ref_clinvar_folder, genome_build, clinvar_version,
+                      deploy_folder, genome_build, clinvar_version,
                       workflow_repo, assay, login_handler.github_token,
                       vcf_id, vep_config_id)
     tracker.perform_checks()
@@ -72,11 +75,11 @@ def run_workflow_config_update(bin_folder, genome_build):
     # push repo to github
     # create pull request
     # merge pull request to main branch
+    repo_dir = "temp/reports_workflow_repo_{}".format(assay)
+    split_assay_url = workflow_repo.split("/")
+    repo_name = "{}/{}".format(split_assay_url[3],
+                               split_assay_url[4])
     if not tracker.pr_merged:
-        repo_dir = "temp/reports_workflow_repo_{}".format(assay)
-        split_assay_url = workflow_repo.split("/")
-        repo_name = "{}/{}".format(split_assay_url[3],
-                                   split_assay_url[4])
         git_handler = GitHandler(repo_dir,
                                  repo_name,
                                  workflow_repo,
@@ -117,7 +120,7 @@ def run_workflow_config_update(bin_folder, genome_build):
                 config_present = True
                 break
         if not config_present:
-            error_message = ("No file matching config name {}"
+            error_message = ("Error: No file matching config name {}"
                              .format(config_name)
                              + " was found in repo {}".format(repo_name))
             slack_handler.send_message(slack_channel, error_message)
@@ -149,7 +152,6 @@ def run_workflow_config_update(bin_folder, genome_build):
         match_regex = r"\{"
         replace_regex_name = r"\"name\": \"(.*)\""
         replace_regex_title = r"\"title\": \"(.*)\""
-        old_workflow_title = "TSO500_reports_workflow_v{}".format(old_version)
         new_workflow_title = "TSO500_reports_workflow_v{}".format(version)
         utils.update_json(filename_glob, match_regex,
                           replace_regex_name, new_workflow_title)
@@ -164,7 +166,6 @@ def run_workflow_config_update(bin_folder, genome_build):
         git_handler.make_branch_github(branch_name, "main")
         git_handler.push_to_remote()
 
-        vep_config_name = utils.find_file_name_from_id(vep_config_id)
         pr_title = ("TSO500 reports workflow config update to use VEP config"
                     + " {}".format(vep_config_name))
         pr_num = git_handler.make_pull_request(branch_name,
@@ -182,7 +183,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     # Verification that step 1 has been completed
     tracker.check_pr_merged()
     if not tracker.pr_merged:
-        error_message = ("PR for workflow config update for assay {}"
+        error_message = ("Error: PR for workflow config update for assay {}"
                          .format(assay)
                          + " was not merged")
         slack_handler.send_message(slack_channel, error_message)
@@ -215,9 +216,8 @@ def run_workflow_config_update(bin_folder, genome_build):
         evidence_folder = "{}/Evidence".format(config_subfolder)
         workflow_handler.test_reports_workflow(workflow_id,
                                                dev_proj_id,
-                                               version,
                                                evidence_folder,
-                                               new_workflow_title,
+                                               tracker.workflow_version,
                                                vep_config_name,
                                                clinvar_version)
     else:
@@ -229,8 +229,8 @@ def run_workflow_config_update(bin_folder, genome_build):
     # Verification that testing has been uploaded to DNAnexus
     tracker.check_evidence_uploaded()
     if not tracker.evidence_uploaded:
-        error_message = ("Reports workflow testing evidence for assay {}"
-                         .format(assay)
+        error_message = ("Error: Reports workflow testing evidence for assay"
+                         + " {}".format(assay)
                          + " was not uploaded to DNAnexus")
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
@@ -239,7 +239,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     if tracker.changes_status == Tracker.STATUS_UNCHECKED:
         tracker.check_testing_status()
     if tracker.changes_status == Tracker.STATUS_PASSED:
-        tracker.info("Workflow passed testing")
+        logger.info("Workflow passed testing")
     elif tracker.changes_status == Tracker.STATUS_FAILED:
         error_message = ("Error: Testing failed for reports workflow update"
                          + (" for {} with clinvar version {}"
@@ -247,8 +247,8 @@ def run_workflow_config_update(bin_folder, genome_build):
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
     else:
-        error_message = ("Reports workflow testing evidence for assay {}"
-                         .format(assay)
+        error_message = ("Error: Reports workflow testing evidence for assay"
+                         + " {}".format(assay)
                          + " could not be checked")
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
@@ -256,26 +256,36 @@ def run_workflow_config_update(bin_folder, genome_build):
     # Make github release of current config version
     # deploy new workflow from 003 to 001 reference project
     if not tracker.workflow_deployed:
-        comment = (("Updated config name from \"name\": \"{}\" to"
-                    .format(old_workflow_title))
+        repo_dir = "temp/prod_workflow_repo_{}".format(assay)
+        git_handler = GitHandler(repo_dir,
+                                 repo_name,
+                                 workflow_repo,
+                                 "main",
+                                 login_handler.github_token)
+        comment = ("Updated config name to"
                    + (" \"name\": \"{}\"\n"
-                      .format(new_workflow_title))
+                      .format(tracker.workflow_version))
                    + "\n"
-                   + ("Updated config title from \"title\": \"{}\" to"
-                      .format(old_workflow_title))
+                   + "Updated config title to"
                    + (" \"title\": \"{}\"\n"
-                      .format(new_workflow_title))
+                      .format(tracker.workflow_version))
                    + "\n"
                    + "Updated TSO500 vep config file source to"
                    + "  \"id\":\"{}\"\n".format(vep_config_id))
+        regex = r"[0-9]+\.[0-9]+\.[0-9]+"
+        version = re.search(regex, tracker.workflow_version)[0]
         git_handler.make_release(version, comment)
-        deploy_folder = "/apps_workflows"
+        git_handler.exit_github()
         # deploy new workflow to production
+        workflow_id = utils.find_dx_file(dev_proj_id,
+                                         testing_folder,
+                                         tracker.workflow_version)
         deployer.deploy_workflow_to_production(ref_proj_id, dev_proj_id,
                                                workflow_id, deploy_folder)
     else:
-        error_message = ("The reports workflow update update for assay"
-                         + " {} workflow version {}".format(assay, version)
+        error_message = ("Error: The reports workflow update update for assay"
+                         + " {} workflow version {}"
+                         .format(assay, tracker.workflow_version)
                          + " clinvar version {}".format(clinvar_version)
                          + " has already been completed")
         slack_handler.send_message(slack_channel, error_message)
@@ -284,7 +294,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     # Verification that workflow has been deployed to 001
     tracker.check_workflow_deployed()
     if not tracker.workflow_deployed:
-        error_message = ("Vep config testing evidence for assay {}"
+        error_message = ("Error: Reports workfllow for assay {}"
                          .format(assay)
                          + " was not deployed to 001")
         slack_handler.send_message(slack_channel, error_message)
@@ -292,7 +302,7 @@ def run_workflow_config_update(bin_folder, genome_build):
     else:
         # notify team of completed workflow update
         slack_handler.announce_workflow_update(slack_channel,
-                                               new_workflow_title,
+                                               tracker.workflow_version,
                                                vep_config_id)
         exit_prometheus()
 

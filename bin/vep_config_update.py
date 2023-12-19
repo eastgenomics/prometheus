@@ -43,7 +43,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # find latest clinvar name and ID from 001 reference project
     # check that update folder for this version exists in DNAnexus
     # make new vep update folder in overall update folder
-    ref_clinvar_folder = "/annotation/{}/clinvar/".format(assay)
+    ref_clinvar_folder = "/annotation/{}/clinvar/".format(genome_build)
     (clinvar_version, vcf_id, index_id) = get_prod_version(ref_proj_id,
                                                            ref_clinvar_folder,
                                                            genome_build)
@@ -63,8 +63,9 @@ def run_vep_config_update(bin_folder, assay, genome_build):
 
     # check if any steps have already been completed
     evidence_folder = "{}/Evidence".format(config_subfolder)
+    deploy_folder = "/dynamic_files/vep_configs"
     tracker = Tracker(dev_proj_id, ref_proj_id, evidence_folder,
-                      ref_clinvar_folder, genome_build, clinvar_version,
+                      deploy_folder, genome_build, clinvar_version,
                       assay_repo, assay, login_handler.github_token,
                       vcf_id)
     tracker.perform_checks()
@@ -77,11 +78,11 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # push repo to github
     # create pull request
     # merge pull request to main branch
+    split_assay_url = assay_repo.split("/")
+    repo_name = "{}/{}".format(split_assay_url[3],
+                               split_assay_url[4])
     if not tracker.pr_merged:
         repo_dir = "temp/vep_repo_{}".format(assay)
-        split_assay_url = assay_repo.split("/")
-        repo_name = "{}/{}".format(split_assay_url[3],
-                                   split_assay_url[4])
         git_handler = GitHandler(repo_dir,
                                  repo_name,
                                  assay_repo,
@@ -189,7 +190,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # Verification that step 1 has been completed
     tracker.check_pr_merged()
     if not tracker.pr_merged:
-        error_message = ("PR for vep config update for assay {}"
+        error_message = ("Error: PR for vep config update for assay {}"
                          .format(assay)
                          + " was not merged")
         slack_handler.send_message(slack_channel, error_message)
@@ -225,7 +226,9 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                        config_subfolder,
                                        ref_proj_id,
                                        assay,
-                                       genome_build)
+                                       genome_build,
+                                       vcf_id)
+        git_handler.exit_github()
     else:
         logger.info("The vep config file for assay"
                     + " {} has already been tested"
@@ -235,7 +238,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # Verification that testing has been uploaded to DNAnexus
     tracker.check_evidence_uploaded()
     if not tracker.evidence_uploaded:
-        error_message = ("Vep config testing evidence for assay {}"
+        error_message = ("Error: Vep config testing evidence for assay {}"
                          .format(assay)
                          + " was not uploaded to DNAnexus")
         slack_handler.send_message(slack_channel, error_message)
@@ -245,7 +248,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     if tracker.changes_status == Tracker.STATUS_UNCHECKED:
         tracker.check_testing_status()
     if tracker.changes_status == Tracker.STATUS_PASSED:
-        tracker.info("Vep config passed testing")
+        logger.info("Vep config passed testing")
     elif tracker.changes_status == Tracker.STATUS_FAILED:
         error_message = ("Error: Testing failed for VEP config file update"
                          + (" for {} with clinvar version {}"
@@ -253,7 +256,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
     else:
-        error_message = ("Vep config testing evidence for assay {}"
+        error_message = ("Error: Vep config testing evidence for assay {}"
                          .format(assay)
                          + " could not be checked")
         slack_handler.send_message(slack_channel, error_message)
@@ -262,20 +265,32 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # Make github release of current config version
     # deploy new config from 003 to 001 reference project
     if not tracker.config_deployed:
-        comment = (("Updated config version from \"config_version\": \"{}\" to"
-                    .format(version))
+        repo_dir = "temp/prod_vep_repo_{}".format(assay)
+        git_handler = GitHandler(repo_dir,
+                                 repo_name,
+                                 assay_repo,
+                                 "main",
+                                 login_handler.github_token)
+        new_version = tracker.config_version
+        comment = ("Updated config version to"
                    + " \"config_version\": \"{}\"\n".format(new_version)
                    + "\n"
                    + "Updated ClinVar annotation reference file source:\n"
                    + "\"file_id\":\"{}\"\n".format(vcf_id)
                    + "\"index_id\":\"{}\"\n".format(index_id))
         git_handler.make_release(new_version, comment)
-        deploy_folder = "/dynamic_files/vep_configs"
+        git_handler.exit_github()
+        # find dev config id from 003 project
+        folder_path = "{}/Testing".format(config_subfolder)
+        dev_config_id = utils.find_dx_file(dev_proj_id,
+                                           folder_path,
+                                           tracker.config_name)
         deployer.deploy_config_to_production(ref_proj_id, dev_proj_id,
                                              dev_config_id, deploy_folder)
     else:
-        error_message = ("The vep config update update for assay"
-                         + "{} config version {}".format(assay, new_version)
+        new_version = tracker.config_version
+        error_message = ("Error: The vep config update update for assay"
+                         + " {} config version {}".format(assay, new_version)
                          + " clinvar version {}".format(clinvar_version)
                          + " has already been completed")
         slack_handler.send_message(slack_channel, error_message)
@@ -284,9 +299,10 @@ def run_vep_config_update(bin_folder, assay, genome_build):
     # Verification that vep config has been deployed to 001
     tracker.check_config_deployed()
     if not tracker.config_deployed:
-        error_message = ("Vep config testing evidence for assay {}"
+        error_message = ("Error: Vep config file for assay {}"
                          .format(assay)
-                         + " was not deployed to 001")
+                         + " build {} was not deployed to 001"
+                         .format(genome_build))
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
     else:
@@ -317,7 +333,7 @@ if __name__ == "__main__":
     # Followed by the genome build e.g., b38
 
     # validate arguments
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         logger.error("4 command line args are required"
                      + " to run vep_config_update.py")
         exit_prometheus()
