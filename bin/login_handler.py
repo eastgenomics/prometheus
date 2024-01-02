@@ -10,10 +10,16 @@ import json
 
 
 class LoginHandler:
+    """Handles all logins for Prometheus
+    """
     def __init__(self):
-        self.dx_token, self.slack_token = self.load_credentials()
+        """loads credentials
+        """
+        (self.dx_token,
+         self.slack_token,
+         self.github_token) = self.load_credentials()
 
-    def login_DNAnexus(self) -> None:
+    def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
 
         Raises:
@@ -28,6 +34,8 @@ class LoginHandler:
         logger = logging.getLogger("main log")
 
         dx.set_security_context(DX_SECURITY_CONTEXT)
+        # to prevent files being accidentally generated outside of dev project
+        dx.set_workspace_id(dev_proj_id)
 
         try:
             dx.api.system_whoami()
@@ -43,7 +51,7 @@ class LoginHandler:
         dx_token: string
             API token for DNAnexus
         slack_token: string
-            APi token for Slack
+            API token for Slack
         """
         # Get tokens etc from credentials file
         location = "resources/credentials.json"
@@ -52,5 +60,6 @@ class LoginHandler:
 
         dx_token = creds.get('DX_TOKEN')
         slack_token = creds.get('SLACK_TOKEN')
+        github_token = creds.get('GITHUB_TOKEN')
 
-        return dx_token, slack_token
+        return dx_token, slack_token, github_token

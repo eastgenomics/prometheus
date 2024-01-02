@@ -10,13 +10,12 @@ os.chdir("..")
 
 class testCase(unittest.TestCase):
 
-    def test_login_invalid_token(self):
+    def test_send_message(self):
         handler = sh.SlackHandler("invalid-token")
         test_message = "This message is part of a Prometheus unit test"
         with self.assertRaises(Exception):
             handler.send_message("egg-test", test_message)
 
-    def test_login_invalid_channel(self):
         # load config files
         login_handler = lh.LoginHandler()
         dx_token, slack_token = login_handler.load_credentials()
@@ -26,13 +25,11 @@ class testCase(unittest.TestCase):
         with self.assertRaises(Exception):
             handler.send_message("invalid-channel", test_message)
 
-    def test_login_invalid(self):
         handler = sh.SlackHandler("invalid-token")
         test_message = "This message is part of a Prometheus unit test"
         with self.assertRaises(Exception):
             handler.send_message("invalid-channel", test_message)
 
-    def test_login_valid(self):
         # load config files
         login_handler = lh.LoginHandler()
         dx_token, slack_token = login_handler.load_credentials()

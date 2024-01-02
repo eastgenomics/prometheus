@@ -3,7 +3,6 @@ import unittest
 
 import ftplib
 import re
-import time
 import os
 os.chdir("..")
 os.chdir("..")
@@ -12,13 +11,9 @@ os.chdir("..")
 class testCase(unittest.TestCase):
 
     def test_connect_to_website(self):
-        # safety feature to prevent too many requests to server
-        time.sleep(1)
         assert type(gc.connect_to_website()) is ftplib.FTP
 
     def test_get_ftp_files(self):
-        # safety feature to prevent too many requests to server
-        time.sleep(1)
         (recent_vcf_file,
          recent_tbi_file,
          latest_time,

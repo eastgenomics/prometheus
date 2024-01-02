@@ -74,7 +74,7 @@ def compare_annotation(diff_twe, diff_tso):
     changed_output = "{}/changed_variants.csv".format(output_location)
     changed.to_csv(changed_output, index=True)
     detailed_out = "{}/detailed_changed_variants.csv".format(output_location)
-    detailed.to_csv(detailed_out, index=True)
+    detailed.to_csv(detailed_out, index=False)
 
     return added_output, deleted_output, changed_output, detailed_out
 
@@ -181,6 +181,25 @@ def parse_diff(diff_filename):
     changed_from_split = split_variant_info(changed_list_from)
     changed_to_split = split_variant_info(changed_list_to)
 
+    # if name == "" or " " in changed_from, add changed_to entry to added
+    # and delete entry in changed_from and changed_to
+    # if name == "" or " " in changed_to, add changed_from entry to deleted
+    # and delete entry in changed_from and changed_to
+    delete_indices = []
+    for i in range(0, len(changed_from_split)):
+        from_name = changed_from_split[i][2]
+        to_name = changed_to_split[i][2]
+        if from_name == "" or from_name == " ":
+            delete_indices.append(i)
+            added_split.append(changed_to_split[i])
+        elif to_name == "" or to_name == " ":
+            delete_indices.append(i)
+            deleted_split.append(changed_from_split[i])
+
+    for index in sorted(delete_indices, reverse=True):
+        del changed_from_split[index]
+        del changed_to_split[index]
+
     added_df, deleted_df, changed_df, detailed_df = make_dataframes(
         added_split,
         deleted_split,
@@ -208,7 +227,7 @@ def parse_line_count(line):
         return num_commas/2 + 1
     else:
         raise Exception("Invalid (odd) number of commas found"
-                        + "when parsing diff file")
+                        + " when parsing diff file")
 
 
 def split_variant_info(raw_list):
@@ -276,64 +295,137 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
 
     # generate variant evidence report
     # get all changed variants
-    detailed_df = changed_from_df[["changed from",
-                                   "changed to",
-                                   "clinvar ID"]]
+    det_df = changed_from_df[["changed from",
+                              "changed to",
+                              "clinvar ID"]]
     # add info columns
-    detailed_df["from info"] = changed_from_df["info"]
-    detailed_df["to info"] = changed_to_df["info"]
-    # filter to only changes with from or to having evidence
-    detailed_df.drop(detailed_df[detailed_df["from info"] == "."
-                                 & detailed_df["to info"]].index,
-                     inplace=True)
+    det_df["from info"] = changed_from_df["info"]
+    det_df["to info"] = changed_to_df["info"]
+    # filter to only changes with from and to having evidence
+    det_df.drop(det_df[(det_df["from info"] == ".")
+                | (det_df["to info"] == ".")].index,
+                inplace=True)
     # get list of counts per evidence type (5) for from and to
     # format: benign, likely benign, uncertain,
     #         likely pathogenic, pathogenic
+    if len(det_df) == 0:
+        return added_df, deleted_df, changed_df, det_df
     evidence_list = []
-    for index, row in detailed_df.iterrows():
+    for index, row in det_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
+        # length 7 + length 7 = vector of length 14
         all_evidence = from_evidence + to_evidence
         evidence_list.append(all_evidence)
 
-    evidence_df = pandas.DataFrame(data=all_evidence,
-                                   columns=["benign prod",
-                                            "likely benign prod",
-                                            "uncertain prod",
-                                            "likely pathogenic prod",
-                                            "pathogenic prod",
-                                            "benign dev",
-                                            "likely benign dev",
-                                            "uncertain dev",
-                                            "likely pathogenic dev",
-                                            "pathogenic dev"])
+    # TODO: handle case for only evidence count changing (e.g., (1) to (2))
+    ev_df = pandas.DataFrame(data=evidence_list,
+                             columns=["benign_prod",
+                                      "likely_benign_prod",
+                                      "uncertain_prod",
+                                      "likely_pathogenic_prod",
+                                      "pathogenic_prod",
+                                      "path_low_penetrance_prod",
+                                      "unknown_prod",
+                                      "benign_dev",
+                                      "likely_benign_dev",
+                                      "uncertain_dev",
+                                      "likely_pathogenic_dev",
+                                      "pathogenic_dev",
+                                      "path_low_penetrance_dev",
+                                      "unknown_dev"])
 
-    detailed_df["benign prod",
-                "benign dev",
-                "likely benign prod",
-                "likely benign dev",
-                "uncertain prod",
-                "uncertain dev",
-                "likely pathogenic prod",
-                "likely pathogenic dev",
-                "pathogenic prod",
-                "pathogenic dev"] = evidence_df["benign prod",
-                                                "benign dev",
-                                                "likely benign prod",
-                                                "likely benign dev",
-                                                "uncertain prod",
-                                                "uncertain dev",
-                                                "likely pathogenic prod",
-                                                "likely pathogenic dev",
-                                                "pathogenic prod",
-                                                "pathogenic dev"]
-    detailed_df.drop(columns=["from info", "to info"])
+    det_df[["benign_prod",
+            "benign_dev",
+            "likely_benign_prod",
+            "likely_benign_dev",
+            "uncertain_prod",
+            "uncertain_dev",
+            "likely_pathogenic_prod",
+            "likely_pathogenic_dev",
+            "pathogenic_prod",
+            "pathogenic_dev",
+            "path_low_penetrance_prod",
+            "path_low_penetrance_dev",
+            "unknown_prod",
+            "unknown_dev"]] = ev_df[["benign_prod",
+                                     "benign_dev",
+                                     "likely_benign_prod",
+                                     "likely_benign_dev",
+                                     "uncertain_prod",
+                                     "uncertain_dev",
+                                     "likely_pathogenic_prod",
+                                     "likely_pathogenic_dev",
+                                     "pathogenic_prod",
+                                     "pathogenic_dev",
+                                     "path_low_penetrance_prod",
+                                     "path_low_penetrance_dev",
+                                     "unknown_prod",
+                                     "unknown_dev"]]
+    det_df.drop(columns=["from info", "to info"], inplace=True)
 
-    return added_df, deleted_df, changed_df, detailed_df
+    return added_df, deleted_df, changed_df, det_df
 
 
-def get_evidence_counts():
-    return
+def get_evidence_counts(info):
+    """gets the evidence count per category for a given variant
+
+    Args:
+        info (str): string of info column of a given variant
+
+    Raises:
+        Exception: info has invalid format
+        Exception: info has invalid categories
+
+    Returns:
+        list: list of ints in format benign l_benign uncertain l_path path
+    """
+    return_list = [0, 0, 0, 0, 0, 0, 0]
+    # handles case in which "&" is in the middle of string
+    # e.g., Pathogenic&_low_penetrance(1)
+    regex = r"[a-zA-Z_]+&*[a-zA-Z_]*\([0-9]+\)"
+    match_regex = r"(^[A-Z].+)\(([0-9]+)\)"
+    split = re.findall(regex, info)
+    if len(split) < 1:
+        raise Exception("Info field \"{}\" does not contain any valid entries"
+                        .format(info))
+
+    cat_benign = "Benign"
+    cat_lbenign = "Likely_benign"
+    cat_uncertain = "Uncertain_significance"
+    cat_lpathogenic = "Likely_pathogenic"
+    cat_pathogenic = "Pathogenic"
+    cat_lpenetrance = "Pathogenic&_low_penetrance"
+    # format is now Name(n)
+    for entry in split:
+        match = re.search(match_regex, entry)
+        if not match:
+            raise Exception("Info field \"{}\" entry \"{}\" has invalid format"
+                            .format(info, entry))
+        category = match.group(1)
+        try:
+            count = int(match.group(2))
+        except Exception:
+            raise Exception("Info field \"{}\"has invalid categories"
+                            .format(info)
+                            + ". The category {} has an invalid evidence count"
+                            .format(category))
+        if category == cat_benign:
+            return_list[0] = count
+        elif category == cat_lbenign:
+            return_list[1] = count
+        elif category == cat_uncertain:
+            return_list[2] = count
+        elif category == cat_lpathogenic:
+            return_list[3] = count
+        elif category == cat_pathogenic:
+            return_list[4] = count
+        elif category == cat_lpenetrance:
+            return_list[5] = count
+        else:
+            # record in "unknown" category instead of failing
+            return_list[6] = count
+    return return_list
 
 
 def get_categories(dataframe_extract):
@@ -346,16 +438,18 @@ def get_categories(dataframe_extract):
         list: list of updated category names
     """
     updated_categories = []
+    with open(regex_config_location, "r") as file:
+        regex_dict = json.load(file)
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
         info = row["info"]
-        full_name = get_full_category_name(base_name, info)
+        full_name = get_full_category_name(base_name, info, regex_dict)
         updated_categories.append(full_name)
 
     return updated_categories
 
 
-def get_full_category_name(base_name, info):
+def get_full_category_name(base_name, info, regex_dict):
     """get full category name from category and info columns for single entry
 
     Args:
@@ -364,65 +458,87 @@ def get_full_category_name(base_name, info):
 
     Raises:
         Exception: Invalid input format in 'info' field
-        Exception: Invalid input in 'name' field
 
     Returns:
         str: full category name
     """
-    with open(regex_config_location, "r") as file:
-        regex_dict = json.load(file)
-
     difference_regex = regex_dict["difference_regex"]
     evidence_regex = regex_dict["evidence_regex"]
 
     conflict = "conflicting interpretations of pathogenicity"
     conflict_other = "conflicting interpretations of pathogenicity and other"
+    conflict_risk = ("conflicting interpretations of"
+                     + " pathogenicity and risk factor")
+    conflict_other_risk = ("conflicting interpretations of"
+                           + " pathogenicity and other and risk factor")
 
-    # validate that category is contained in difference regex
-    name_match = False
-    for key in difference_regex:
-        if re.match(difference_regex[key], base_name):
-            # value entered is valid
-            name_match = True
-            if (key != conflict and key != conflict_other):
-                # return simple category, as this does not require modification
-                return key
-            else:
-                # check info
-                if info == ".":
-                    raise Exception("Invalid input format in 'info' field")
+    unknown_key = "unknown"
+
+    name_split = base_name.split("/")
+    # loop through name split to parse all name components
+    # then add together to single name
+    full_names = []
+    for name in name_split:
+        # validate that category is contained in difference regex
+        name_match = False
+
+        for key in difference_regex:
+            if re.match(difference_regex[key], name):
+                # value entered is valid
+                name_match = True
+                if (key != conflict
+                        and key != conflict_other
+                        and key != conflict_risk
+                        and key != conflict_other_risk):
+                    # add simple category to list of names
+                    full_names.append(key)
                 else:
-                    # try to parse info
-                    split_info = info.split("&")
-                    # remove numbers in brackets
-                    # TODO: extract numbers for final report table
-                    new_info = []
-                    for my_str in split_info:
-                        match = re.match(r"(.+)\([0-9]+\)", my_str).groups()[0]
-                        if match:
-                            new_info.append(match)
-                        else:
-                            raise Exception("Invalid input format "
-                                            + "in 'info' field")
+                    # check info
+                    if info == ".":
+                        raise Exception("Invalid input format in 'info' field")
+                    else:
+                        # try to parse info
+                        split_info = info.split("&")
+                        # remove numbers in brackets
+                        new_info = []
+                        for my_str in split_info:
+                            match = (re.match(r"(.+)\([0-9]+\)", my_str)
+                                     .groups()[0])
+                            if match:
+                                new_info.append(match)
+                            else:
+                                raise Exception("Invalid input format "
+                                                + "in 'info' field")
 
-                    # we now have a vec (new_info) containing all evidence
-                    # categories for this variant
-                    # order this list of categories so the order is uniform
-                    # for all variants
-                    match_found = False
-                    output_string = base_name + " "
-                    for regex_category in evidence_regex:
-                        for evidence in new_info:
-                            if re.match(evidence_regex[regex_category],
-                                        evidence):
-                                # add category and &
-                                output_string += regex_category + "&"
-                                match_found = True
-                                continue
-                    if not match_found:
-                        raise Exception("Invalid input in 'info' field")
-                    # remove final &
-                    output_string = output_string[:-1]
-                    return output_string
-    if not name_match:
-        raise Exception("Invalid input in 'name' field")
+                        # we now have a vec (new_info) containing all evidence
+                        # categories for this variant
+                        # order this list of categories so the order is uniform
+                        # for all variants
+                        match_found = False
+                        output_string = name + " "
+                        for regex_category in evidence_regex:
+                            for evidence in new_info:
+                                if re.match(evidence_regex[regex_category],
+                                            evidence):
+                                    # add category and &
+                                    output_string += regex_category + "&"
+                                    match_found = True
+                                    continue
+                        if not match_found:
+                            raise Exception("Invalid input in 'info' field")
+                        # remove final &
+                        output_string = output_string[:-1]
+                        return output_string
+        if not name_match:
+            # if name does not match records, record as unknown
+            # instead of failing
+            full_names.append(unknown_key)
+    # if name is simple, return
+    # else, build composite name
+    if len(full_names) < 2:
+        return full_names[0]
+    else:
+        full_name = full_names[0]
+        for i in range(1, len(full_names)):
+            full_name += "/{}".format(full_names[i])
+        return full_name
