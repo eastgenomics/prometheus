@@ -25,18 +25,27 @@ from progress_tracker import VepProgressTracker as Tracker
 logger = logging.getLogger("main log")
 
 
-def run_vep_config_update(bin_folder, assay, genome_build):
+def run_vep_config_update(bin_folder, assay, genome_build,
+                          config_path, creds_path):
     """runs all steps in vep config update
 
     Args:
         bin_folder (str): folder scripts are run from
         assay (str): vep assay being updated
         genome_build (str): genome build used for update
+        config_path (str): path to config file
+        creds_path (str): path to credentials file
     """
+    # make temp dir
+    try:
+        os.mkdir("temp")
+    except FileExistsError:
+        pass
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel = load_config()
-    assay_repo = load_config_repo(assay)
-    login_handler = LoginHandler()
+    ref_proj_id, dev_proj_id, slack_channel = load_config(bin_folder,
+                                                          config_path)
+    assay_repo = load_config_repo(assay, bin_folder, config_path)
+    login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
@@ -221,13 +230,22 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                                 project=dev_proj_id,
                                                 folder=folder_path)
                          .describe().get('id'))
-        vep_testing.vep_testing_config(dev_proj_id,
-                                       dev_config_id,
-                                       config_subfolder,
-                                       ref_proj_id,
-                                       assay,
-                                       genome_build,
-                                       vcf_id)
+        try:
+            vep_testing.vep_testing_config(dev_proj_id,
+                                           dev_config_id,
+                                           config_subfolder,
+                                           ref_proj_id,
+                                           assay,
+                                           genome_build,
+                                           vcf_id)
+        except Exception:
+            error_message = ("Error: Vep config file for assay {}"
+                             .format(assay)
+                             + " build {} took over max wait time for"
+                             .format(genome_build)
+                             + " DNAnexus vep job to complete")
+            slack_handler.send_message(slack_channel, error_message)
+            exit_prometheus()
         git_handler.exit_github()
     else:
         logger.info("The vep config file for assay"
@@ -289,7 +307,7 @@ def run_vep_config_update(bin_folder, assay, genome_build):
                                              dev_config_id, deploy_folder)
     else:
         new_version = tracker.config_version
-        error_message = ("Error: The vep config update update for assay"
+        error_message = ("Info: The vep config update update for assay"
                          + " {} config version {}".format(assay, new_version)
                          + " clinvar version {}".format(clinvar_version)
                          + " has already been completed")
@@ -333,9 +351,10 @@ if __name__ == "__main__":
     # Followed by the genome build e.g., b38
 
     # validate arguments
-    if len(sys.argv) < 4:
-        logger.error("4 command line args are required"
+    if len(sys.argv) < 6:
+        logger.error("6 command line args are required"
                      + " to run vep_config_update.py")
         exit_prometheus()
 
-    run_vep_config_update(sys.argv[1], sys.argv[2], sys.argv[3])
+    run_vep_config_update(sys.argv[1], sys.argv[2], sys.argv[3],
+                          sys.argv[4], sys.argv[5])

@@ -43,8 +43,9 @@ def vep_testing_config(project_id, dev_config_id,
     vep_job = run_vep(project_id, vep_job_folder, dev_config_id,
                       vcf_id, bed_id, dx_update_folder)
     # Pause until jobs have finished
+    # Max wait time provided is 60 minutes
     job_list = [vep_job]
-    check_jobs_finished(job_list, 2, 20)
+    check_jobs_finished(job_list, 2, 60)
 
     log = "temp/vep_job_log.txt"
     os.system("dx watch {} > {}".format(vep_job, log))
@@ -153,7 +154,8 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
      changed_csv,
      detailed_csv) = (compare_annotation
                       .compare_annotation(twe_diff_filename,
-                                          tso_diff_filename))
+                                          tso_diff_filename,
+                                          bin_folder))
 
     return added_csv, deleted_csv, changed_csv, detailed_csv, job_report
 

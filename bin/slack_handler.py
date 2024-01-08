@@ -49,7 +49,8 @@ class SlackHandler:
                           .format(vcf_name, tbi_name))
         self.send_message(channel, update_message)
 
-    def announce_workflow_update(self, channel, file_name, vep_config_name):
+    def announce_workflow_update(self, channel, file_name, vep_config_name,
+                                 genome_build):
         """announces workflow update to team
 
         Args:
@@ -61,7 +62,8 @@ class SlackHandler:
                           + " reference project as {}.".format(file_name)
                           + "\nThe update consists of updating the Helios VEP"
                           + (" config file specificed to {}"
-                             .format(vep_config_name)))
+                             .format(vep_config_name))
+                          + " for genome build {}".format(genome_build))
         self.send_message(channel, update_message)
 
     def send_message(self, channel, message):

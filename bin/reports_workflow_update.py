@@ -25,18 +25,27 @@ from progress_tracker import WorkflowProgressTracker as Tracker
 logger = logging.getLogger("main log")
 
 
-def run_workflow_config_update(bin_folder, genome_build):
+def run_workflow_config_update(bin_folder, genome_build,
+                               config_path, creds_path):
     """runs all steps in the helios reports workflow update
 
     Args:
         bin_folder (str): folder scripts are run from
         genome_build (str): genome build used for update
+        config_path (str): path to config file
+        creds_path (str): path to credentials file
     """
+    # make temp dir
+    try:
+        os.mkdir("temp")
+    except FileExistsError:
+        pass
     assay = "TSO500"
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel = load_config()
-    workflow_repo = load_config_reports_workflow()
-    login_handler = LoginHandler()
+    ref_proj_id, dev_proj_id, slack_channel = load_config(bin_folder,
+                                                          config_path)
+    workflow_repo = load_config_reports_workflow(bin_folder, config_path)
+    login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
@@ -283,7 +292,7 @@ def run_workflow_config_update(bin_folder, genome_build):
         deployer.deploy_workflow_to_production(ref_proj_id, dev_proj_id,
                                                workflow_id, deploy_folder)
     else:
-        error_message = ("Error: The reports workflow update update for assay"
+        error_message = ("Info: The reports workflow update update for assay"
                          + " {} workflow version {}"
                          .format(assay, tracker.workflow_version)
                          + " clinvar version {}".format(clinvar_version)
@@ -303,7 +312,8 @@ def run_workflow_config_update(bin_folder, genome_build):
         # notify team of completed workflow update
         slack_handler.announce_workflow_update(slack_channel,
                                                tracker.workflow_version,
-                                               vep_config_id)
+                                               vep_config_id,
+                                               genome_build)
         exit_prometheus()
 
 
@@ -322,9 +332,10 @@ if __name__ == "__main__":
     # Followed by the genome build e.g., b38
 
     # validate arguments
-    if len(sys.argv) != 3:
-        logger.error("3 command line args are required"
+    if len(sys.argv) < 5:
+        logger.error("5 command line args are required"
                      + " to run reports_workflow_update.py")
         exit_prometheus()
 
-    run_workflow_config_update(sys.argv[1], sys.argv[2])
+    run_workflow_config_update(sys.argv[1], sys.argv[2],
+                               sys.argv[3], sys.argv[4])

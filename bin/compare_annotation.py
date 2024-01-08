@@ -7,11 +7,10 @@ import types
 import pandas
 import json
 
-regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
 
 
-def compare_annotation(diff_twe, diff_tso):
+def compare_annotation(diff_twe, diff_tso, bin_folder):
     """generates csv reports from diff outputs for TWE and TSO500
 
     Args:
@@ -27,7 +26,8 @@ def compare_annotation(diff_twe, diff_tso):
             path to .csv summarising changed variants
     """
     # get variant annotation changes for TWE
-    added_twe, deleted_twe, changed_twe, detailed_twe = parse_diff(diff_twe)
+    added_twe, deleted_twe, changed_twe, detailed_twe = parse_diff(diff_twe,
+                                                                   bin_folder)
     # add "assay" column with "TWE" for added, deleted, and changed
     added_twe["assay"] = "TWE"
     deleted_twe["assay"] = "TWE"
@@ -35,7 +35,8 @@ def compare_annotation(diff_twe, diff_tso):
     detailed_twe["assay"] = "TWE"
 
     # get variant annotation changes for TSO500
-    added_tso, deleted_tso, changed_tso, detailed_tso = parse_diff(diff_tso)
+    added_tso, deleted_tso, changed_tso, detailed_tso = parse_diff(diff_tso,
+                                                                   bin_folder)
     # add "assay" column with "TSO500" for added, deleted, and changed
     added_tso["assay"] = "TSO500"
     deleted_tso["assay"] = "TSO500"
@@ -79,7 +80,7 @@ def compare_annotation(diff_twe, diff_tso):
     return added_output, deleted_output, changed_output, detailed_out
 
 
-def parse_diff(diff_filename):
+def parse_diff(diff_filename, bin_folder):
     """parses file of diff output to dataframes
 
     Args:
@@ -204,7 +205,8 @@ def parse_diff(diff_filename):
         added_split,
         deleted_split,
         changed_from_split,
-        changed_to_split
+        changed_to_split,
+        bin_folder
     )
 
     return added_df, deleted_df, changed_df, detailed_df
@@ -249,7 +251,7 @@ def split_variant_info(raw_list):
 
 
 def make_dataframes(added_list, deleted_list, changed_list_from,
-                    changed_list_to):
+                    changed_list_to, bin_folder):
     """generates dataframes from lists of variants
 
     Args:
@@ -274,23 +276,27 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     added_df = pandas.DataFrame(data=added_list,
                                 columns=["mutation", "clinvar ID",
                                          "category", "info"])
-    added_df["added"] = get_categories(added_df)
+    added_df["added"] = get_categories(added_df,
+                                       bin_folder)
     added_df = added_df[["added"]]
 
     deleted_df = pandas.DataFrame(data=deleted_list,
                                   columns=["mutation", "clinvar ID",
                                            "category", "info"])
-    deleted_df["deleted"] = get_categories(deleted_df)
+    deleted_df["deleted"] = get_categories(deleted_df,
+                                           bin_folder)
     deleted_df = deleted_df[["deleted"]]
 
     changed_from_df = pandas.DataFrame(data=changed_list_from,
                                        columns=["mutation", "clinvar ID",
                                                 "category", "info"])
-    changed_from_df["changed from"] = get_categories(changed_from_df)
+    changed_from_df["changed from"] = get_categories(changed_from_df,
+                                                     bin_folder)
     changed_to_df = pandas.DataFrame(data=changed_list_to,
                                      columns=["mutation", "clinvar ID",
                                               "category", "info"])
-    changed_from_df["changed to"] = get_categories(changed_to_df)
+    changed_from_df["changed to"] = get_categories(changed_to_df,
+                                                   bin_folder)
     changed_df = changed_from_df[["changed from", "changed to"]]
 
     # generate variant evidence report
@@ -428,7 +434,7 @@ def get_evidence_counts(info):
     return return_list
 
 
-def get_categories(dataframe_extract):
+def get_categories(dataframe_extract, bin_folder):
     """get full category name from category and info columns for all entries
 
     Args:
@@ -438,7 +444,8 @@ def get_categories(dataframe_extract):
         list: list of updated category names
     """
     updated_categories = []
-    with open(regex_config_location, "r") as file:
+    location = "{}/resources/annotation_regex.json".format(bin_folder)
+    with open(location, "r") as file:
         regex_dict = json.load(file)
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]

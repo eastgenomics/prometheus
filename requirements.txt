@@ -1,7 +1,8 @@
-atlassian
 dxpy==0.351.0
-jira==3.5.2
+githubrelease==1.5.9
+GitPython==3.1.40
 pandas==2.0.3
-Requests
-slack_sdk==3.21.3
+PyGithub==2.1.1
+Requests==2.31.0
 urllib3==1.26.5
+vcfpy==0.13.6

@@ -373,7 +373,7 @@ def find_all_dx_files(project_id, folder_path, file_name):
     return file_ids
 
 
-def load_config():
+def load_config(bin_path, config_path):
     """loads config file
 
     Returns:
@@ -384,7 +384,8 @@ def load_config():
         slack_channel: str
             Slack API token
     """
-    with open("resources/config.json", "r", encoding="utf8") as json_file:
+    # config_path = "{}/resources/config.json".format(bin_path)
+    with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
     ref_proj_id = config.get('001_REFERENCE_PROJ_ID')
@@ -394,14 +395,15 @@ def load_config():
     return ref_proj_id, dev_proj_id, slack_channel
 
 
-def load_config_repo(assay):
+def load_config_repo(assay, bin_path, config_path):
     """loads config file for VEP config update
 
     Returns:
         repo: str
             URL to github repo for assay config file
     """
-    with open("resources/config.json", "r", encoding="utf8") as json_file:
+    # config_path = "{}/resources/config.json".format(bin_path)
+    with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
     if assay == "TSO500":
@@ -414,14 +416,15 @@ def load_config_repo(assay):
     return repo
 
 
-def load_config_reports_workflow():
+def load_config_reports_workflow(bin_path, config_path):
     """loads config file for TSO500 reports workflow update
 
     Returns:
         repo: str
             URL to github repo for TSO500 reports workflow
     """
-    with open("resources/config.json", "r", encoding="utf8") as json_file:
+    # config_path = "{}/resources/config.json".format(bin_path)
+    with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
     repo = config.get('TSO500_WORKFLOW_REPO')

@@ -5,6 +5,7 @@ new clinvar updates come in
 """
 import logging
 import sys
+import os
 
 from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
 import make_vep_test_configs as vep
@@ -18,15 +19,23 @@ from utils import load_config
 logger = logging.getLogger("main log")
 
 
-def run_annotation_update(bin_folder, genome_build):
+def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
     """runs all steps of prometheus ClinVar annotation resource update
 
     Args:
         bin_folder (str): folder scripts are run from
+        config_path (str): path to config file
+        creds_path (str): path to credentials file
     """
+    # make temp dir
+    try:
+        os.mkdir("temp")
+    except FileExistsError:
+        pass
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel = load_config()
-    login_handler = LoginHandler()
+    ref_proj_id, dev_proj_id, slack_channel = load_config(bin_folder,
+                                                          config_path)
+    login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
@@ -81,7 +90,8 @@ def run_annotation_update(bin_folder, genome_build):
                                                       clinvar_vcf_id,
                                                       clinvar_tbi_id,
                                                       dev_proj_id,
-                                                      ref_proj_id)
+                                                      ref_proj_id,
+                                                      bin_folder)
     else:
         vep_config_dev = tracker.vep_config_dev
         vep_config_prod = tracker.vep_config_prod
@@ -192,10 +202,10 @@ if __name__ == "__main__":
     # a DNAnexus app/applet
 
     # validate arguments
-    if len(sys.argv) < 3:
-        logger.error("2 command line args are required"
+    if len(sys.argv) < 5:
+        logger.error("5 command line args are required"
                      + " to run annotation_update.py"
                      + " but {} were provided".format(len(sys.argv)))
         exit_prometheus()
 
-    run_annotation_update(sys.argv[1], sys.argv[2])
+    run_annotation_update(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
