@@ -47,21 +47,6 @@ process updateVepConfigs
         """
 }
 
-process updateReportsWorkflow
-{
-    input:
-        each genomeBuild
-        val assay
-        path config_path
-        path cred_path
-
-    script:
-        
-        """
-        python3 ${pathToBin}/reports_workflow_update.py ${pathToBin} ${genomeBuild} ${config_path} ${cred_path}
-        """
-}
-
 workflow 
 {
     // run prometheus
@@ -75,7 +60,4 @@ workflow
     // TSO500, TWE, CEN, and MYE in parallel
     assays = Channel.of("TSO500", "TWE", "CEN")
     vep = updateVepConfigs(annotation, assays, params.config_path, params.cred_path)
-
-    // update TSO500 reports workflow
-    updateReportsWorkflow(genomes, vep.filter {it == "TSO500"}, params.config_path, params.cred_path)
 }
