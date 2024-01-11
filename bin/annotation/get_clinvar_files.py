@@ -8,7 +8,7 @@ from datetime import datetime
 import dxpy
 import time
 
-from utils import check_jobs_finished
+from util.utils import check_jobs_finished
 
 
 def get_ftp_files():

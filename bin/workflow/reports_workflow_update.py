@@ -9,18 +9,18 @@ import os
 import re
 import sys
 
-import deployer
-from login_handler import LoginHandler
-from slack_handler import SlackHandler
-from utils import (get_prod_version,
-                   get_prod_vep_config,
-                   load_config,
-                   load_config_reports_workflow,
-                   check_proj_folder_exists)
-from git_handler import GitHandler
-import utils
+import util.deployer as deployer
+from util.login_handler import LoginHandler
+from util.slack_handler import SlackHandler
+from util.utils import (get_prod_version,
+                        get_prod_vep_config,
+                        load_config,
+                        load_config_reports_workflow,
+                        check_proj_folder_exists)
+from util.git_handler import GitHandler
+import util.utils as utils
 import workflow_handler
-from progress_tracker import WorkflowProgressTracker as Tracker
+from util.progress_tracker import WorkflowProgressTracker as Tracker
 
 logger = logging.getLogger("main log")
 
@@ -198,6 +198,7 @@ def run_workflow_config_update(bin_folder, genome_build,
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()
 
+    # TODO: update for reports workflow
     # clone git repo to get latest config file for given assay
     # upload config file to DNAnexus
     # fetch a valid panel bed and vcf file to run VEP for a given assay

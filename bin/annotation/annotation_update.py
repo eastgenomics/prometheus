@@ -9,12 +9,12 @@ import os
 
 from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
 import make_vep_test_configs as vep
-import vep_testing
-import deployer
-from login_handler import LoginHandler
-from slack_handler import SlackHandler
-from progress_tracker import ClinvarProgressTracker as Tracker
-from utils import load_config
+import util.vep_testing as vep_testing
+import util.deployer as deployer
+from util.login_handler import LoginHandler
+from util.slack_handler import SlackHandler
+from util.progress_tracker import ClinvarProgressTracker as Tracker
+from util.utils import load_config
 
 logger = logging.getLogger("main log")
 

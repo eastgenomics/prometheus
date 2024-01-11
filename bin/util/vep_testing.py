@@ -11,7 +11,7 @@ import vcfpy
 import os
 
 # local modules
-import compare_annotation
+import annotation.compare_annotation as compare_annotation
 from utils import check_jobs_finished
 from utils import check_proj_folder_exists
 from utils import find_dx_file

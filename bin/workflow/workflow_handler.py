@@ -10,11 +10,11 @@ import json
 import pandas as pd
 
 # local modules
-from utils import (check_analyses_finished,
-                   find_dx_file,
-                   find_all_dx_files,
-                   match_folder_name,
-                   get_recent_002_projects)
+from util.utils import (check_analyses_finished,
+                        find_dx_file,
+                        find_all_dx_files,
+                        match_folder_name,
+                        get_recent_002_projects)
 from inspect_workflow_logs import (inspect_workflow_info,
                                    inspect_vep_logs)
 

@@ -3,9 +3,9 @@ Inspects the contents of reports workflow log files for specific strings
 """
 
 import dxpy
-import utils
 
-from utils import search_for_regex
+import util.utils as utils
+from util.utils import search_for_regex
 
 regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
