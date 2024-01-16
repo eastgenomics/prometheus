@@ -75,25 +75,25 @@ def generate_test_summary(filename, test_passed, config_name, vcf_name,
         config_line_count = len(config_results)
         if config_line_count > 0:
             f.write(f"Pass: There were {config_line_count}"
-                    f" lines containing \"{config_name}\"\n")
+                    + f" lines containing \"{config_name}\"\n")
             f.write("Lines containing new config file name:\n\n")
             for line in config_results:
                 f.write(line)
         else:
             f.write(f"Fail: There were {config_line_count} lines"
-                    f" containing \"{config_name}\"\n")
+                    + f" containing \"{config_name}\"\n")
         f.write("\n\n")
 
         f.write(f"Name of new vcf file: {vcf_name}\n\n")
         vcf_line_count = len(vcf_results)
         if vcf_line_count > 0:
             f.write(f"Pass: There were {vcf_line_count} lines"
-                    f" containing \"{vcf_name}\"\n")
+                    + f" containing \"{vcf_name}\"\n")
             f.write("Lines containing new vcf file name:\n\n")
             for line in vcf_results:
                 f.write(line)
         else:
             f.write(f"Fail: There were {vcf_line_count} lines"
-                    f" containing \"{vcf_name}\"\n")
+                    + f" containing \"{vcf_name}\"\n")
 
     return filename

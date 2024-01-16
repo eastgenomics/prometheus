@@ -32,7 +32,7 @@ def generate_config_files(dev_version, dev_annotation_file_id,
                                                      "/annotation/b37/clinvar",
                                                      genome_build)
     prod_filename = ("Clinvar_annotation_vep_config_prod_"
-                     f"{prod_version}.json")
+                     + f"{prod_version}.json")
     prod_output_path = f"temp/{prod_filename}"
     path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id,
                                     prod_index_file_id, bin_folder)

@@ -23,9 +23,9 @@ class SlackHandler:
             genome_build (str): genome build of ClinVar file
         """
         update_message = ("The new version of the ClinVar"
-                          f" {genome_build} annotation resource file"
-                          f" {file_name} ({date}) has been deployed"
-                          " into 001_reference.")
+                          + f" {genome_build} annotation resource file"
+                          + f" {file_name} ({date}) has been deployed"
+                          + " into 001_reference.")
         self.send_message(channel, update_message)
 
     def announce_config_update(self, channel, file_name, assay,
@@ -40,11 +40,11 @@ class SlackHandler:
         vcf_name = f"clinvar_{clinvar_version}_{genome_build}.vcf.gz"
         tbi_name = f"{vcf_name}.tbi"
         update_message = (f"The latest version of the {assay}"
-                          " vep config file has been deployed into the 001"
-                          f" reference project as {file_name}."
-                          "\nThe update consists of updating the ClinVar"
-                          " annotation resource files specificed to"
-                          f" {vcf_name} and {tbi_name}.")
+                          + " vep config file has been deployed into the 001"
+                          + f" reference project as {file_name}."
+                          + "\nThe update consists of updating the ClinVar"
+                          + " annotation resource files specificed to"
+                          + f" {vcf_name} and {tbi_name}.")
         self.send_message(channel, update_message)
 
     def announce_workflow_update(self, channel, file_name, vep_config_name,
@@ -56,11 +56,11 @@ class SlackHandler:
             file_name (_type_): file name of workflow
         """
         update_message = ("The latest version of the Helios reports workflow"
-                          " has been deployed into the 001"
-                          f" reference project as {file_name}."
-                          "\nThe update consists of updating the Helios VEP"
-                          f" config file specificed to {vep_config_name}"
-                          f" for genome build {genome_build}")
+                          + " has been deployed into the 001"
+                          + f" reference project as {file_name}."
+                          + "\nThe update consists of updating the Helios VEP"
+                          + f" config file specificed to {vep_config_name}"
+                          + f" for genome build {genome_build}")
         self.send_message(channel, update_message)
 
     def send_message(self, channel, message):
@@ -91,7 +91,7 @@ class SlackHandler:
             if not response['ok']:
                 # error in sending slack notification
                 raise Exception("Error sending slack "
-                                f"notification: {response.get('error')}")
+                                + f"notification: {response.get('error')}")
         except Exception as err:
             raise Exception("Error sending post request for slack "
-                            f"notification: {err}")
+                            + f"notification: {err}")

@@ -77,7 +77,7 @@ class ClinvarProgressTracker:
             vcf = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
                                      vcf_name)
             tbi_name = (f"clinvar_{self.dev_version}_{self.genome_build}"
-                        ".vcf.gz.tbi")
+                        + ".vcf.gz.tbi")
             tbi = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
                                      tbi_name)
             self.clinvar_fetched = True
@@ -200,7 +200,7 @@ class ClinvarProgressTracker:
             utils.find_dx_file(self.ref_proj_id, folder,
                                vcf_name)
             tbi_name = (f"clinvar_{self.dev_version}_{self.genome_build}"
-                        ".vcf.gz.tbi")
+                        + ".vcf.gz.tbi")
             utils.find_dx_file(self.ref_proj_id, folder,
                                tbi_name)
             self.clinvar_deployed = True

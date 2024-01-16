@@ -25,7 +25,7 @@ def deploy_config_to_production(reference_project_id, dev_project_id,
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(f"Folder {deploy_folder} does not exist"
-                        f" in project {reference_project_id}")
+                        + f" in project {reference_project_id}")
 
     with open_dxfile(dxid=config_id, project=dev_project_id) as file:
         file.clone(project=reference_project_id, folder=deploy_folder)
@@ -47,7 +47,7 @@ def deploy_workflow_to_production(reference_project_id, dev_project_id,
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(f"Folder {deploy_folder} does not exist"
-                        f" in project {reference_project_id}")
+                        + f" in project {reference_project_id}")
     workflow = DXWorkflow(dxid=workflow_id, project=dev_project_id)
     workflow.clone(project=reference_project_id, folder=deploy_folder)
 
@@ -68,7 +68,7 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(f"Folder {deploy_folder} does not exist"
-                        f" in project {reference_project_id}")
+                        + f" in project {reference_project_id}")
 
     with open_dxfile(dxid=vcf_file_id, project=dev_project_id) as vcf_file:
         vcf_file.clone(project=reference_project_id, folder=deploy_folder)
@@ -106,7 +106,7 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
             DNAnexus file ID for txt file containing job IDs
     """
     subfolder = (f"ClinVar_version_{clinvar_version}"
-                 "_annotation_resource_update")
+                 + "_annotation_resource_update")
     folder_path = f"/{subfolder}/Evidence"
 
     # make new subfolder for documenting evidence

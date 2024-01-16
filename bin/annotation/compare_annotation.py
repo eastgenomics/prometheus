@@ -473,9 +473,9 @@ def get_full_category_name(base_name, info, regex_dict):
     conflict = "conflicting interpretations of pathogenicity"
     conflict_other = "conflicting interpretations of pathogenicity and other"
     conflict_risk = ("conflicting interpretations of"
-                     " pathogenicity and risk factor")
+                     + " pathogenicity and risk factor")
     conflict_other_risk = ("conflicting interpretations of"
-                           " pathogenicity and other and risk factor")
+                           + " pathogenicity and other and risk factor")
 
     unknown_key = "unknown"
 
@@ -513,7 +513,7 @@ def get_full_category_name(base_name, info, regex_dict):
                                 new_info.append(match)
                             else:
                                 raise Exception("Invalid input format "
-                                                "in 'info' field")
+                                                + "in 'info' field")
 
                         # we now have a vec (new_info) containing all evidence
                         # categories for this variant

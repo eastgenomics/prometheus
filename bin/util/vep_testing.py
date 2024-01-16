@@ -204,8 +204,8 @@ def parse_vep_output(project_id, folder, label, update_folder):
                 info = csq_fields[4]
 
             new_record = (f"{record.CHROM}:{record.POS}"
-                          f":{record.REF}:{record.ALT[0].value}"
-                          f" {csq_fields[2]} {csq_fields[3]} {info}\n")
+                          + f":{record.REF}:{record.ALT[0].value}"
+                          + f" {csq_fields[2]} {csq_fields[3]} {info}\n")
             file.write(new_record)
 
     return vcf_output_path
@@ -254,10 +254,10 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
             file.write(f"Production TSO500 job: {prod_tso_job}\n")
     except FileNotFoundError:
         print("The directory for saving the job report "
-              f"{path} does not exist")
+              + f"{path} does not exist")
     except FileExistsError:
         print(f"The file {path} "
-              "already exists and job report cannot be saved")
+              + "already exists and job report cannot be saved")
 
     return path
 
@@ -324,8 +324,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"
-    vcf = ""
-    bed = ""
+    vcf = bed = ""
 
     for index, row in df.iterrows():
         # attempt to find vcf and bed files
@@ -339,7 +338,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
 
     if vcf == "":
         raise IOError("VCF file not found in recent 002"
-                      f" project for assay {assay}")
+                      + f" project for assay {assay}")
 
     try:
         bed = find_dx_file(ref_proj_id, folder_bed, bed_name)
@@ -348,6 +347,6 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
 
     if bed == "":
         raise IOError("Panel bed file not found in 001"
-                      f" ref project for assay {assay}")
+                      + f" ref project for assay {assay}")
 
     return vcf, bed

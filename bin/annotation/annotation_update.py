@@ -46,7 +46,7 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
      earliest_time,
      clinvar_version) = get_ftp_files()
     update_folder = (f"/ClinVar_version_{clinvar_version}"
-                     "_annotation_resource_update")
+                     + "_annotation_resource_update")
     genome_build_folder = f"/annotation/{genome_build}/clinvar"
 
     # check if any steps have already been completed
@@ -57,8 +57,8 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
     # Step 1 - Fetch latest ClinVar files and add to new 003 project
     if not tracker.clinvar_fetched:
         logger.info("Downloading the clinvar annotation resource files "
-                    f"{recent_vcf_file} and {recent_tbi_file}"
-                    f" from {earliest_time}")
+                    + f"{recent_vcf_file} and {recent_tbi_file}"
+                    + f" from {earliest_time}")
         (clinvar_vcf_id,
          clinvar_tbi_id) = retrieve_clinvar_files(dev_proj_id,
                                                   recent_vcf_file,
@@ -69,9 +69,9 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
         clinvar_vcf_id = tracker.clinvar_vcf_id
         clinvar_tbi_id = tracker.clinvar_tbi_id
         logger.info("The clinvar annotation resource files "
-                    f"{recent_vcf_file} and {recent_tbi_file}"
-                    f" from {earliest_time}"
-                    " have already been downloaded")
+                    + f"{recent_vcf_file} and {recent_tbi_file}"
+                    + f" from {earliest_time}"
+                    + " have already been downloaded")
 
     # Verification that step 1 has been completed
     tracker.check_clinvar_fetched()
@@ -82,7 +82,7 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
     # and store local paths
     if not tracker.configs_made:
         logger.info("Creating development and production"
-                    " config files from template")
+                    + " config files from template")
         (vep_config_dev,
          vep_config_prod) = vep.generate_config_files(clinvar_version,
                                                       clinvar_vcf_id,
@@ -95,7 +95,7 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
         vep_config_dev = tracker.vep_config_dev
         vep_config_prod = tracker.vep_config_prod
         logger.info("Development and production"
-                    " config files already created")
+                    + " config files already created")
 
     # Verification that step 2 has been completed
     tracker.check_configs_made()
@@ -179,9 +179,10 @@ def announce_manual_check(slack_handler, channel, dev_project, update_folder):
     """
     # send slack message announcing manual check must be made for evidence
     slack_handler.send_message(channel,
-                               "Latest ClinVar annotation resource file update"
-                               " awaiting manual review in DNAnexus project"
-                               f" {dev_project} folder {update_folder}")
+                               ("Latest ClinVar annotation resource file"
+                                + " update awaiting manual review in DNAnexus"
+                                + f" project {dev_project}"
+                                + " folder {update_folder}"))
     exit_prometheus()
 
 
@@ -202,8 +203,8 @@ if __name__ == "__main__":
     num_args = len(sys.argv)
     if num_args < 5:
         logger.error("5 command line args are required"
-                     f" to run annotation_update.py"
-                     f" but {num_args} were provided")
+                     + " to run annotation_update.py"
+                     + f" but {num_args} were provided")
         exit_prometheus()
 
     run_annotation_update(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

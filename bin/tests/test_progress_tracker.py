@@ -22,7 +22,7 @@ class testCase(unittest.TestCase):
          earliest_time,
          clinvar_version) = get_clinvar_files.get_ftp_files()
         update_folder = (f"/ClinVar_version_{clinvar_version}"
-                         "_annotation_resource_update")
+                         + "_annotation_resource_update")
         b37_folder = "/annotation/b37/clinvar"
         genome_build = "b37"
         tracker_b37 = Tracker(dev_proj_id, ref_proj_id, update_folder,
