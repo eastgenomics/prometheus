@@ -86,26 +86,34 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     # validate genome build
     valid_genome_builds = ["b37", "b38"]
     if genome_build not in valid_genome_builds:
-        raise Exception(f"Genome build \"{genome_build}\"specified in "
-                        + "retrieve_clinvar_files is invalid")
+        raise Exception(
+            f"Genome build \"{genome_build}\"specified in"
+            + " retrieve_clinvar_files is invalid"
+        )
 
     build_number = genome_build[1:]
-    vcf_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-                + f"{build_number}/weekly/{recent_vcf_file}")
-    tbi_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-                + f"{build_number}/weekly/{recent_tbi_file}")
+    vcf_link = (
+        "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+        + f"{build_number}/weekly/{recent_vcf_file}")
+    tbi_link = (
+        "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+        + f"{build_number}/weekly/{recent_tbi_file}")
     vcf_base_name = recent_vcf_file.split(".")[0]
     renamed_vcf = f"{vcf_base_name}_{genome_build}.vcf.gz"
     renamed_tbi = f"{vcf_base_name}_{genome_build}.vcf.gz.tbi"
-    subfolder = (f"ClinVar_version_{clinvar_version}"
-                 + "_annotation_resource_update")
+    subfolder = (
+        f"ClinVar_version_{clinvar_version}"
+        + "_annotation_resource_update"
+    )
     project_folder = f"/{subfolder}/Testing"
 
     # start url fetcher jobs
-    vcf_job_id = run_url_fetcher(project_id, project_folder,
-                                 vcf_link, renamed_vcf)
-    tbi_job_id = run_url_fetcher(project_id, project_folder,
-                                 tbi_link, renamed_tbi)
+    vcf_job_id = run_url_fetcher(
+        project_id, project_folder, vcf_link, renamed_vcf
+    )
+    tbi_job_id = run_url_fetcher(
+        project_id, project_folder, tbi_link, renamed_tbi
+    )
 
     # Pause until jobs have finished
     job_list = [vcf_job_id, tbi_job_id]
@@ -113,32 +121,32 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
 
     # find file in DNAnexus output folder + get file ID
     vcf_files = list(dxpy.find_data_objects(
-            name=renamed_vcf,
-            project=project_id,
-            folder=project_folder
-        ))
+        name=renamed_vcf,
+        project=project_id,
+        folder=project_folder
+    ))
 
     # check if file is present
     if vcf_files:
         vcf_id = vcf_files[0]['id']
     else:
-        raise FileNotFoundError(f"VCF file {vcf_id} not found in"
-                                + f" DNAnexus project {project_id} in"
-                                + f" folder {project_folder}")
+        raise FileNotFoundError(
+            f"VCF file {vcf_id} not found in DNAnexus project {project_id} in"
+            + f" folder {project_folder}")
 
     tbi_files = list(dxpy.find_data_objects(
-            name=renamed_tbi,
-            project=project_id,
-            folder=project_folder
-        ))
+        name=renamed_tbi,
+        project=project_id,
+        folder=project_folder
+    ))
 
     # check if file is present
     if tbi_files:
         tbi_id = tbi_files[0]['id']
     else:
-        raise FileNotFoundError(f"TBI file {tbi_id} not found in"
-                                + f" DNAnexus project {project_id} in"
-                                + f" folder {project_folder}")
+        raise FileNotFoundError(
+            f"TBI file {tbi_id} not found in DNAnexus project {project_id} in"
+            + f" folder {project_folder}")
 
     # safety feature to prevent too many requests to server
     time.sleep(1)
@@ -165,11 +173,11 @@ def run_url_fetcher(project_id, destination_folder,
     }
 
     job = dxpy.bindings.dxapp.DXApp(name="url_fetcher").run(
-                app_input=inputs,
-                project=project_id,
-                folder=destination_folder,
-                priority='high'
-            )
+        app_input=inputs,
+        project=project_id,
+        folder=destination_folder,
+        priority='high'
+    )
     job_id = job.describe().get('id')
 
     return job_id
@@ -185,11 +193,9 @@ def connect_to_website():
         ftp = FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()
         ftp.cwd("/pub/clinvar/vcf_GRCh37/weekly/")
-    except OSError as error:
-        print("Error: cannot connect to ncbi website")
-        print(error)
-        exit
-    # safety feature to prevent too many requests to server
+        # safety feature to prevent too many requests to server
         time.sleep(1)
+    except OSError:
+        raise RuntimeError("Error: cannot connect to ncbi website")
 
     return ftp

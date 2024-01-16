@@ -54,8 +54,10 @@ def check_analyses_finished(id_list, timer, max_wait_time):
 
     # fail if analyses took too long to finish
     if time_elapsed >= max_wait_time:
-        raise Exception("Analysis took longer than max wait time of"
-                        + f" {max_wait_time} minutes to complete")
+        raise Exception(
+            "Analysis took longer than max wait time of"
+            + f" {max_wait_time} minutes to complete"
+        )
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -97,8 +99,9 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
 
     # fail if jobs took too long to finish
     if time_elapsed >= max_wait_time:
-        raise Exception("Jobs took longer than max wait time of"
-                        + f" {max_wait_time} minutes to complete")
+        raise RuntimeError(
+            "Jobs took longer than max wait time of"
+            + f" {max_wait_time} minutes to complete")
 
 
 def check_project_exists(project_id):
@@ -125,13 +128,13 @@ def check_proj_folder_exists(project_id, folder_path):
         folder_path (str): path to DNAnexus folder
 
     Raises:
-        Exception: project not found
+        RuntimeError: project not found
 
     Returns:
         bool: does folder exist in project
     """
     if not check_project_exists(project_id):
-        raise Exception(f"Project {project_id} does not exist")
+        raise RuntimeError(f"Project {project_id} does not exist")
 
     try:
         dxpy.api.project_list_folder(
@@ -153,8 +156,8 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
         genome_build (str): genome build of ClinVar file
 
     Raises:
-        Exception: no ClinVar files could be found in ref project folder
-        Exception: project folder does not exist
+        RuntimeError: no ClinVar files could be found in ref project folder
+        RuntimeError: project folder does not exist
 
     Returns:
         recent_version: str
@@ -165,26 +168,24 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
             DNAnexus file ID for production vcf index file
     """
     if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
-        raise Exception(f"Folder {ref_proj_folder} does not exist"
-                        + f" in project {ref_proj_id}")
+        raise RuntimeError(
+            f"Folder {ref_proj_folder} does not exist in project {ref_proj_id}"
+        )
     name_regex = f"clinvar_*_{genome_build}.vcf.gz"
     vcf_files = list(dxpy.find_data_objects(
-            name=name_regex,
-            name_mode='glob',
-            project=ref_proj_id,
-            folder=ref_proj_folder
-        ))
+        name=name_regex, name_mode='glob', project=ref_proj_id,
+        folder=ref_proj_folder
+    ))
 
     # Error handling if files are not found in 001 reference
     if not vcf_files:
-        raise Exception(f"No clinvar files matching {name_regex} "
-                        + "were found in 001 reference project")
+        raise RuntimeError(
+            f"No clinvar files matching {name_regex}"
+            + " were found in 001 reference project"
+        )
 
     latest_time = datetime.strptime("20200101", '%Y%m%d').date()
-    recent_version = ""
-    vcf_id = ""
-    index_id = ""
-    version = ""
+    recent_version = vcf_id = index_id = version = ""
 
     for file in vcf_files:
         name = dxpy.describe(
@@ -198,9 +199,10 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
             vcf_id = file['id']
 
     # get index file based on clinvar version
-    index_id = find_dx_file(ref_proj_id,
-                            + f"/annotation/{genome_build}/clinvar", "clinvar_"
-                            + f"{recent_version}_{genome_build}.vcf.gz.tbi")
+    index_id = find_dx_file(
+        ref_proj_id, f"/annotation/{genome_build}/clinvar",
+        f"clinvar_{recent_version}_{genome_build}.vcf.gz.tbi"
+    )
 
     # return latest production version
     return recent_version, vcf_id, index_id
@@ -223,8 +225,9 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
             DNAnexus file ID of vep config file
     """
     if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
-        raise Exception(f"Folder {ref_proj_folder} does not exist"
-                        + f" in project {ref_proj_id}")
+        raise RuntimeError(
+            f"Folder {ref_proj_folder} does not exist in project {ref_proj_id}"
+        )
     assay = assay.lower()
     name_regex = f"{assay}_vep_config_v*.json"
     config_files = list(dxpy.find_data_objects(
@@ -244,8 +247,8 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
 
     # Error handling if files are not found in 001 reference
     if not config_files:
-        raise Exception(f"No vep config files matching {name_regex}"
-                        + " were found in 001 reference project")
+        raise RuntimeError(f"No vep config files matching {name_regex}"
+                           + " were found in 001 reference project")
 
     # return the most recent file uploaded found
     if len(config_files) == 1:
@@ -274,36 +277,38 @@ def find_dx_file(project_id, folder_path, file_name):
     """
     if folder_path == "":
         file_list = list(dxpy.find_data_objects(
-                name=file_name,
-                name_mode="glob",
-                project=project_id,
-                describe={
-                    "fields": {
-                        "id": True,
-                        "name": True,
-                        "created": True,
-                        "archivalState": True
-                    }
+            name=file_name,
+            name_mode="glob",
+            project=project_id,
+            describe={
+                "fields": {
+                    "id": True,
+                    "name": True,
+                    "created": True,
+                    "archivalState": True
                 }
-            ))
+            }
+        ))
     else:
         file_list = list(dxpy.find_data_objects(
-                name=file_name,
-                name_mode='glob',
-                project=project_id,
-                folder=folder_path,
-                describe={
-                    "fields": {
-                        "id": True,
-                        "name": True,
-                        "created": True,
-                        "archivalState": True
-                    }
+            name=file_name,
+            name_mode='glob',
+            project=project_id,
+            folder=folder_path,
+            describe={
+                "fields": {
+                    "id": True,
+                    "name": True,
+                    "created": True,
+                    "archivalState": True
                 }
-            ))
+            }
+        ))
     if len(file_list) < 1:
-        raise IOError(f"DNAnexus file {file_name} does not exist in project"
-                      + f" {project_id} folder {folder_path}")
+        raise IOError(
+            f"DNAnexus file {file_name} does not exist in project"
+            + f" {project_id} folder {folder_path}"
+        )
 
     # return the most recent file uploaded found
     if len(file_list) == 1:
@@ -332,36 +337,38 @@ def find_all_dx_files(project_id, folder_path, file_name):
     """
     if folder_path == "":
         file_list = list(dxpy.find_data_objects(
-                name=file_name,
-                name_mode="glob",
-                project=project_id,
-                describe={
-                    "fields": {
-                        "id": True,
-                        "name": True,
-                        "created": True,
-                        "archivalState": True
-                    }
+            name=file_name,
+            name_mode="glob",
+            project=project_id,
+            describe={
+                "fields": {
+                    "id": True,
+                    "name": True,
+                    "created": True,
+                    "archivalState": True
                 }
-            ))
+            }
+        ))
     else:
         file_list = list(dxpy.find_data_objects(
-                name=file_name,
-                name_mode='glob',
-                project=project_id,
-                folder=folder_path,
-                describe={
-                    "fields": {
-                        "id": True,
-                        "name": True,
-                        "created": True,
-                        "archivalState": True
-                    }
+            name=file_name,
+            name_mode='glob',
+            project=project_id,
+            folder=folder_path,
+            describe={
+                "fields": {
+                    "id": True,
+                    "name": True,
+                    "created": True,
+                    "archivalState": True
                 }
-            ))
+            }
+        ))
     if len(file_list) < 1:
-        raise IOError(f"DNAnexus file {file_name} does not exist in project"
-                      + f" {project_id} folder {folder_path}")
+        raise IOError(
+            f"DNAnexus file {file_name} does not exist in project"
+            + f" {project_id} folder {folder_path}"
+        )
 
     # return the most recent file uploaded found
     file_ids = []
@@ -422,8 +429,8 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
         replace_with (str): string to replace the replace regex
 
     Raises:
-        Exception: first match regex has not match
-        Exception: replace regex has no match
+        RuntimeError: first match regex has not match
+        RuntimeError: replace regex has no match
     """
     old_config_filename = glob.glob(json_path_glob)[0]
     new_lines = []
@@ -446,11 +453,13 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
                 else:
                     new_lines.append(line)
     if not match_found:
-        raise Exception(f"Regex {first_match} had no match"
-                        + f" in file {old_config_filename}")
+        raise RuntimeError(
+            f"Regex {first_match} had no match in file {old_config_filename}"
+        )
     elif not regex_found:
-        raise Exception(f"Regex {replace_regex} had no match"
-                        + f" in file {old_config_filename}")
+        raise RuntimeError(
+            f"Regex {replace_regex} had no match in file {old_config_filename}"
+        )
     os.remove(old_config_filename)
     with open(old_config_filename, "w") as f:
         f.writelines(new_lines)
@@ -467,8 +476,8 @@ def is_json_content_different(json_path_glob, first_match,
         new_file_id (str): new file ID to be compared against
 
     Raises:
-        Exception: first match regex has no match
-        Exception: file ID regex has no match
+        RuntimeError: first match regex has no match
+        RuntimeError: file ID regex has no match
 
     Returns:
         _type_: _description_
@@ -493,11 +502,13 @@ def is_json_content_different(json_path_glob, first_match,
                     else:
                         return True
     if not match_found:
-        raise Exception(f"Regex {first_match} had no match"
-                        + f" in file {config_filename}")
+        raise RuntimeError(
+            f"Regex {first_match} had no match in file {config_filename}"
+        )
     elif not regex_found:
-        raise Exception(f"Regex {file_id_regex} had no match"
-                        + f" in file {config_filename}")
+        raise RuntimeError(
+            f"Regex {file_id_regex} had no match in file {config_filename}"
+        )
 
 
 def search_json(json_path_glob, first_match,
@@ -510,8 +521,8 @@ def search_json(json_path_glob, first_match,
         search_regex (str): regex to search for
 
     Raises:
-        Exception: first match regex not found
-        Exception: search regex not found
+        RuntimeError: first match regex not found
+        RuntimeError: search regex not found
 
     Returns:
         str: string matching search regex
@@ -532,11 +543,13 @@ def search_json(json_path_glob, first_match,
                     # get portion of match in parentheses
                     return match[1]
     if not match_found:
-        raise Exception(f"Regex {first_match} had no match"
-                        + f" in file {config_filename}")
+        raise RuntimeError(
+            f"Regex {first_match} had no match in file {config_filename}"
+        )
     elif not regex_found:
-        raise Exception(f"Regex {search_regex} had no match"
-                        + f" in file {config_filename}")
+        raise RuntimeError(
+            f"Regex {search_regex} had no match in file {config_filename}"
+        )
 
 
 def increment_version(version):
@@ -546,7 +559,7 @@ def increment_version(version):
         version (str): version to increment
 
     Raises:
-        Exception: version has invalid format
+        RuntimeError: version has invalid format
 
     Returns:
         str: incremented version
@@ -555,8 +568,10 @@ def increment_version(version):
     regex = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
     matched = re.search(regex, version)
     if not matched:
-        raise Exception(f"Version {version} has invalid format."
-                        + " Format must be x.y.z where x y and z are integers")
+        raise RuntimeError(
+            f"Version {version} has invalid format."
+            + " Format must be x.y.z where x y and z are integers"
+        )
     new_version_end = int(matched[3]) + 1
     return_version = f"{matched[1]}.{matched[2]}.{new_version_end}"
     return return_version
@@ -570,7 +585,7 @@ def get_recent_002_projects(assay, months):
         months (int): number of months ago to check from
 
     Raises:
-        Exception: No projects found for assay in past n months
+        RuntimeError: No projects found for assay in past n months
 
     Returns:
         pandas.DataFrame: projects found, cols id, name, created
@@ -588,8 +603,9 @@ def get_recent_002_projects(assay, months):
             created_after=f"-{months}M",
         ))
     if len(assay_response) < 1:
-        raise Exception(f"No 002 projects found for assay {assay}"
-                        + f" in past {months} months")
+        raise RuntimeError(
+            f"No 002 projects found for assay {assay} in past {months} months"
+        )
 
     assay_info = [[]]
     for entry in assay_response:
@@ -599,10 +615,11 @@ def get_recent_002_projects(assay, months):
         assay_info.append(info)
 
     # get most recent 002 in search and return project id
-    df = pd.DataFrame.from_records(data=assay_info,
-                                   columns=["id",
-                                            "name",
-                                            "created"])
+    df = pd.DataFrame.from_records(
+        data=assay_info, columns=[
+            "id", "name", "created"
+        ]
+    )
     # sort by date
     df = df.sort_values(["created"], ascending=[False])
 
@@ -632,25 +649,27 @@ def match_folder_name(project_id, base_path, folder_regex):
         folder_regex (str): regex of folder name
 
     Raises:
-        Exception: base path not found in project
-        Exception: folder matching regex not found
+        RuntimeError: base path not found in project
+        RuntimeError: folder matching regex not found
 
     Returns:
         _type_: _description_
     """
     if not check_proj_folder_exists(project_id, base_path):
-        raise Exception(f"Folder {base_path} does not exist"
-                        + f" in project {project_id}")
+        raise RuntimeError(
+            f"Folder {base_path} does not exist in project {project_id}"
+        )
 
-    folders = list_subfolders(project=project_id,
-                              path=base_path,
-                              recurse=False)
+    folders = list_subfolders(
+        project=project_id, path=base_path, recurse=False
+    )
     match_regex = re.compile(folder_regex)
     for folder in folders:
         if match_regex.search(folder):
             return folder
-    raise Exception(f"No folder matched the regex {folder_regex} "
-                    + f"in path {base_path} of project {project_id}")
+    raise RuntimeError(
+        f"No folder matched the regex {folder_regex}"
+        + f" in path {base_path} of project {project_id}")
 
 
 def search_for_regex(log_file, regex):

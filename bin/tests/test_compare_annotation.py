@@ -15,21 +15,31 @@ class testCase(unittest.TestCase):
             regex_dict = json.load(file)
 
         assert ca.get_full_category_name("Benign", ".", regex_dict) == "benign"
-        assert (ca.get_full_category_name("Benign/Likely_benign", ".",
-                                          regex_dict)
-                == "benign/likely benign")
-        assert (ca.get_full_category_name("not_provided", ".", regex_dict)
-               == "not provided")
-        assert (ca.get_full_category_name("Pathogenic", ".", regex_dict)
-               == "pathogenic")
-        assert (ca.get_full_category_name("Uncertain_significance", ".",
-                                          regex_dict)
-                == "uncertain significance")
-        assert (ca.get_full_category_name("Pathogenic/Likely_pathogenic", ".",
-                                          regex_dict)
-                == "pathogenic/likely pathogenic")
-        assert (ca.get_full_category_name("risk_factor", ".", regex_dict)
-               == "risk factor")
+        assert (
+            ca.get_full_category_name(
+                "Benign/Likely_benign", ".", regex_dict
+            ) == "benign/likely benign"
+        )
+        assert (
+            ca.get_full_category_name(
+                "not_provided", ".", regex_dict
+            ) == "not provided")
+        assert (
+            ca.get_full_category_name(
+                "Pathogenic", ".", regex_dict
+            ) == "pathogenic")
+        assert (
+            ca.get_full_category_name(
+                "Uncertain_significance", ".", regex_dict
+            ) == "uncertain significance")
+        assert (
+            ca.get_full_category_name(
+                "Pathogenic/Likely_pathogenic", ".", regex_dict
+                ) == "pathogenic/likely pathogenic")
+        assert (
+            ca.get_full_category_name(
+                "risk_factor", ".", regex_dict
+                ) == "risk factor")
 
         # complex cases
         conflicting = "Conflicting_interpretations_of_pathogenicity"
@@ -91,10 +101,12 @@ class testCase(unittest.TestCase):
          detailed_df) = ca.parse_diff("test_diff.txt")
 
         # check output type is correct
-        assert ((type(added_df) is pandas.DataFrame)
-                and (type(deleted_df) is pandas.DataFrame)
-                and (type(changed_df) is pandas.DataFrame)
-                and (type(changed_df) is pandas.DataFrame))
+        assert (
+            (type(added_df) is pandas.DataFrame)
+            and (type(deleted_df) is pandas.DataFrame)
+            and (type(changed_df) is pandas.DataFrame)
+            and (type(changed_df) is pandas.DataFrame)
+            )
 
         # check contents are correct
         assert len(added_df) == 1
@@ -118,8 +130,10 @@ class testCase(unittest.TestCase):
             ca.get_full_category_name(conflict_other, info, regex_dict)
 
     def test_split_variant_info(self):
-        input = ["< 1:10689814:G:C 2125983 Uncertain_significance .",
-                 "< 1:247587997:G:A 1985408 Benign ."]
+        input = [
+            "< 1:10689814:G:C 2125983 Uncertain_significance .",
+            "< 1:247587997:G:A 1985408 Benign ."
+        ]
         output = ca.split_variant_info(input)
         assert len(output) == 2
         assert output[0][0] == "1:10689814:G:C"
@@ -128,8 +142,10 @@ class testCase(unittest.TestCase):
         assert output[0][3] == "."
 
     def test_get_evidence_counts(self):
-        input = ("Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
-                 + "&Likely_pathogenic(3)&Pathogenic(4)")
+        input = (
+            "Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
+            + "&Likely_pathogenic(3)&Pathogenic(4)"
+        )
         assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 0, 0]
 
         input = "Benign(1)&Likely_pathogenic(31)&Pathogenic(46)"
@@ -138,21 +154,22 @@ class testCase(unittest.TestCase):
     def test_make_dataframes(self):
         added_list = []
         deleted_list = []
-        changed_list_from = [["mutation",
-                              "1234",
-                              "Conflicting_interpretations_of_pathogenicity",
-                              "Benign(1)&Likely_pathogenic(3)&Pathogenic(4)"]]
-        changed_list_to = [["mutation",
-                            "1234",
-                            "Conflicting_interpretations_of_pathogenicity",
-                            "Benign(1)&Likely_benign(1)&Pathogenic(4)"]]
+        changed_list_from = [[
+            "mutation", "1234",
+            "Conflicting_interpretations_of_pathogenicity",
+            "Benign(1)&Likely_pathogenic(3)&Pathogenic(4)"
+        ]]
+        changed_list_to = [[
+            "mutation", "1234",
+            "Conflicting_interpretations_of_pathogenicity",
+            "Benign(1)&Likely_benign(1)&Pathogenic(4)"
+        ]]
         (added_df,
          deleted_df,
          changed_df,
-         det_df) = ca.make_dataframes(added_list,
-                                      deleted_list,
-                                      changed_list_from,
-                                      changed_list_to)
+         det_df) = ca.make_dataframes(
+             added_list, deleted_list, changed_list_from, changed_list_to
+        )
         output_location = "temp"
         detailed_out = (f"{output_location}/detailed_changed_variants.csv")
         det_df.to_csv(detailed_out, index=False)

@@ -55,9 +55,9 @@ class testCase(unittest.TestCase):
         folder = "/annotation/b37/clinvar"
         check_proj_folder_exists(ref_proj_id, folder)
         (prod_version, prod_annotation_file_id,
-            prod_index_file_id) = get_prod_version(ref_proj_id,
-                                                   folder,
-                                                   "b37")
+            prod_index_file_id) = get_prod_version(
+                ref_proj_id, folder, "b37"
+            )
         assert re.match(r"\d{6}", prod_version)
         assert re.match(r"^file-.+$", prod_annotation_file_id)
         assert re.match(r"^file-.+$", prod_index_file_id)
@@ -118,10 +118,8 @@ class testCase(unittest.TestCase):
 
     def test_update_json(self):
         path = "temp/unittest_update_json.txt"
-        lines = ["This\n",
-                 "sentence\n",
-                 "is\n",
-                 "false\n"]
+        lines = [
+            "This\n", "sentence\n", "is\n", "false\n"]
         with open(path, "w") as file:
             file.writelines(lines)
         json_path_glob = "temp/unit*_update_json.txt"
@@ -131,26 +129,24 @@ class testCase(unittest.TestCase):
         search_regex = r"(is.+ot)"
 
         with self.assertRaises(Exception):
-            utils.search_json(json_path_glob,
-                              first_match,
-                              search_regex)
-        utils.update_json(json_path_glob,
-                          first_match,
-                          replace_regex,
-                          replace_with)
+            utils.search_json(
+                json_path_glob, first_match, search_regex)
+        utils.update_json(
+            json_path_glob, first_match, replace_regex, replace_with
+        )
 
-        found = utils.search_json(json_path_glob,
-                                  first_match,
-                                  search_regex)
+        found = utils.search_json(
+            json_path_glob, first_match, search_regex
+        )
         assert found == replace_with
         os.remove(path)
 
     def test_is_json_content_different(self):
         path = "temp/unittest_content_different.txt"
-        lines = ["Content\n",
-                 "Header\n",
-                 "File ID: \"file-myfile12345\"\n",
-                 "End\n"]
+        lines = [
+            "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
+            "End\n"
+        ]
         with open(path, "w") as file:
             file.writelines(lines)
         json_path_glob = "temp/unit*_content_different.txt"
@@ -158,37 +154,32 @@ class testCase(unittest.TestCase):
         file_id_regex = r"File ID: \"(.+)\""
         new_file_id = "file-myfile23456"
         old_file_id = "file-myfile12345"
-        assert utils.is_json_content_different(json_path_glob,
-                                               first_match,
-                                               file_id_regex,
-                                               new_file_id)
+        assert utils.is_json_content_different(
+            json_path_glob, first_match, file_id_regex, new_file_id
+        )
 
-        assert not utils.is_json_content_different(json_path_glob,
-                                                   first_match,
-                                                   file_id_regex,
-                                                   old_file_id)
+        assert not utils.is_json_content_different(
+            json_path_glob, first_match, file_id_regex, old_file_id
+        )
 
         first_match = "Header12345"
         with self.assertRaises(Exception):
-            utils.is_json_content_different(json_path_glob,
-                                            first_match,
-                                            file_id_regex,
-                                            new_file_id)
+            utils.is_json_content_different(
+                json_path_glob, first_match, file_id_regex, new_file_id
+            )
 
         first_match = "Header"
         file_id_regex = r"File ID Incorrect: \"(.+)\""
         with self.assertRaises(Exception):
-            utils.is_json_content_different(json_path_glob,
-                                            first_match,
-                                            file_id_regex,
-                                            new_file_id)
+            utils.is_json_content_different(
+                json_path_glob, first_match, file_id_regex, new_file_id
+            )
 
     def test_search_json(self):
         path = "temp/unittest_search_json.txt"
-        lines = ["This\n",
-                 "sentence\n",
-                 "is\n",
-                 "false\n"]
+        lines = [
+            "This\n", "sentence\n", "is\n", "false\n"
+        ]
         with open(path, "w") as file:
             file.writelines(lines)
         json_path_glob = "temp/unit*_search_json.txt"
@@ -201,24 +192,23 @@ class testCase(unittest.TestCase):
                               search_regex)
 
         search_regex = r"(is)"
-        found = utils.search_json(json_path_glob,
-                                  first_match,
-                                  search_regex)
+        found = utils.search_json(
+            json_path_glob, first_match, search_regex
+        )
         assert found == "is"
 
         first_match = "sentence12345"
         with self.assertRaises(Exception):
-            utils.search_json(json_path_glob,
-                              first_match,
-                              search_regex)
+            utils.search_json(
+                json_path_glob, first_match, search_regex
+            )
         os.remove(path)
 
     def test_search_for_regex(self):
         path = "temp/unittest_log.txt"
-        lines = ["This\n",
-                 "sentence\n",
-                 "is\n",
-                 "false\n"]
+        lines = [
+            "This\n", "sentence\n", "is\n", "false\n"
+        ]
         with open(path, "w") as file:
             file.writelines(lines)
         regex = ".+e"

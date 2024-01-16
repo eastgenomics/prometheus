@@ -37,7 +37,7 @@ class GitHandler:
             self.origin = self.repo.remotes["origin"]
             pass
         self.origin.fetch()
-        # Setup a local tracking branch of a remote branch
+        # Set up a local tracking branch of a remote branch
         # create local branch branch_name from remote branch_name
         try:
             self.repo.create_head(branch_name, self.origin.refs[branch_name])
@@ -65,10 +65,7 @@ class GitHandler:
         new_name (str): new name of file
         """
         # TODO: replace subprocess with gitpython API call
-        mv_input = ["git",
-                    "mv",
-                    old_name,
-                    new_name]
+        mv_input = ["git", "mv", old_name, new_name]
         os.chdir(filepath)
         subprocess.run(mv_input, stderr=subprocess.STDOUT)
         os.chdir("..")
@@ -112,8 +109,9 @@ class GitHandler:
             source_branch (str): name of branch to create from (e.g., main)
         """
         sb = self.github_repo.get_branch(source_branch)
-        self.github_repo.create_git_ref(ref='refs/heads/' + branch_name,
-                                        sha=sb.commit.sha)
+        self.github_repo.create_git_ref(
+            ref='refs/heads/' + branch_name, sha=sb.commit.sha
+        )
         # set local branch_name to track remote branch_name
         self.origin.fetch()
         (self.repo.heads[branch_name]
@@ -139,10 +137,8 @@ class GitHandler:
         Returns:
             int: ID of pull request used by github
         """
-        pr = self.github_repo.create_pull(title=title,
-                                          body=body,
-                                          head=branch_name,
-                                          base=base_name)
+        pr = self.github_repo.create_pull(
+            title=title, body=body, head=branch_name, base=base_name)
         return pr.number
 
     def merge_pull_request(self, pr_number):
@@ -162,11 +158,10 @@ class GitHandler:
             comment (str): release comment
         """
         os.environ["GITHUB_TOKEN"] = self.github_token
-        gh_release_create(self.github_repo_name,
-                          f"v{version}",
-                          publish=True,
-                          name=f"v{version}",
-                          body=comment)
+        gh_release_create(
+            self.github_repo_name, f"v{version}", publish=True,
+            name=f"v{version}", body=comment
+        )
 
     def open_github_instance(self, github_token):
         """sets up new github instance

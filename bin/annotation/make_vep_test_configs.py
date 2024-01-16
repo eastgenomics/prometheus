@@ -27,32 +27,38 @@ def generate_config_files(dev_version, dev_annotation_file_id,
             DNAnexus file ID for prod vep config file
     """
     # make prod testing file from template
-    (prod_version, prod_annotation_file_id,
-        prod_index_file_id) = utils.get_prod_version(ref_proj_id,
-                                                     "/annotation/b37/clinvar",
-                                                     genome_build)
-    prod_filename = ("Clinvar_annotation_vep_config_prod_"
-                     + f"{prod_version}.json")
+    (prod_version,
+     prod_annotation_file_id,
+     prod_index_file_id) = utils.get_prod_version(
+         ref_proj_id, "/annotation/b37/clinvar", genome_build
+    )
+    prod_filename = (
+        f"Clinvar_annotation_vep_config_prod_{prod_version}.json"
+    )
     prod_output_path = f"temp/{prod_filename}"
-    path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id,
-                                    prod_index_file_id, bin_folder)
+    path_to_prod = make_config_file(
+        prod_output_path, prod_annotation_file_id,
+        prod_index_file_id, bin_folder
+    )
 
     # make dev testing file from template
     dev_filename = (f"Clinvar_annotation_vep_config_dev_{dev_version}.json")
     dev_output_path = f"temp/{dev_filename}"
-    path_to_dev = make_config_file(dev_output_path, dev_annotation_file_id,
-                                   dev_index_file_id, bin_folder)
+    path_to_dev = make_config_file(
+        dev_output_path, dev_annotation_file_id,
+        dev_index_file_id, bin_folder
+    )
 
     # upload prod and dev files to DNAnexus via dxpy
-    subfolder = (f"ClinVar_version_{dev_version}_annotation_resource_update")
+    subfolder = f"ClinVar_version_{dev_version}_annotation_resource_update"
     folder_path = f"/{subfolder}/Testing"
 
-    dev_file = dxpy.upload_local_file(filename=path_to_dev,
-                                      project=dev_proj_id,
-                                      folder=folder_path)
-    prod_file = dxpy.upload_local_file(filename=path_to_prod,
-                                       project=dev_proj_id,
-                                       folder=folder_path)
+    dev_file = dxpy.upload_local_file(
+        filename=path_to_dev, project=dev_proj_id, folder=folder_path
+    )
+    prod_file = dxpy.upload_local_file(
+        filename=path_to_prod, project=dev_proj_id, folder=folder_path
+    )
 
     dev_id = dev_file.get_id()
     prod_id = prod_file.get_id()

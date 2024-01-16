@@ -22,10 +22,10 @@ class SlackHandler:
             date (str): date of ClinVar file version
             genome_build (str): genome build of ClinVar file
         """
-        update_message = ("The new version of the ClinVar"
-                          + f" {genome_build} annotation resource file"
-                          + f" {file_name} ({date}) has been deployed"
-                          + " into 001_reference.")
+        update_message = (
+            f"The new version of the ClinVar {genome_build} annotation"
+            + f" resource file {file_name} ({date}) has been deployed"
+            + " into 001_reference.")
         self.send_message(channel, update_message)
 
     def announce_config_update(self, channel, file_name, assay,
@@ -39,28 +39,12 @@ class SlackHandler:
         """
         vcf_name = f"clinvar_{clinvar_version}_{genome_build}.vcf.gz"
         tbi_name = f"{vcf_name}.tbi"
-        update_message = (f"The latest version of the {assay}"
-                          + " vep config file has been deployed into the 001"
-                          + f" reference project as {file_name}."
-                          + "\nThe update consists of updating the ClinVar"
-                          + " annotation resource files specificed to"
-                          + f" {vcf_name} and {tbi_name}.")
-        self.send_message(channel, update_message)
-
-    def announce_workflow_update(self, channel, file_name, vep_config_name,
-                                 genome_build):
-        """announces workflow update to team
-
-        Args:
-            channel (str): name of slack channel to post to
-            file_name (_type_): file name of workflow
-        """
-        update_message = ("The latest version of the Helios reports workflow"
-                          + " has been deployed into the 001"
-                          + f" reference project as {file_name}."
-                          + "\nThe update consists of updating the Helios VEP"
-                          + f" config file specificed to {vep_config_name}"
-                          + f" for genome build {genome_build}")
+        update_message = (
+            f"The latest version of the {assay} vep config file has been"
+            + f" deployed into the 001 reference project as {file_name}."
+            + "\nThe update consists of updating the ClinVar"
+            + " annotation resource files specificed to"
+            + f" {vcf_name} and {tbi_name}.")
         self.send_message(channel, update_message)
 
     def send_message(self, channel, message):
@@ -90,8 +74,11 @@ class SlackHandler:
 
             if not response['ok']:
                 # error in sending slack notification
-                raise Exception("Error sending slack "
-                                + f"notification: {response.get('error')}")
+                raise RuntimeError(
+                    "Error sending slack"
+                    + f" notification: {response.get('error')}"
+                )
         except Exception as err:
-            raise Exception("Error sending post request for slack "
-                            + f"notification: {err}")
+            raise RuntimeError(
+                f"Error sending post request for slack notification: {err}"
+            )

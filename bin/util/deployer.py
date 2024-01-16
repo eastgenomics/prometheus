@@ -24,8 +24,10 @@ def deploy_config_to_production(reference_project_id, dev_project_id,
         Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
-        raise Exception(f"Folder {deploy_folder} does not exist"
-                        + f" in project {reference_project_id}")
+        raise Exception(
+            f"Folder {deploy_folder} does not exist"
+            + f" in project {reference_project_id}"
+        )
 
     with open_dxfile(dxid=config_id, project=dev_project_id) as file:
         file.clone(project=reference_project_id, folder=deploy_folder)
@@ -67,8 +69,10 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
         Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
-        raise Exception(f"Folder {deploy_folder} does not exist"
-                        + f" in project {reference_project_id}")
+        raise Exception(
+            f"Folder {deploy_folder} does not exist"
+            + f" in project {reference_project_id}"
+        )
 
     with open_dxfile(dxid=vcf_file_id, project=dev_project_id) as vcf_file:
         vcf_file.clone(project=reference_project_id, folder=deploy_folder)
@@ -113,20 +117,20 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
     dev_project = DXProject(dev_project_id)
     dev_project.new_folder(folder_path, parents=True)
 
-    added_id = upload_local_file(filename=added_csv,
-                                 project=dev_project_id,
-                                 folder=folder_path)
-    deleted_id = upload_local_file(filename=deleted_csv,
-                                   project=dev_project_id,
-                                   folder=folder_path)
-    changed_id = upload_local_file(filename=changed_csv,
-                                   project=dev_project_id,
-                                   folder=folder_path)
-    detailed_id = upload_local_file(filename=detailed_csv,
-                                    project=dev_project_id,
-                                    folder=folder_path)
-    job_report_id = upload_local_file(filename=job_report,
-                                      project=dev_project_id,
-                                      folder=folder_path)
+    added_id = upload_local_file(
+        filename=added_csv, project=dev_project_id, folder=folder_path
+    )
+    deleted_id = upload_local_file(
+        filename=deleted_csv, project=dev_project_id, folder=folder_path
+    )
+    changed_id = upload_local_file(
+        filename=changed_csv, project=dev_project_id, folder=folder_path
+    )
+    detailed_id = upload_local_file(
+        filename=detailed_csv, project=dev_project_id, folder=folder_path
+    )
+    job_report_id = upload_local_file(
+        filename=job_report, project=dev_project_id, folder=folder_path
+    )
 
     return added_id, deleted_id, changed_id, detailed_id, job_report_id

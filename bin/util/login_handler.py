@@ -17,8 +17,9 @@ class LoginHandler:
         """
         (self.dx_token,
          self.slack_token,
-         self.github_token) = self.load_credentials(bin_folder,
-                                                    config_path)
+         self.github_token) = self.load_credentials(
+             bin_folder, config_path
+        )
 
     def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
