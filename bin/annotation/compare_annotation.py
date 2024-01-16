@@ -68,13 +68,13 @@ def compare_annotation(diff_twe, diff_tso, bin_folder):
                                  columns='assay', values='assay counts')
     changed = changed.fillna(0).astype(int)
 
-    added_output = "{}/added_variants.csv".format(output_location)
+    added_output = f"{output_location}/added_variants.csv"
     added.to_csv(added_output, index=True)
-    deleted_output = "{}/deleted_variants.csv".format(output_location)
+    deleted_output = f"{output_location}/deleted_variants.csv"
     deleted.to_csv(deleted_output, index=True)
-    changed_output = "{}/changed_variants.csv".format(output_location)
+    changed_output = f"{output_location}/changed_variants.csv"
     changed.to_csv(changed_output, index=True)
-    detailed_out = "{}/detailed_changed_variants.csv".format(output_location)
+    detailed_out = f"{output_location}/detailed_changed_variants.csv"
     detailed.to_csv(detailed_out, index=False)
 
     return added_output, deleted_output, changed_output, detailed_out
@@ -101,9 +101,8 @@ def parse_diff(diff_filename, bin_folder):
     try:
         diff = open(diff_filename, "r")
     except (FileNotFoundError, IOError):
-        raise FileNotFoundError("Error: the diff file "
-                                + diff_filename
-                                + " could not be found!")
+        raise FileNotFoundError(f"Error: the diff file {diff_filename}"
+                                " could not be found!")
 
     consts = types.SimpleNamespace()
     consts.SCAN_MODE = 0
@@ -229,7 +228,7 @@ def parse_line_count(line):
         return num_commas/2 + 1
     else:
         raise Exception("Invalid (odd) number of commas found"
-                        + " when parsing diff file")
+                        " when parsing diff file")
 
 
 def split_variant_info(raw_list):
@@ -393,8 +392,8 @@ def get_evidence_counts(info):
     match_regex = r"(^[A-Z].+)\(([0-9]+)\)"
     split = re.findall(regex, info)
     if len(split) < 1:
-        raise Exception("Info field \"{}\" does not contain any valid entries"
-                        .format(info))
+        raise Exception(f"Info field \"{info}\" does not contain any valid"
+                        " entries")
 
     cat_benign = "Benign"
     cat_lbenign = "Likely_benign"
@@ -406,16 +405,15 @@ def get_evidence_counts(info):
     for entry in split:
         match = re.search(match_regex, entry)
         if not match:
-            raise Exception("Info field \"{}\" entry \"{}\" has invalid format"
-                            .format(info, entry))
+            raise Exception(f"Info field \"{info}\" entry \"{entry}\" has"
+                            " invalid format")
         category = match.group(1)
         try:
             count = int(match.group(2))
         except Exception:
-            raise Exception("Info field \"{}\"has invalid categories"
-                            .format(info)
-                            + ". The category {} has an invalid evidence count"
-                            .format(category))
+            raise Exception(f"Info field \"{info}\"has invalid categories"
+                            f". The category {category} has an invalid"
+                            " evidence count")
         if category == cat_benign:
             return_list[0] = count
         elif category == cat_lbenign:
@@ -444,7 +442,7 @@ def get_categories(dataframe_extract, bin_folder):
         list: list of updated category names
     """
     updated_categories = []
-    location = "{}/resources/annotation_regex.json".format(bin_folder)
+    location = f"{bin_folder}/resources/annotation_regex.json"
     with open(location, "r") as file:
         regex_dict = json.load(file)
     for index, row in dataframe_extract.iterrows():
@@ -475,9 +473,9 @@ def get_full_category_name(base_name, info, regex_dict):
     conflict = "conflicting interpretations of pathogenicity"
     conflict_other = "conflicting interpretations of pathogenicity and other"
     conflict_risk = ("conflicting interpretations of"
-                     + " pathogenicity and risk factor")
+                     " pathogenicity and risk factor")
     conflict_other_risk = ("conflicting interpretations of"
-                           + " pathogenicity and other and risk factor")
+                           " pathogenicity and other and risk factor")
 
     unknown_key = "unknown"
 
@@ -515,7 +513,7 @@ def get_full_category_name(base_name, info, regex_dict):
                                 new_info.append(match)
                             else:
                                 raise Exception("Invalid input format "
-                                                + "in 'info' field")
+                                                "in 'info' field")
 
                         # we now have a vec (new_info) containing all evidence
                         # categories for this variant
@@ -547,5 +545,5 @@ def get_full_category_name(base_name, info, regex_dict):
     else:
         full_name = full_names[0]
         for i in range(1, len(full_names)):
-            full_name += "/{}".format(full_names[i])
+            full_name += f"/{full_names[i]}"
         return full_name

@@ -30,7 +30,7 @@ def check_analyses_finished(id_list, timer, max_wait_time):
         try:
             analysis_list.append(DXAnalysis(analysis_id))
         except dxpy.exceptions.DXError:
-            raise IOError("DNAnexus analysis {} not found".format(analysis_id))
+            raise IOError(f"DNAnexus analysis {analysis_id} not found")
 
     time_elapsed = 0
 
@@ -55,7 +55,7 @@ def check_analyses_finished(id_list, timer, max_wait_time):
     # fail if analyses took too long to finish
     if time_elapsed >= max_wait_time:
         raise Exception("Analysis took longer than max wait time of"
-                        + " {} minutes to complete".format(max_wait_time))
+                        f" {max_wait_time} minutes to complete")
 
 
 def check_jobs_finished(job_id_list, timer, max_wait_time):
@@ -73,7 +73,7 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
         try:
             job_list.append(dxpy.bindings.dxjob.DXJob(job_id))
         except dxpy.exceptions.DXError:
-            raise IOError("DNAnexus job {} not found".format(job_id))
+            raise IOError(f"DNAnexus job {job_id} not found")
 
     time_elapsed = 0
 
@@ -98,7 +98,7 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
     # fail if jobs took too long to finish
     if time_elapsed >= max_wait_time:
         raise Exception("Jobs took longer than max wait time of"
-                        + " {} minutes to complete".format(max_wait_time))
+                        f" {max_wait_time} minutes to complete")
 
 
 def check_project_exists(project_id):
@@ -131,7 +131,7 @@ def check_proj_folder_exists(project_id, folder_path):
         bool: does folder exist in project
     """
     if not check_project_exists(project_id):
-        raise Exception("Project {} does not exist".format(project_id))
+        raise Exception(f"Project {project_id} does not exist")
 
     try:
         dxpy.api.project_list_folder(
@@ -165,9 +165,9 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
             DNAnexus file ID for production vcf index file
     """
     if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(ref_proj_folder, ref_proj_id))
-    name_regex = "clinvar_*_{}.vcf.gz".format(genome_build)
+        raise Exception(f"Folder {ref_proj_folder} does not exist"
+                        f" in project {ref_proj_id}")
+    name_regex = f"clinvar_*_{genome_build}.vcf.gz"
     vcf_files = list(dxpy.find_data_objects(
             name=name_regex,
             name_mode='glob',
@@ -177,8 +177,8 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
     # Error handling if files are not found in 001 reference
     if not vcf_files:
-        raise Exception("No clinvar files matching {} ".format(name_regex)
-                        + "were found in 001 reference project")
+        raise Exception(f"No clinvar files matching {name_regex} "
+                        "were found in 001 reference project")
 
     latest_time = datetime.strptime("20200101", '%Y%m%d').date()
     recent_version = ""
@@ -199,8 +199,8 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
 
     # get index file based on clinvar version
     index_id = find_dx_file(ref_proj_id,
-                            "/annotation/b37/clinvar", "clinvar_"
-                            + "{}_b37.vcf.gz.tbi".format(recent_version))
+                            f"/annotation/{genome_build}/clinvar", "clinvar_"
+                            f"{recent_version}_{genome_build}.vcf.gz.tbi")
 
     # return latest production version
     return recent_version, vcf_id, index_id
@@ -223,10 +223,10 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
             DNAnexus file ID of vep config file
     """
     if not check_proj_folder_exists(ref_proj_id, ref_proj_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(ref_proj_folder, ref_proj_id))
+        raise Exception(f"Folder {ref_proj_folder} does not exist"
+                        f" in project {ref_proj_id}")
     assay = assay.lower()
-    name_regex = "{}_vep_config_v*.json".format(assay)
+    name_regex = f"{assay}_vep_config_v*.json"
     config_files = list(dxpy.find_data_objects(
             name=name_regex,
             name_mode='glob',
@@ -244,8 +244,8 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
 
     # Error handling if files are not found in 001 reference
     if not config_files:
-        raise Exception("No vep config files matching {} ".format(name_regex)
-                        + "were found in 001 reference project")
+        raise Exception(f"No vep config files matching {name_regex}"
+                        " were found in 001 reference project")
 
     # return the most recent file uploaded found
     if len(config_files) == 1:
@@ -302,9 +302,8 @@ def find_dx_file(project_id, folder_path, file_name):
                 }
             ))
     if len(file_list) < 1:
-        raise IOError("DNAnexus file "
-                      + "{} does not exist in project {} folder {}"
-                      .format(file_name, project_id, folder_path))
+        raise IOError(f"DNAnexus file {file_name} does not exist in project"
+                      f" {project_id} folder {folder_path}")
 
     # return the most recent file uploaded found
     if len(file_list) == 1:
@@ -361,9 +360,8 @@ def find_all_dx_files(project_id, folder_path, file_name):
                 }
             ))
     if len(file_list) < 1:
-        raise IOError("DNAnexus file "
-                      + "{} does not exist in project {} folder {}"
-                      .format(file_name, project_id, folder_path))
+        raise IOError(f"DNAnexus file {file_name} does not exist in project"
+                      f" {project_id} folder {folder_path}")
 
     # return the most recent file uploaded found
     file_ids = []
@@ -384,7 +382,6 @@ def load_config(bin_path, config_path):
         slack_channel: str
             Slack API token
     """
-    # config_path = "{}/resources/config.json".format(bin_path)
     with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
@@ -402,7 +399,6 @@ def load_config_repo(assay, bin_path, config_path):
         repo: str
             URL to github repo for assay config file
     """
-    # config_path = "{}/resources/config.json".format(bin_path)
     with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
@@ -412,22 +408,6 @@ def load_config_repo(assay, bin_path, config_path):
         repo = config.get('TWE_CONFIG_REPO')
     elif assay == "CEN":
         repo = config.get('CEN_CONFIG_REPO')
-
-    return repo
-
-
-def load_config_reports_workflow(bin_path, config_path):
-    """loads config file for TSO500 reports workflow update
-
-    Returns:
-        repo: str
-            URL to github repo for TSO500 reports workflow
-    """
-    # config_path = "{}/resources/config.json".format(bin_path)
-    with open(config_path, "r", encoding="utf8") as json_file:
-        config = json.load(json_file)
-
-    repo = config.get('TSO500_WORKFLOW_REPO')
 
     return repo
 
@@ -466,11 +446,11 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
                 else:
                     new_lines.append(line)
     if not match_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(first_match, old_config_filename))
+        raise Exception(f"Regex {first_match} had no match"
+                        f" in file {old_config_filename}")
     elif not regex_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(replace_regex, old_config_filename))
+        raise Exception(f"Regex {replace_regex} had no match"
+                        f" in file {old_config_filename}")
     os.remove(old_config_filename)
     with open(old_config_filename, "w") as f:
         f.writelines(new_lines)
@@ -513,11 +493,11 @@ def is_json_content_different(json_path_glob, first_match,
                     else:
                         return True
     if not match_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(first_match, config_filename))
+        raise Exception(f"Regex {first_match} had no match"
+                        f" in file {config_filename}")
     elif not regex_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(file_id_regex, config_filename))
+        raise Exception(f"Regex {file_id_regex} had no match"
+                        f" in file {config_filename}")
 
 
 def search_json(json_path_glob, first_match,
@@ -552,11 +532,11 @@ def search_json(json_path_glob, first_match,
                     # get portion of match in parentheses
                     return match[1]
     if not match_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(first_match, config_filename))
+        raise Exception(f"Regex {first_match} had no match"
+                        f" in file {config_filename}")
     elif not regex_found:
-        raise Exception("Regex {} had no match in file {}"
-                        .format(search_regex, config_filename))
+        raise Exception(f"Regex {search_regex} had no match"
+                        f" in file {config_filename}")
 
 
 def increment_version(version):
@@ -575,13 +555,10 @@ def increment_version(version):
     regex = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
     matched = re.search(regex, version)
     if not matched:
-        raise Exception("Version {} has invalid format. Format must be x.y.z"
-                        .format(version)
-                        + " where x y and z are integers")
+        raise Exception(f"Version {version} has invalid format."
+                        " Format must be x.y.z where x y and z are integers")
     new_version_end = int(matched[3]) + 1
-    return_version = "{}.{}.{}".format(matched[1],
-                                       matched[2],
-                                       new_version_end)
+    return_version = f"{matched[1]}.{matched[2]}.{new_version_end}"
     return return_version
 
 
@@ -608,12 +585,11 @@ def get_recent_002_projects(assay, months):
                     "created": True
                 }
             },
-            created_after="-{}M".format(months),
+            created_after=f"-{months}M",
         ))
     if len(assay_response) < 1:
-        raise Exception("No 002 projects found for assay {}"
-                        .format(assay)
-                        + " in past {} months".format(months))
+        raise Exception(f"No 002 projects found for assay {assay}"
+                        f" in past {months} months")
 
     assay_info = [[]]
     for entry in assay_response:
@@ -663,21 +639,18 @@ def match_folder_name(project_id, base_path, folder_regex):
         _type_: _description_
     """
     if not check_proj_folder_exists(project_id, base_path):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(base_path, project_id))
+        raise Exception(f"Folder {base_path} does not exist"
+                        f" in project {project_id}")
 
     folders = list_subfolders(project=project_id,
                               path=base_path,
                               recurse=False)
-    # if len(folders) < 1:
-    #     raise Exception("Folder {} in project {} has no subfolders"
-    #                     .format(basePath, project_id))
     match_regex = re.compile(folder_regex)
     for folder in folders:
         if match_regex.search(folder):
             return folder
-    raise Exception("No folder matched the regex {} ".format(folder_regex)
-                    + "in path {} of project {}".format(base_path, project_id))
+    raise Exception(f"No folder matched the regex {folder_regex} "
+                    f"in path {base_path} of project {project_id}")
 
 
 def search_for_regex(log_file, regex):

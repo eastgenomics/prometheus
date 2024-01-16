@@ -67,18 +67,17 @@ class ClinvarProgressTracker:
         """checks if clinvar files have been uploaded to 003 dev project
         """
         # check .vcf and .tbi files exist for update in DNAnexus
-        folder = (self.evidence_folder + "/Testing")
+        folder = f"{self.evidence_folder}/Testing"
         if not utils.check_proj_folder_exists(self.dev_proj_id, folder):
             self.clinvar_fetched = False
             return
 
         try:
-            vcf_name = ("clinvar_{}_{}.vcf.gz"
-                        .format(self.dev_version, self.genome_build))
+            vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
             vcf = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
                                      vcf_name)
-            tbi_name = ("clinvar_{}_{}.vcf.gz.tbi"
-                        .format(self.dev_version, self.genome_build))
+            tbi_name = (f"clinvar_{self.dev_version}_{self.genome_build}"
+                        ".vcf.gz.tbi")
             tbi = utils.find_dx_file(self.dev_proj_id, self.evidence_folder,
                                      tbi_name)
             self.clinvar_fetched = True
@@ -92,7 +91,7 @@ class ClinvarProgressTracker:
         """
         # check dev and prod vep config files exist for update in DNAnexus
         try:
-            folder = self.evidence_folder + "/Testing"
+            folder = f"{self.evidence_folder}/Testing"
             dev_filename = "Clinvar_annotation_vep_config_dev_*.json"
             prod_filename = "Clinvar_annotation_vep_config_prod_*.json"
             dev = utils.find_dx_file(self.dev_proj_id,
@@ -112,7 +111,7 @@ class ClinvarProgressTracker:
         """
         # check evidence files have been uploaded to DNAnexus
         try:
-            folder = self.evidence_folder + "/Evidence"
+            folder = f"{self.evidence_folder}/Evidence"
             added = "added_variants.csv"
             deleted = "deleted_variants.csv"
             changed = "changed_variants.csv"
@@ -141,7 +140,7 @@ class ClinvarProgressTracker:
         # for manual review or "auto_review.txt" for automatic.
         # this must be present in the DNAnexus update evidence directory
         try:
-            folder = self.evidence_folder + "/Evidence"
+            folder = f"{self.evidence_folder}/Evidence"
             auto = ("auto_review.txt")
             utils.find_dx_file(self.dev_proj_id, folder,
                                auto)
@@ -151,17 +150,16 @@ class ClinvarProgressTracker:
             pass
 
         try:
-            folder = self.evidence_folder + "/Evidence"
+            folder = f"{self.evidence_folder}/Evidence"
             auto = ("manual_review.txt")
-            utils.find_dx_file(self.dev_proj_id, folder,
-                               auto)
+            utils.find_dx_file(self.dev_proj_id, folder, auto)
             self.changes_status = self.STATUS_PASSED
             return
         except IOError:
             pass
 
         # get file ID, download file
-        folder = self.evidence_folder + "/Evidence"
+        folder = f"{self.evidence_folder}/Evidence"
         changed = "changed_variants.csv"
         changed_id = utils.find_dx_file(self.dev_proj_id,
                                         folder,
@@ -198,12 +196,11 @@ class ClinvarProgressTracker:
         # check that clinvar files have been deployed to 001
         try:
             folder = self.ref_deploy_folder
-            vcf_name = ("clinvar_{}_{}.vcf.gz"
-                        .format(self.dev_version, self.genome_build))
+            vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
             utils.find_dx_file(self.ref_proj_id, folder,
                                vcf_name)
-            tbi_name = ("clinvar_{}_{}.vcf.gz.tbi"
-                        .format(self.dev_version, self.genome_build))
+            tbi_name = (f"clinvar_{self.dev_version}_{self.genome_build}"
+                        ".vcf.gz.tbi")
             utils.find_dx_file(self.ref_proj_id, folder,
                                tbi_name)
             self.clinvar_deployed = True
@@ -217,7 +214,7 @@ class ClinvarProgressTracker:
         file_name = "temp/auto_review.txt"
         with open(file_name, "w") as file:
             file.write("ClinVar changes have passed automatic review")
-        folder = self.evidence_folder + "/Evidence"
+        folder = f"{self.evidence_folder}/Evidence"
         dxpy.upload_local_file(filename=file_name,
                                project=self.dev_proj_id,
                                folder=folder)
@@ -275,17 +272,15 @@ class VepProgressTracker:
         """checks if VEP config PR has been merged and new config is present
         """
         # download repo locally
-        repo_dir = "temp/tracker/prod_vep_repo_{}".format(self.assay)
+        repo_dir = f"temp/tracker/prod_vep_repo_{self.assay}"
         split_assay_url = self.config_github_link.split("/")
-        repo_name = "{}/{}".format(split_assay_url[3],
-                                   split_assay_url[4])
+        repo_name = f"{split_assay_url[3]}/{split_assay_url[4]}"
         git_handler = GitHandler(repo_dir,
                                  repo_name,
                                  self.config_github_link,
                                  "main",
                                  self.github_token)
-        updated_config = glob.glob("{}/*_vep_config_*.json"
-                                   .format(repo_dir))[0]
+        updated_config = glob.glob(f"{repo_dir}/*_vep_config_*.json")[0]
         # set config name
         self.config_name = updated_config.split("/")[-1]
         self.config_version = re.match(r"(.*_vep_config_v)(.*).json",
@@ -314,7 +309,7 @@ class VepProgressTracker:
         passed = False
         try:
             folder = self.evidence_folder
-            summary = "pass_{}_testing_summary.txt".format(self.assay)
+            summary = f"pass_{self.assay}_testing_summary.txt"
             utils.find_dx_file(self.dev_proj_id,
                                folder,
                                summary)
@@ -324,7 +319,7 @@ class VepProgressTracker:
         failed = False
         try:
             folder = self.evidence_folder
-            summary = "fail_{}_testing_summary.txt".format(self.assay)
+            summary = f"fail_{self.assay}_testing_summary.txt"
             utils.find_dx_file(self.dev_proj_id,
                                folder,
                                summary)
@@ -342,7 +337,7 @@ class VepProgressTracker:
         # for testing purposes, this is a text file named "manual_review.txt"
         # for manual review or "auto_review.txt" for automatic.
         # this must be present in the DNAnexus update evidence directory
-        output_filename = ("pass_{}_testing_summary.txt".format(self.assay))
+        output_filename = (f"pass_{self.assay}_testing_summary.txt")
         try:
             utils.find_dx_file(self.dev_proj_id,
                                self.evidence_folder,
@@ -416,22 +411,20 @@ class WorkflowProgressTracker:
         """checks if workflow config PR is merged and new config is present
         """
         # download repo locally
-        repo_dir = "temp/tracker/prod_workflow_repo_{}".format(self.assay)
+        repo_dir = f"temp/tracker/prod_workflow_repo_{self.assay}"
         split_assay_url = self.config_github_link.split("/")
-        repo_name = "{}/{}".format(split_assay_url[3],
-                                   split_assay_url[4])
+        repo_name = f"{split_assay_url[3]}/{split_assay_url[4]}"
         git_handler = GitHandler(repo_dir,
                                  repo_name,
                                  self.config_github_link,
                                  "main",
                                  self.github_token)
-        updated_config = glob.glob("{}/dxworkflow.json"
-                                   .format(repo_dir))[0]
+        updated_config = glob.glob(f"{repo_dir}/dxworkflow.json")[0]
         # set config name
         self.config_name = updated_config.split("/")[-1]
         # read latest config
         # check if production vep config file is already in config
-        filename_glob = "{}/dxworkflow.json".format(repo_dir)
+        filename_glob = f"{repo_dir}/dxworkflow.json"
         match_regex = r"\"executable\": \"app-eggd_vep/.+\""
         file_id_regex = r"\"id\": \"(.*)\""
         is_different = utils.is_json_content_different(filename_glob,

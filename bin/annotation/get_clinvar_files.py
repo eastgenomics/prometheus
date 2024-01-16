@@ -86,20 +86,20 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     # validate genome build
     valid_genome_builds = ["b37", "b38"]
     if genome_build not in valid_genome_builds:
-        raise Exception("Genome build \"{}\"specified in ".format(genome_build)
-                        + "retrieve_clinvar_files is invalid")
+        raise Exception(f"Genome build \"{genome_build}\"specified in "
+                        "retrieve_clinvar_files is invalid")
 
     build_number = genome_build[1:]
     vcf_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-                + "{}/weekly/{}".format(build_number, recent_vcf_file))
+                f"{build_number}/weekly/{recent_vcf_file}")
     tbi_link = ("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
-                + "{}/weekly/{}".format(build_number, recent_tbi_file))
+                f"{build_number}/weekly/{recent_tbi_file}")
     vcf_base_name = recent_vcf_file.split(".")[0]
-    renamed_vcf = "{}_{}.vcf.gz".format(vcf_base_name, genome_build)
-    renamed_tbi = "{}_{}.vcf.gz.tbi".format(vcf_base_name, genome_build)
-    subfolder = ("ClinVar_version_{}".format(clinvar_version)
-                 + "_annotation_resource_update")
-    project_folder = "/{}/Testing".format(subfolder)
+    renamed_vcf = f"{vcf_base_name}_{genome_build}.vcf.gz"
+    renamed_tbi = f"{vcf_base_name}_{genome_build}.vcf.gz.tbi"
+    subfolder = (f"ClinVar_version_{clinvar_version}"
+                 "_annotation_resource_update")
+    project_folder = f"/{subfolder}/Testing"
 
     # start url fetcher jobs
     vcf_job_id = run_url_fetcher(project_id, project_folder,
@@ -122,9 +122,9 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     if vcf_files:
         vcf_id = vcf_files[0]['id']
     else:
-        raise FileNotFoundError("VCF file {} not found in ".format(vcf_id)
-                                + "DNAnexus project {} in folder {}"
-                                .format(project_id, project_folder))
+        raise FileNotFoundError(f"VCF file {vcf_id} not found in"
+                                f" DNAnexus project {project_id} in"
+                                f" folder {project_folder}")
 
     tbi_files = list(dxpy.find_data_objects(
             name=renamed_tbi,
@@ -136,9 +136,9 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     if tbi_files:
         tbi_id = tbi_files[0]['id']
     else:
-        raise FileNotFoundError("TBI file {} not found in ".format(tbi_id)
-                                + "DNAnexus project {} in folder {}"
-                                .format(project_id, project_folder))
+        raise FileNotFoundError(f"TBI file {tbi_id} not found in"
+                                f" DNAnexus project {project_id} in"
+                                f" folder {project_folder}")
 
     # safety feature to prevent too many requests to server
     time.sleep(1)

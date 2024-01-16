@@ -1,10 +1,10 @@
 import unittest
 
-from bin.utils import check_project_exists
-from bin.utils import check_proj_folder_exists
-from bin.utils import check_jobs_finished
-from bin.utils import get_prod_version
-from bin.utils import find_dx_file
+from .context import check_project_exists
+from .context import check_proj_folder_exists
+from .context import check_jobs_finished
+from .context import get_prod_version
+from .context import find_dx_file
 from .context import utils
 
 import re

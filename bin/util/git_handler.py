@@ -163,9 +163,9 @@ class GitHandler:
         """
         os.environ["GITHUB_TOKEN"] = self.github_token
         gh_release_create(self.github_repo_name,
-                          "v{}".format(version),
+                          f"v{version}",
                           publish=True,
-                          name="v{}".format(version),
+                          name=f"v{version}",
                           body=comment)
 
     def open_github_instance(self, github_token):
@@ -192,8 +192,7 @@ class GitHandler:
         if repo:
             self.github_repo = repo
         else:
-            raise Exception("Github repo {} not found"
-                            .format(repo_name))
+            raise Exception(f"Github repo {repo_name} not found")
 
     def exit_github(self):
         """closes github instance

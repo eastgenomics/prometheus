@@ -39,7 +39,7 @@ def vep_testing_config(project_id, dev_config_id,
                                             ref_proj_id,
                                             genome_build)
     # Run vep
-    vep_job_folder = "vep_run_{}".format(assay)
+    vep_job_folder = f"vep_run_{assay}"
     vep_job = run_vep(project_id, vep_job_folder, dev_config_id,
                       vcf_id, bed_id, dx_update_folder)
     # Pause until jobs have finished
@@ -48,7 +48,7 @@ def vep_testing_config(project_id, dev_config_id,
     check_jobs_finished(job_list, 2, 60)
 
     log = "temp/vep_job_log.txt"
-    os.system("dx watch {} > {}".format(vep_job, log))
+    os.system(f"dx watch {vep_job} > {log}")
 
     config_name = DXFile(dxid=dev_config_id,
                          project=project_id).describe()["name"]
@@ -59,7 +59,7 @@ def vep_testing_config(project_id, dev_config_id,
                                              assay)
 
     # upload file to DNAnexus
-    evidence_folder = "{}/Evidence".format(dx_update_folder)
+    evidence_folder = f"{dx_update_folder}/Evidence"
     if not check_proj_folder_exists(project_id=project_id,
                                     folder_path=evidence_folder):
         dev_project = dxpy.bindings.dxproject.DXProject(dxid=project_id)
@@ -102,7 +102,7 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
                                                     ref_proj_id,
                                                     genome_build)
 
-    update_folder = ("/ClinVar_version_{}".format(clinvar_version)
+    update_folder = (f"/ClinVar_version_{clinvar_version}"
                      + "_annotation_resource_update")
 
     # Run on Dev TWE VCF
@@ -178,23 +178,22 @@ def parse_vep_output(project_id, folder, label, update_folder):
         str: path to parsed vep output
     """
     # Download files output from vep
-    folder_path = "{0}/{1}".format(update_folder, folder)
+    folder_path = f"{update_folder}/{folder}"
     if not check_proj_folder_exists(project_id, folder_path):
-        raise Exception("Folder {} not found in {}".format(folder_path,
-                                                           project_id))
+        raise Exception(f"Folder {folder_path} not found in {project_id}")
     download_folder(project_id,
-                    "temp/{}".format(label),
+                    f"temp/{label}",
                     folder=folder_path,
                     overwrite=True)
 
     # Parse the variant and ClinVar annotation fields
-    glob_path = "temp/{}/*.vcf.gz".format(label)
+    glob_path = f"temp/{label}/*.vcf.gz"
     vcf_input_path = ""
     try:
         vcf_input_path = glob.glob(glob_path)[0]
     except IndexError:
-        raise IOError("File matching glob {} not found".format(glob_path))
-    vcf_output_path = "temp/parsed_vcf_{}.txt".format(label)
+        raise IOError(f"File matching glob {glob_path} not found")
+    vcf_output_path = f"temp/parsed_vcf_{label}.txt"
     vcf_reader = vcfpy.Reader.from_path(vcf_input_path)
 
     with open(vcf_output_path, "w") as file:
@@ -204,12 +203,9 @@ def parse_vep_output(project_id, folder, label, update_folder):
             if csq_fields[4] != "":
                 info = csq_fields[4]
 
-            new_record = ("{}:{}:{}:{} {} {} {}\n"
-                          .format(record.CHROM, record.POS,
-                                  record.REF, record.ALT[0].value,
-                                  csq_fields[2],
-                                  csq_fields[3],
-                                  info))
+            new_record = (f"{record.CHROM}:{record.POS}"
+                          f":{record.REF}:{record.ALT[0].value}"
+                          f" {csq_fields[2]} {csq_fields[3]} {info}\n")
             file.write(new_record)
 
     return vcf_output_path
@@ -228,8 +224,8 @@ def get_diff_output(dev_output, prod_output, label, bin_folder):
         str: path to diff output txt file
     """
     # run diff
-    output_file = "temp/{}_diff_output.txt".format(label)
-    diff_input = ["sh", "{}/get_diff.sh".format(bin_folder),
+    output_file = f"temp/{label}_diff_output.txt"
+    diff_input = ["sh", f"{bin_folder}/get_diff.sh",
                   dev_output, prod_output, output_file]
     subprocess.run(diff_input, stderr=subprocess.STDOUT)
 
@@ -252,16 +248,16 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
     """
     try:
         with open(path, "w") as file:
-            file.write("Development TWE job: {}\n".format(dev_twe_job))
-            file.write("Development TSO500 job: {}\n".format(dev_tso_job))
-            file.write("Production TWE job: {}\n".format(prod_twe_job))
-            file.write("Production TSO500 job: {}\n".format(prod_tso_job))
+            file.write(f"Development TWE job: {dev_twe_job}\n")
+            file.write(f"Development TSO500 job: {dev_tso_job}\n")
+            file.write(f"Production TWE job: {prod_twe_job}\n")
+            file.write(f"Production TSO500 job: {prod_tso_job}\n")
     except FileNotFoundError:
         print("The directory for saving the job report "
-              + "{} does not exist".format(path))
+              f"{path} does not exist")
     except FileExistsError:
-        print("The file {} ".format(path)
-              + "already exists and job report cannot be saved")
+        print(f"The file {path} "
+              "already exists and job report cannot be saved")
 
     return path
 
@@ -287,7 +283,7 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
         "panel_bed": {'$dnanexus_link': panel_bed_file}
     }
 
-    folder_path = "/{0}/{1}".format(update_folder, project_folder)
+    folder_path = f"/{update_folder}/{project_folder}"
 
     job = dxpy.bindings.dxapp.DXApp(name="eggd_vep").run(
                 app_input=inputs,
@@ -321,10 +317,10 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
     df = get_recent_002_projects(assay, 12)
 
     if assay == "TSO500":
-        folder_bed = "/bed_files/{}/kits/tso500".format(genome_build)
+        folder_bed = f"/bed_files/{genome_build}/kits/tso500"
         vcf_name = "*Hotspots.vcf.gz"
     else:
-        folder_bed = "/bed_files/{}/kits/twist_exome".format(genome_build)
+        folder_bed = f"/bed_files/{genome_build}/kits/twist_exome"
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"
@@ -343,7 +339,7 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
 
     if vcf == "":
         raise IOError("VCF file not found in recent 002"
-                      + " project for assay {}".format(assay))
+                      f" project for assay {assay}")
 
     try:
         bed = find_dx_file(ref_proj_id, folder_bed, bed_name)
@@ -352,6 +348,6 @@ def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
 
     if bed == "":
         raise IOError("Panel bed file not found in 001"
-                      + " ref project for assay {}".format(assay))
+                      f" ref project for assay {assay}")
 
     return vcf, bed

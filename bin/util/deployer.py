@@ -24,8 +24,8 @@ def deploy_config_to_production(reference_project_id, dev_project_id,
         Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(deploy_folder, reference_project_id))
+        raise Exception(f"Folder {deploy_folder} does not exist"
+                        f" in project {reference_project_id}")
 
     with open_dxfile(dxid=config_id, project=dev_project_id) as file:
         file.clone(project=reference_project_id, folder=deploy_folder)
@@ -46,8 +46,8 @@ def deploy_workflow_to_production(reference_project_id, dev_project_id,
         Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(deploy_folder, reference_project_id))
+        raise Exception(f"Folder {deploy_folder} does not exist"
+                        f" in project {reference_project_id}")
     workflow = DXWorkflow(dxid=workflow_id, project=dev_project_id)
     workflow.clone(project=reference_project_id, folder=deploy_folder)
 
@@ -67,8 +67,8 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
         Exception: project folder does not exist
     """
     if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
-        raise Exception("Folder {} does not exist in project {}"
-                        .format(deploy_folder, reference_project_id))
+        raise Exception(f"Folder {deploy_folder} does not exist"
+                        f" in project {reference_project_id}")
 
     with open_dxfile(dxid=vcf_file_id, project=dev_project_id) as vcf_file:
         vcf_file.clone(project=reference_project_id, folder=deploy_folder)
@@ -105,9 +105,9 @@ def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
         job_report_id: str
             DNAnexus file ID for txt file containing job IDs
     """
-    subfolder = ("ClinVar_version_{}".format(clinvar_version)
-                 + "_annotation_resource_update")
-    folder_path = "/{}/Evidence".format(subfolder)
+    subfolder = (f"ClinVar_version_{clinvar_version}"
+                 "_annotation_resource_update")
+    folder_path = f"/{subfolder}/Evidence"
 
     # make new subfolder for documenting evidence
     dev_project = DXProject(dev_project_id)

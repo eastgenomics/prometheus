@@ -54,8 +54,6 @@ class LoginHandler:
         slack_token: string
             API token for Slack
         """
-        # Get tokens etc from credentials file
-        # location = "{}/resources/credentials.json".format(bin_folder)
         location = config_path
         with open(location, "r", encoding='utf8') as json_file:
             creds = json.load(json_file)

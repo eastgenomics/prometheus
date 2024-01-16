@@ -10,7 +10,7 @@ import util.utils as utils
 
 def generate_config_files(dev_version, dev_annotation_file_id,
                           dev_index_file_id, dev_proj_id, ref_proj_id,
-                          bin_folder):
+                          bin_folder, genome_build):
     """generates vep config files for dev and prod ClinVar files
 
     Args:
@@ -30,24 +30,22 @@ def generate_config_files(dev_version, dev_annotation_file_id,
     (prod_version, prod_annotation_file_id,
         prod_index_file_id) = utils.get_prod_version(ref_proj_id,
                                                      "/annotation/b37/clinvar",
-                                                     "b37")
+                                                     genome_build)
     prod_filename = ("Clinvar_annotation_vep_config_prod_"
-                     + "{}.json".format(prod_version))
-    prod_output_path = "temp/{}".format(prod_filename)
+                     f"{prod_version}.json")
+    prod_output_path = f"temp/{prod_filename}"
     path_to_prod = make_config_file(prod_output_path, prod_annotation_file_id,
                                     prod_index_file_id, bin_folder)
 
     # make dev testing file from template
-    dev_filename = ("Clinvar_annotation_vep_config_dev_"
-                    + "{}.json".format(dev_version))
-    dev_output_path = "temp/{}".format(dev_filename)
+    dev_filename = (f"Clinvar_annotation_vep_config_dev_{dev_version}.json")
+    dev_output_path = f"temp/{dev_filename}"
     path_to_dev = make_config_file(dev_output_path, dev_annotation_file_id,
                                    dev_index_file_id, bin_folder)
 
     # upload prod and dev files to DNAnexus via dxpy
-    subfolder = ("ClinVar_version_{}".format(dev_version)
-                 + "_annotation_resource_update")
-    folder_path = "/{}/Testing".format(subfolder)
+    subfolder = (f"ClinVar_version_{dev_version}_annotation_resource_update")
+    folder_path = f"/{subfolder}/Testing"
 
     dev_file = dxpy.upload_local_file(filename=path_to_dev,
                                       project=dev_proj_id,
@@ -74,7 +72,7 @@ def make_config_file(filename, annotation_file_id, index_file_id, bin_folder):
         str: path to config file created
     """
     # copy template file and rename
-    location = "{}/resources/template_VEP_Config.json".format(bin_folder)
+    location = f"{bin_folder}/resources/template_VEP_Config.json"
     shutil.copy(location, filename)
 
     # replace CLINVAR_VCF_FILE_ID and CLINVAR_VCF_TBI_FILE_ID and save

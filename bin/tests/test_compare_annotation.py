@@ -154,8 +154,7 @@ class testCase(unittest.TestCase):
                                       changed_list_from,
                                       changed_list_to)
         output_location = "temp"
-        detailed_out = ("{}/detailed_changed_variants.csv"
-                        .format(output_location))
+        detailed_out = (f"{output_location}/detailed_changed_variants.csv")
         det_df.to_csv(detailed_out, index=False)
 
 

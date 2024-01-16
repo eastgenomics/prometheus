@@ -25,8 +25,7 @@ class testCase(unittest.TestCase):
                                                      assay)
         os.remove(results_file)
         assert test_passed
-        output_filename = ("temp/{}_{}_testing_summary.txt".format("pass",
-                                                                   assay))
+        output_filename = f"temp/pass_{assay}_testing_summary.txt"
         assert results_file == output_filename
 
         config_name = "my_incorrect_config.json"
@@ -40,8 +39,7 @@ class testCase(unittest.TestCase):
                                                      assay)
         os.remove(results_file)
         assert not test_passed
-        output_filename = ("temp/{}_{}_testing_summary.txt".format("fail",
-                                                                   assay))
+        output_filename = f"temp/fail_{assay}_testing_summary.txt"
         assert results_file == output_filename
 
         os.remove(log_path)
