@@ -172,24 +172,44 @@ class ClinvarProgressTracker:
         dxpy.download_dxfile(changed_id, download_dest)
 
         # perform review to check if changes can be passed automatically
-        changed = pd.read_csv(download_dest)
+        changed_df = pd.read_csv(download_dest)
         benign_1 = "benign"
         benign_2 = "benign/likely benign"
         patho_1 = "pathogenic"
         patho_2 = "pathogenic/likely pathogenic"
-        for index, row in changed.iterrows():
-            if ((row["changed from"] == benign_1
-                or row["changed from"] == benign_2)
-                and (row["changed to"] == patho_1
-                     or row["changed to"] == patho_2)):
+        for index, row in changed_df.iterrows():
+            # if variant classification is changed from benign to
+            # pathogenic, flag changes for manual review
+            # or if variant classification is changed from pathogenic to
+            # benign, flag changes for manual review
+            if (
+                (
+                    (
+                        row["changed from"] == benign_1
+                        or row["changed from"] == benign_2
+                    )
+                    and
+                    (
+                        row["changed to"] == patho_1
+                        or row["changed to"] == patho_2
+                    )
+                )
+                or
+                (
+                    (
+                        row["changed to"] == benign_1
+                        or row["changed to"] == benign_2
+                    )
+                    and
+                    (
+                        row["changed from"] == patho_1
+                        or row["changed from"] == patho_2
+                    )
+                )
+            ):
                 self.changes_status == self.STATUS_REVIEW
                 return
-            if ((row["changed to"] == benign_1
-                or row["changed to"] == benign_2)
-                and (row["changed from"] == patho_1
-                     or row["changed from"] == patho_2)):
-                self.changes_status == self.STATUS_REVIEW
-                return
+
         self.upload_check_passed()
         self.changes_status = self.STATUS_PASSED
 
