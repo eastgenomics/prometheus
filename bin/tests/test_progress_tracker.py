@@ -30,7 +30,6 @@ class testCase(unittest.TestCase):
             dev_proj_id, ref_proj_id, update_folder, b37_folder, genome_build,
             clinvar_version
         )
-        assert type(tracker_b37) is Tracker
 
         assert tracker_b37.perform_checks() is None
 

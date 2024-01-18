@@ -28,10 +28,7 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
         creds_path (str): path to credentials file
     """
     # make temp dir
-    try:
-        os.mkdir("temp")
-    except FileExistsError:
-        pass
+    os.makedirs("temp", exist_ok=True)
     # load config files and log into websites
     ref_proj_id, dev_proj_id, slack_channel = load_config(bin_folder,
                                                           config_path)

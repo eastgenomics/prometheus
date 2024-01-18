@@ -8,8 +8,6 @@ from datetime import datetime
 import dxpy
 import time
 
-from util.utils import check_jobs_finished
-
 
 def get_ftp_files():
     """retrieves information about latest ClinVar file
@@ -36,7 +34,7 @@ def get_ftp_files():
 
     for file_name in file_list:
 
-        if file_name == "":
+        if not file_name.strip():
             continue
         file_name = file_name.split()[-1]
 
@@ -108,16 +106,12 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     project_folder = f"/{subfolder}/Testing"
 
     # start url fetcher jobs
-    vcf_job_id = run_url_fetcher(
+    run_url_fetcher(
         project_id, project_folder, vcf_link, renamed_vcf
     )
-    tbi_job_id = run_url_fetcher(
+    run_url_fetcher(
         project_id, project_folder, tbi_link, renamed_tbi
     )
-
-    # Pause until jobs have finished
-    job_list = [vcf_job_id, tbi_job_id]
-    check_jobs_finished(job_list, 2, 20)
 
     # find file in DNAnexus output folder + get file ID
     vcf_files = list(dxpy.find_data_objects(
@@ -148,9 +142,6 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
             f"TBI file {tbi_id} not found in DNAnexus project {project_id} in"
             + f" folder {project_folder}")
 
-    # safety feature to prevent too many requests to server
-    time.sleep(1)
-
     return vcf_id, tbi_id
 
 
@@ -178,6 +169,7 @@ def run_url_fetcher(project_id, destination_folder,
         folder=destination_folder,
         priority='high'
     )
+    job.wait_on_done()
     job_id = job.describe().get('id')
 
     return job_id
@@ -188,13 +180,17 @@ def connect_to_website():
 
     Returns:
         ftplib.FTP: FTP object to enable download from ncbi website
+
+    Raises:
+        RuntimeError: cannot connect to ncbi website
     """
+    # safety feature to prevent too many requests to server
+    time.sleep(1)
+
     try:
         ftp = FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()
         ftp.cwd("/pub/clinvar/vcf_GRCh37/weekly/")
-        # safety feature to prevent too many requests to server
-        time.sleep(1)
     except OSError:
         raise RuntimeError("Error: cannot connect to ncbi website")
 

@@ -27,30 +27,34 @@ class testCase(unittest.TestCase):
         test_folder = "/annotation/b37/clinvar"
         assert check_proj_folder_exists(test_proj_id, test_folder)
 
+    def test_check_proj_folder_exists_invalid(self):
         test_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         test_folder = "/invalid_name"
         assert not check_proj_folder_exists(test_proj_id, test_folder)
 
-    def test_check_jobs_finished(self):
+    def test_check_jobs_finished_single_invalid(self):
         test_job_id_list = ["job-this-id-will-fail"]
         with self.assertRaises(IOError):
             check_jobs_finished(test_job_id_list, 1, 2)
 
+    def test_check_jobs_finished_multiple_invalid(self):
         test_job_id_list = ["job-this-id-will-fail",
                             "job-this-id-will-also-fail",
                             "job-this-id-will-fail-too"]
         with self.assertRaises(IOError):
             check_jobs_finished(test_job_id_list, 1, 2)
 
+    def test_check_jobs_finished_single_valid(self):
         test_job_id_list = ["job-GYJYgp04FK2b07Pyxb04zk6V"]
         assert check_jobs_finished(test_job_id_list, 1, 2) is None
 
+    def test_check_jobs_finished_multiple_valid(self):
         test_job_id_list = ["job-GYJYgp04FK2b07Pyxb04zk6V",
                             "job-GYJYgkj4FK2g7KBpKvV5Y8xy",
                             "job-GYJYbv84FK2yg6K4BZ07YPkK"]
         assert check_jobs_finished(test_job_id_list, 1, 2) is None
 
-    def test_get_prod_version(self):
+    def test_get_prod_version_valid(self):
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar"
         check_proj_folder_exists(ref_proj_id, folder)
@@ -62,25 +66,30 @@ class testCase(unittest.TestCase):
         assert re.match(r"^file-.+$", prod_annotation_file_id)
         assert re.match(r"^file-.+$", prod_index_file_id)
 
+    def test_get_prod_version_invalid_project(self):
         ref_proj_id = "project-invalid"
         folder = "/annotation/b37/clinvar"
 
         with self.assertRaises(Exception):
             get_prod_version(ref_proj_id, folder, "b37")
 
+    def test_get_prod_version_invalid_folder(self):
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b371/clinvar"
 
         with self.assertRaises(Exception):
             get_prod_version(ref_proj_id, folder, "b37")
 
-    def test_find_dx_file(self):
+    def test_find_dx_file_invalid(self):
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar/"
         file = "invalid_file.xyz"
         with self.assertRaises(IOError):
             find_dx_file(ref_proj_id, folder, file)
 
+    def test_find_dx_file_valid(self):
+        ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
+        folder = "/annotation/b37/clinvar/"
         file = "clinvar_20230107_b37.vcf.gz"
         file_id = find_dx_file(ref_proj_id, folder, file)
         assert re.match(r"^file-.+$", file_id)
@@ -91,15 +100,17 @@ class testCase(unittest.TestCase):
         assert dev_proj_id is not None
         assert slack_channel is not None
 
-    def test_load_config_repo(self):
+    def test_load_config_repo_TSO500(self):
         assay = "TSO500"
         repo = utils.load_config_repo(assay)
         assert repo is not None
 
+    def test_load_config_repo_TWE(self):
         assay = "TWE"
         repo = utils.load_config_repo(assay)
         assert repo is not None
 
+    def test_load_config_repo_CEN(self):
         assay = "CEN"
         repo = utils.load_config_repo(assay)
         assert repo is not None
@@ -141,7 +152,7 @@ class testCase(unittest.TestCase):
         assert found == replace_with
         os.remove(path)
 
-    def test_is_json_content_different(self):
+    def test_is_json_content_different_valid(self):
         path = "temp/unittest_content_different.txt"
         lines = [
             "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
@@ -161,21 +172,45 @@ class testCase(unittest.TestCase):
         assert not utils.is_json_content_different(
             json_path_glob, first_match, file_id_regex, old_file_id
         )
+        os.remove(path)
 
+    def test_is_json_content_different_invalid_header(self):
+        path = "temp/unittest_content_different.txt"
+        lines = [
+            "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
+            "End\n"
+        ]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_content_different.txt"
+        file_id_regex = r"File ID: \"(.+)\""
+        new_file_id = "file-myfile23456"
         first_match = "Header12345"
         with self.assertRaises(Exception):
             utils.is_json_content_different(
                 json_path_glob, first_match, file_id_regex, new_file_id
             )
+        os.remove(path)
 
+    def test_is_json_content_different_invalid_match(self):
+        path = "temp/unittest_content_different.txt"
+        lines = [
+            "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
+            "End\n"
+        ]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_content_different.txt"
+        new_file_id = "file-myfile23456"
         first_match = "Header"
         file_id_regex = r"File ID Incorrect: \"(.+)\""
         with self.assertRaises(Exception):
             utils.is_json_content_different(
                 json_path_glob, first_match, file_id_regex, new_file_id
             )
+        os.remove(path)
 
-    def test_search_json(self):
+    def test_search_json_invalid(self):
         path = "temp/unittest_search_json.txt"
         lines = [
             "This\n", "sentence\n", "is\n", "false\n"
@@ -190,18 +225,22 @@ class testCase(unittest.TestCase):
             utils.search_json(json_path_glob,
                               first_match,
                               search_regex)
+        os.remove(path)
 
+    def test_search_json_valid(self):
+        path = "temp/unittest_search_json.txt"
+        lines = [
+            "This\n", "sentence\n", "is\n", "false\n"
+        ]
+        with open(path, "w") as file:
+            file.writelines(lines)
+        json_path_glob = "temp/unit*_search_json.txt"
+        first_match = "sentence"
         search_regex = r"(is)"
         found = utils.search_json(
             json_path_glob, first_match, search_regex
         )
         assert found == "is"
-
-        first_match = "sentence12345"
-        with self.assertRaises(Exception):
-            utils.search_json(
-                json_path_glob, first_match, search_regex
-            )
         os.remove(path)
 
     def test_search_for_regex(self):
@@ -214,6 +253,7 @@ class testCase(unittest.TestCase):
         regex = ".+e"
         results = utils.search_for_regex(path, regex)
         assert len(results) == 2
+        os.remove(path)
 
 
 if __name__ == "__main__":

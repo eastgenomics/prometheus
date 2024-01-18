@@ -102,11 +102,13 @@ class testCase(unittest.TestCase):
 
         # check output type is correct
         assert (
-            (type(added_df) is pandas.DataFrame)
-            and (type(deleted_df) is pandas.DataFrame)
-            and (type(changed_df) is pandas.DataFrame)
-            and (type(changed_df) is pandas.DataFrame)
+            (
+                isinstance(added_df, pandas.DataFrame)
+                and isinstance(deleted_df, pandas.DataFrame)
+                and isinstance(changed_df, pandas.DataFrame)
+                and isinstance(detailed_df, pandas.DataFrame)
             )
+        )
 
         # check contents are correct
         assert len(added_df) == 1

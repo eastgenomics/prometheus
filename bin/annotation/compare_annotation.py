@@ -186,13 +186,13 @@ def parse_diff(diff_filename, bin_folder):
     # if name == "" or " " in changed_to, add changed_from entry to deleted
     # and delete entry in changed_from and changed_to
     delete_indices = []
-    for i in range(0, len(changed_from_split)):
+    for i, val in enumerate(changed_from_split):
         from_name = changed_from_split[i][2]
         to_name = changed_to_split[i][2]
-        if from_name == "" or from_name == " ":
+        if from_name.strip() == "":
             delete_indices.append(i)
             added_split.append(changed_to_split[i])
-        elif to_name == "" or to_name == " ":
+        elif to_name.strip() == "":
             delete_indices.append(i)
             deleted_split.append(changed_from_split[i])
 
@@ -236,12 +236,21 @@ def split_variant_info(raw_list):
 
     Returns:
         list: list of values in format mutation, clinvar ID, category, info
+
+    Raises:
+        RuntimeError: string in list has invalid format
     """
     filtered_list = []
     for item in raw_list:
         # format: mutation, clinvar ID, category, info
         # ignore first element as this is ">" or "<"
-        filtered_list.append(item.split(' ')[1:])
+        if item[0] == ">" or item[0] == "<":
+            filtered_list.append(item.split(' ')[1:])
+        else:
+            raise RuntimeError(
+                "Invalid string provided to split_variant_info"
+                + ". Each string must begin with either '>' or '<'"
+            )
 
     return filtered_list
 
@@ -269,9 +278,10 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
                      uncertain prod, uncertain dev, likely pathogenic prod,
                      likely pathogenic dev, pathogenic prod, pathogenic dev
     """
-    added_df = pandas.DataFrame(data=added_list,
-                                columns=["mutation", "clinvar ID",
-                                         "category", "info"])
+    standard_cols = ["mutation", "clinvar ID", "category", "info"]
+    added_df = pandas.DataFrame(
+        data=added_list, columns=standard_cols
+    )
     added_df["added"] = get_categories(
         added_df, bin_folder
     )
@@ -288,43 +298,41 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     deleted_df = deleted_df[["deleted"]]
 
     changed_from_df = pandas.DataFrame(
-        data=changed_list_from, columns=[
-            "mutation", "clinvar ID", "category", "info"
-        ]
+        data=changed_list_from, columns=standard_cols
     )
     changed_from_df["changed from"] = get_categories(
         changed_from_df, bin_folder
     )
     changed_to_df = pandas.DataFrame(
-        data=changed_list_to, columns=[
-            "mutation", "clinvar ID", "category", "info"
-        ]
+        data=changed_list_to, columns=standard_cols
     )
     changed_from_df["changed to"] = get_categories(
-        changed_to_df, bin_folder)
+        changed_to_df, bin_folder
+    )
     changed_df = changed_from_df[["changed from", "changed to"]]
 
-    # generate variant evidence report
-    # get all changed variants
-    det_df = changed_from_df[[
+    # generate variant evidence report and get all changed variants.
+    # the detailed_df dataframe contains a detailed breakdown
+    # of all changes to variant classification in info column
+    detailed_df = changed_from_df[[
         "changed from", "changed to", "clinvar ID"
     ]]
     # add info columns
-    det_df["from info"] = changed_from_df["info"]
-    det_df["to info"] = changed_to_df["info"]
+    detailed_df["from info"] = changed_from_df["info"]
+    detailed_df["to info"] = changed_to_df["info"]
     # filter to only changes with from and to having evidence
-    det_df.drop(
-        det_df[
-            (det_df["from info"] == ".") | (det_df["to info"] == ".")
+    detailed_df.drop(
+        detailed_df[
+            (detailed_df["from info"] == ".") | (detailed_df["to info"] == ".")
         ].index, inplace=True
     )
     # get list of counts per evidence type (5) for from and to
     # format: benign, likely benign, uncertain,
     #         likely pathogenic, pathogenic
-    if len(det_df) == 0:
-        return added_df, deleted_df, changed_df, det_df
+    if len(detailed_df) == 0:
+        return added_df, deleted_df, changed_df, detailed_df
     evidence_list = []
-    for index, row in det_df.iterrows():
+    for index, row in detailed_df.iterrows():
         from_evidence = get_evidence_counts(row["from info"])
         to_evidence = get_evidence_counts(row["to info"])
         # length 7 + length 7 = vector of length 14
@@ -332,7 +340,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         evidence_list.append(all_evidence)
 
     # TODO: handle case for only evidence count changing (e.g., (1) to (2))
-    ev_df = pandas.DataFrame(
+    evidence_df = pandas.DataFrame(
         data=evidence_list,
         columns=[
             "benign_prod", "likely_benign_prod", "uncertain_prod",
@@ -344,7 +352,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         ]
     )
 
-    det_df[[
+    detailed_df[[
         "benign_prod", "benign_dev",
         "likely_benign_prod", "likely_benign_dev",
         "uncertain_prod", "uncertain_dev",
@@ -352,7 +360,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         "pathogenic_prod", "pathogenic_dev",
         "path_low_penetrance_prod", "path_low_penetrance_dev",
         "unknown_prod", "unknown_dev"
-    ]] = ev_df[[
+    ]] = evidence_df[[
         "benign_prod", "benign_dev",
         "likely_benign_prod", "likely_benign_dev",
         "uncertain_prod", "uncertain_dev",
@@ -361,9 +369,9 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         "path_low_penetrance_prod", "path_low_penetrance_dev",
         "unknown_prod", "unknown_dev"
     ]]
-    det_df.drop(columns=["from info", "to info"], inplace=True)
+    detailed_df.drop(columns=["from info", "to info"], inplace=True)
 
-    return added_df, deleted_df, changed_df, det_df
+    return added_df, deleted_df, changed_df, detailed_df
 
 
 def get_evidence_counts(info):
@@ -441,8 +449,14 @@ def get_categories(dataframe_extract, bin_folder):
     """
     updated_categories = []
     location = f"{bin_folder}/resources/annotation_regex.json"
-    with open(location, "r") as file:
-        regex_dict = json.load(file)
+    try:
+        with open(location, "r") as file:
+            regex_dict = json.load(file)
+    except IOError:
+        raise RuntimeError(
+            f"The json file {location} could not be found within the"
+            + "resources folder"
+        )
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
         info = row["info"]
@@ -458,6 +472,7 @@ def get_full_category_name(base_name, info, regex_dict):
     Args:
         base_name (str): from category column
         info (str): from info column
+        regex_dict (str): path to regex dictionary
 
     Raises:
         Exception: Invalid input format in 'info' field
@@ -492,10 +507,12 @@ def get_full_category_name(base_name, info, regex_dict):
             if re.match(difference_regex[key], name):
                 # value entered is valid
                 name_match = True
-                if (key != conflict
-                        and key != conflict_other
-                        and key != conflict_risk
-                        and key != conflict_other_risk):
+                if (
+                    key not in [
+                        conflict, conflict_other, conflict_risk,
+                        conflict_other_risk
+                    ]
+                ):
                     # add simple category to list of names
                     full_names.append(key)
                 else:

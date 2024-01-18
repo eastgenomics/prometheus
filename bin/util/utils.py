@@ -19,7 +19,7 @@ def check_analyses_finished(id_list, timer, max_wait_time):
     """checks if analyses have finished or until max time has elapsed
 
     Args:
-        id_list (str): DNAnexus analysis IDs to check if completed
+        id_list (list(str)): DNAnexus analysis IDs to check if completed
         timer (int): interval to check in (minutes)
         max_wait_time (int): max wait time (minutes)
     """
@@ -460,7 +460,10 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
         raise RuntimeError(
             f"Regex {replace_regex} had no match in file {old_config_filename}"
         )
-    os.remove(old_config_filename)
+    try:
+        os.remove(old_config_filename)
+    except OSError:
+        pass
     with open(old_config_filename, "w") as f:
         f.writelines(new_lines)
 
@@ -607,12 +610,10 @@ def get_recent_002_projects(assay, months):
             f"No 002 projects found for assay {assay} in past {months} months"
         )
 
-    assay_info = [[]]
-    for entry in assay_response:
-        info = [entry["describe"]["id"],
-                entry["describe"]["name"],
-                entry["describe"]["created"]]
-        assay_info.append(info)
+    assay_info = [
+        [x["describe"]["id"],  x["describe"]["name"], x["describe"]["created"]]
+        for x in assay_response
+    ]
 
     # get most recent 002 in search and return project id
     df = pd.DataFrame.from_records(
@@ -624,20 +625,6 @@ def get_recent_002_projects(assay, months):
     df = df.sort_values(["created"], ascending=False)
 
     return df
-
-
-def find_file_name_from_id(file_id):
-    """returns file name from DNAnexus file ID
-
-    Args:
-        file_id (str): DNAnexus file ID
-
-    Returns:
-        name (str): name of DNAnexus file
-    """
-    file = dxpy.bindings.dxfile.DXFile(file_id)
-    name = file.describe()["name"]
-    return name
 
 
 def match_folder_name(project_id, base_path, folder_regex):
@@ -653,7 +640,7 @@ def match_folder_name(project_id, base_path, folder_regex):
         RuntimeError: folder matching regex not found
 
     Returns:
-        _type_: _description_
+        str: path to folder matched by name regex
     """
     if not check_proj_folder_exists(project_id, base_path):
         raise RuntimeError(
