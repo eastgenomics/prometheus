@@ -10,8 +10,9 @@ from dxpy.bindings.dxworkflow import DXWorkflow
 import utils
 
 
-def deploy_config_to_production(reference_project_id, dev_project_id,
-                                config_id, deploy_folder):
+def deploy_config_to_production(
+    reference_project_id, dev_project_id, config_id, deploy_folder
+) -> None:
     """move config file to 001 reference project
 
     Args:
@@ -34,8 +35,9 @@ def deploy_config_to_production(reference_project_id, dev_project_id,
         file.close()
 
 
-def deploy_workflow_to_production(reference_project_id, dev_project_id,
-                                  workflow_id, deploy_folder):
+def deploy_workflow_to_production(
+    reference_project_id, dev_project_id, workflow_id, deploy_folder
+) -> None:
     """move workflow file to 001 reference project
 
     Args:
@@ -54,8 +56,10 @@ def deploy_workflow_to_production(reference_project_id, dev_project_id,
     workflow.clone(project=reference_project_id, folder=deploy_folder)
 
 
-def deploy_clinvar_to_production(reference_project_id, dev_project_id,
-                                 vcf_file_id, tbi_file_id, deploy_folder):
+def deploy_clinvar_to_production(
+    reference_project_id, dev_project_id, vcf_file_id, tbi_file_id,
+    deploy_folder
+) -> None:
     """move vcf file and vcf.tbi file to 001 reference project
 
     Args:
@@ -83,9 +87,10 @@ def deploy_clinvar_to_production(reference_project_id, dev_project_id,
         vcf_file.close()
 
 
-def deploy_testing_to_development(dev_project_id, clinvar_version, added_csv,
-                                  deleted_csv, changed_csv, detailed_csv,
-                                  job_report):
+def deploy_testing_to_development(
+    dev_project_id, clinvar_version, added_csv, deleted_csv, changed_csv,
+    detailed_csv, job_report
+) -> tuple[str, str, str, str, str]:
     """uploads all files output from testing to subfolder of 003 dev project
 
     Args:

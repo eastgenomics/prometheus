@@ -10,10 +10,12 @@ from urllib3.util import Retry
 class SlackHandler:
     """Handles slack interactions
     """
-    def __init__(self, slack_token):
+    def __init__(self, slack_token) -> None:
         self.slack_token = slack_token
 
-    def announce_clinvar_update(self, channel, file_name, date, genome_build):
+    def announce_clinvar_update(
+        self, channel, file_name, date, genome_build
+    ) -> None:
         """announces Clinvar update to team
 
         Args:
@@ -28,14 +30,17 @@ class SlackHandler:
             + " into 001_reference.")
         self.send_message(channel, update_message)
 
-    def announce_config_update(self, channel, file_name, assay,
-                               genome_build, clinvar_version):
+    def announce_config_update(
+        self, channel, file_name, assay, genome_build, clinvar_version
+    ) -> None:
         """announces VEP config update to team
 
         Args:
             channel (str): name of slack channel to post to
             file_name (_type_): file name of config file
+            assay (str): name of assay
             genome_build (str): genome build of config ClinVar file
+            clinvar_version (str): version of clinvar
         """
         vcf_name = f"clinvar_{clinvar_version}_{genome_build}.vcf.gz"
         tbi_name = f"{vcf_name}.tbi"
@@ -47,7 +52,7 @@ class SlackHandler:
             + f" {vcf_name} and {tbi_name}.")
         self.send_message(channel, update_message)
 
-    def send_message(self, channel, message):
+    def send_message(self, channel, message) -> None:
         """sends message to specified slack channel
 
         Args:

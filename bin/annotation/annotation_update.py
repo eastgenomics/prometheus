@@ -19,11 +19,13 @@ from util.utils import load_config
 logger = logging.getLogger("main log")
 
 
-def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
+def run_annotation_update(
+        bin_folder, genome_build, config_path, creds_path) -> None:
     """runs all steps of prometheus ClinVar annotation resource update
 
     Args:
         bin_folder (str): folder scripts are run from
+        genome_build (str): build of genome used e.g., b38
         config_path (str): path to config file
         creds_path (str): path to credentials file
     """
@@ -178,7 +180,8 @@ def run_annotation_update(bin_folder, genome_build, config_path, creds_path):
     )
 
 
-def announce_manual_check(slack_handler, channel, dev_project, update_folder):
+def announce_manual_check(
+        slack_handler, channel, dev_project, update_folder) -> None:
     """announces that manual check of evidence files must be performed
 
     Args:
@@ -196,7 +199,7 @@ def announce_manual_check(slack_handler, channel, dev_project, update_folder):
     exit_prometheus()
 
 
-def exit_prometheus():
+def exit_prometheus() -> None:
     """safely exits Prometheus
     """
     logger.info("Exiting prometheus")

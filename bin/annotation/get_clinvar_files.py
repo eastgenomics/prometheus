@@ -9,7 +9,7 @@ import dxpy
 import time
 
 
-def get_ftp_files():
+def get_ftp_files() -> tuple[str, str, datetime, str]:
     """retrieves information about latest ClinVar file
 
     Returns:
@@ -17,7 +17,7 @@ def get_ftp_files():
             name of latest vcf file on ncbi website
         recent_tbi_file: str
             name of latest vcf index file on ncbi website
-        latest_time: datetime.date
+        latest_time: datetime
             version date of latest ClinVar file
         recent_vcf_version: str
             version of latest ClinVar file
@@ -59,8 +59,9 @@ def get_ftp_files():
     return recent_vcf_file, recent_tbi_file, latest_time, recent_vcf_version
 
 
-def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
-                           clinvar_version, genome_build):
+def retrieve_clinvar_files(
+    project_id, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build
+) -> tuple[str, str]:
     """download latest ClinVar files to 003 development project
 
     Args:
@@ -145,8 +146,9 @@ def retrieve_clinvar_files(project_id, recent_vcf_file, recent_tbi_file,
     return vcf_id, tbi_id
 
 
-def run_url_fetcher(project_id, destination_folder,
-                    download_link, new_file_name):
+def run_url_fetcher(
+    project_id, destination_folder, download_link, new_file_name
+) -> str:
     """runs url fetcher to download a file to a given project folder
 
     Args:
@@ -175,14 +177,15 @@ def run_url_fetcher(project_id, destination_folder,
     return job_id
 
 
-def connect_to_website():
+def connect_to_website() -> FTP:
     """generates a FTP object to enable download from ncbi website
+
+    Raises:
+        RuntimeError: cannot connect to ncbi website
 
     Returns:
         ftplib.FTP: FTP object to enable download from ncbi website
 
-    Raises:
-        RuntimeError: cannot connect to ncbi website
     """
     # safety feature to prevent too many requests to server
     time.sleep(1)

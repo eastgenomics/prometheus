@@ -19,10 +19,10 @@ from inspect_vep_logs import inspect_logs
 from utils import get_recent_002_projects
 
 
-def vep_testing_config(project_id, dev_config_id,
-                       dx_update_folder, ref_proj_id,
-                       assay, genome_build,
-                       clinvar_id):
+def vep_testing_config(
+    project_id, dev_config_id, dx_update_folder, ref_proj_id, assay,
+    genome_build, clinvar_id
+) -> str:
     """performs testing for vep config and generates summary file
 
     Args:
@@ -31,6 +31,8 @@ def vep_testing_config(project_id, dev_config_id,
         dx_update_folder (str): dev folder for current vep update
         ref_proj_id (str): DNAnexus project ID for 001 reference
         assay (str): vep assay name
+        genome_build (str): build of genome
+        clinvar_id: DNAnexus ID of clinvar vcf file
 
     Returns:
         test_summary_id (str): DNAnexus file ID for summary file
@@ -72,9 +74,10 @@ def vep_testing_config(project_id, dev_config_id,
     return test_summary_id
 
 
-def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
-                           clinvar_version, bin_folder, ref_proj_id,
-                           genome_build):
+def vep_testing_annotation(
+    project_id, dev_config_id, prod_config_id, clinvar_version, bin_folder,
+    ref_proj_id, genome_build
+) -> tuple[str, str, str, str, str]:
     """compares vep output for dev and prod files and outputs reports
 
     Args:
@@ -83,6 +86,8 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
         prod_config_id (str): DNAnexus file ID for prod vep config file
         clinvar_version (str): version of ClinVar vcf
         bin_folder (str): path to bin folder
+        ref_proj_id (str): DNAnexus ID of reference project
+        genome_build (str): build of genome
 
     Returns:
         added_csv: str
@@ -175,7 +180,7 @@ def vep_testing_annotation(project_id, dev_config_id, prod_config_id,
     return added_csv, deleted_csv, changed_csv, detailed_csv, job_report
 
 
-def parse_vep_output(project_id, folder, label, update_folder):
+def parse_vep_output(project_id, folder, label, update_folder) -> str:
     """parses output from running vep and returns path to processed output
 
     Args:
@@ -183,7 +188,6 @@ def parse_vep_output(project_id, folder, label, update_folder):
         folder (str): folder name to output to in current update folder
         label (str): label for naming the end of the output file
         update_folder (str): path to folder in 003 project for current update
-        bin_folder (str): path to bin folder
 
     Raises:
         RuntimeError: Folder not found in project
@@ -227,7 +231,7 @@ def parse_vep_output(project_id, folder, label, update_folder):
     return vcf_output_path
 
 
-def get_diff_output(dev_output, prod_output, label, bin_folder):
+def get_diff_output(dev_output, prod_output, label, bin_folder) -> str:
     """get the diff output between dev and prod vep parsed outputs
 
     Args:
@@ -250,8 +254,9 @@ def get_diff_output(dev_output, prod_output, label, bin_folder):
     return output_file
 
 
-def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
-                    prod_tso_job, path) -> str:
+def make_job_report(
+    dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, path
+) -> str:
     """generates job report txt file from vep run DNAnexus job IDs
 
     Args:
@@ -282,8 +287,10 @@ def make_job_report(dev_twe_job, dev_tso_job, prod_twe_job,
     return path
 
 
-def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
-            update_folder):
+def run_vep(
+    project_id, project_folder, config_file, vcf_file, panel_bed_file,
+    update_folder
+) -> str:
     """runs the DNAnexus app vep
 
     Args:
@@ -315,11 +322,15 @@ def run_vep(project_id, project_folder, config_file, vcf_file, panel_bed_file,
     return job_id
 
 
-def get_recent_vep_vcf_bed(assay, ref_proj_id, genome_build):
+def get_recent_vep_vcf_bed(
+    assay, ref_proj_id, genome_build
+) -> tuple(str, str):
     """gets most recent vcf and panel bed files in use for given assay
 
     Args:
         assay (str): name of assay
+        ref_proj_id (str): DNAnexus project ID of reference project
+        genome_build (str): build of genome
 
     Raises:
         Exception: no 002 projects found for assay in past 12 months

@@ -10,12 +10,15 @@ import json
 output_location = "temp"
 
 
-def compare_annotation(diff_twe, diff_tso, bin_folder):
+def compare_annotation(
+    diff_twe, diff_tso, bin_folder
+) -> tuple[str, str, str, str]:
     """generates csv reports from diff outputs for TWE and TSO500
 
     Args:
         diff_twe (str): path to diff output file for TWE
         diff_tso (str): path to diff output file for TSO500
+        bin_folder (str): path to bin folder
 
     Returns:
         added_output: str
@@ -24,6 +27,8 @@ def compare_annotation(diff_twe, diff_tso, bin_folder):
             path to .csv summarising deleted variants
         changed_output: str
             path to .csv summarising changed variants
+        detailed_output: str
+            path to .csv summarising changed variants in detail
     """
     # get variant annotation changes for TWE
     added_twe, deleted_twe, changed_twe, detailed_twe = parse_diff(
@@ -80,11 +85,12 @@ def compare_annotation(diff_twe, diff_tso, bin_folder):
     return added_output, deleted_output, changed_output, detailed_out
 
 
-def parse_diff(diff_filename, bin_folder):
+def parse_diff(diff_filename, bin_folder) -> tuple[str, str, str]:
     """parses file of diff output to dataframes
 
     Args:
         diff_filename (str): path to diff file
+        bin_folder (str): path to bin folder
 
     Raises:
         FileNotFoundError: diff file not found
@@ -96,6 +102,8 @@ def parse_diff(diff_filename, bin_folder):
             path to .csv summarising deleted variants
         changed_df: pandas.DataFrame
             path to .csv summarising changed variants
+        detailed_df: pandas.DataFrame
+            path to .csv summarising changed variants in detail
     """
     # read in file from filename passed in
     try:
@@ -208,7 +216,7 @@ def parse_diff(diff_filename, bin_folder):
     return added_df, deleted_df, changed_df, detailed_df
 
 
-def parse_line_count(line):
+def parse_line_count(line) -> int:
     """checks if the number of commas is valid when parsing a difference
 
     Args:
@@ -228,14 +236,15 @@ def parse_line_count(line):
                         " when parsing diff file")
 
 
-def split_variant_info(raw_list):
+def split_variant_info(raw_list) -> None:
     """splits diff string into columns
 
     Args:
         raw_list (list): list of diff strings
 
     Returns:
-        list: list of values in format mutation, clinvar ID, category, info
+        list(str): list of values in format mutation,
+            clinvar ID, category, info
 
     Raises:
         RuntimeError: string in list has invalid format
@@ -255,8 +264,11 @@ def split_variant_info(raw_list):
     return filtered_list
 
 
-def make_dataframes(added_list, deleted_list, changed_list_from,
-                    changed_list_to, bin_folder):
+def make_dataframes(
+    added_list, deleted_list, changed_list_from, changed_list_to, bin_folder
+) -> tuple[
+    pandas.DataFrame, pandas.DataFrame, pandas.DataFrame, pandas.DataFrame
+]:
     """generates dataframes from lists of variants
 
     Args:
@@ -264,6 +276,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
         deleted_list (list): list of deleted variants
         changed_list_from (list): list of old changed variants
         changed_list_to (list): list of new changed variants
+        bin_folder (str): path to bin folder
 
     Returns:
         added_df: pandas.DataFrame
@@ -374,7 +387,7 @@ def make_dataframes(added_list, deleted_list, changed_list_from,
     return added_df, deleted_df, changed_df, detailed_df
 
 
-def get_evidence_counts(info):
+def get_evidence_counts(info) -> list:
     """gets the evidence count per category for a given variant
 
     Args:
@@ -438,11 +451,12 @@ def get_evidence_counts(info):
     return return_list
 
 
-def get_categories(dataframe_extract, bin_folder):
+def get_categories(dataframe_extract, bin_folder) -> list:
     """get full category name from category and info columns for all entries
 
     Args:
         dataframe_extract (pandas.DataFrame): contains category and info cols
+        bin_folder (str): path to bin folder
 
     Returns:
         list: list of updated category names
@@ -466,7 +480,7 @@ def get_categories(dataframe_extract, bin_folder):
     return updated_categories
 
 
-def get_full_category_name(base_name, info, regex_dict):
+def get_full_category_name(base_name, info, regex_dict) -> str:
     """get full category name from category and info columns for single entry
 
     Args:

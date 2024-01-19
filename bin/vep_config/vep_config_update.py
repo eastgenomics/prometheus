@@ -14,8 +14,9 @@ import util.vep_testing as vep_testing
 import util.deployer as deployer
 from util.login_handler import LoginHandler
 from util.slack_handler import SlackHandler
-from util.utils import (get_prod_version, load_config,
-                        load_config_repo, check_proj_folder_exists)
+from util.utils import (
+    get_prod_version, load_config, load_config_repo, check_proj_folder_exists
+)
 from util.git_handler import GitHandler
 import util.utils as utils
 from util.progress_tracker import VepProgressTracker as Tracker
@@ -23,8 +24,9 @@ from util.progress_tracker import VepProgressTracker as Tracker
 logger = logging.getLogger("main log")
 
 
-def run_vep_config_update(bin_folder, assay, genome_build,
-                          config_path, creds_path):
+def run_vep_config_update(
+    bin_folder, assay, genome_build, config_path, creds_path
+) -> None:
     """runs all steps in vep config update
 
     Args:
@@ -326,7 +328,7 @@ def run_vep_config_update(bin_folder, assay, genome_build,
         exit_prometheus()
 
 
-def exit_prometheus():
+def exit_prometheus() -> None:
     """safely exits Prometheus
     """
     logger.info("Exiting prometheus")

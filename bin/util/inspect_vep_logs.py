@@ -8,7 +8,9 @@ regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"
 
 
-def inspect_logs(log_file, job_id, config_name, vcf_name, assay):
+def inspect_logs(
+    log_file, job_id, config_name, vcf_name, assay
+) -> tuple[bool, str]:
     """checks that specified config and vcf names are present in logs
 
     Args:
@@ -45,8 +47,10 @@ def inspect_logs(log_file, job_id, config_name, vcf_name, assay):
     return test_passed, output_file
 
 
-def generate_test_summary(filename, test_passed, config_name, vcf_name,
-                          config_results, vcf_results, job_id):
+def generate_test_summary(
+    filename, test_passed, config_name, vcf_name, config_results, vcf_results,
+    job_id
+) -> str:
     """generates a summary of log file testing performed
 
     Args:

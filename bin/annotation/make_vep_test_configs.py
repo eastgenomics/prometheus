@@ -8,9 +8,10 @@ import shutil
 import util.utils as utils
 
 
-def generate_config_files(dev_version, dev_annotation_file_id,
-                          dev_index_file_id, dev_proj_id, ref_proj_id,
-                          bin_folder, genome_build):
+def generate_config_files(
+    dev_version, dev_annotation_file_id, dev_index_file_id, dev_proj_id,
+    ref_proj_id, bin_folder, genome_build
+) -> tuple[str, str]:
     """generates vep config files for dev and prod ClinVar files
 
     Args:
@@ -19,6 +20,8 @@ def generate_config_files(dev_version, dev_annotation_file_id,
         dev_index_file_id (str): DNAnexus file ID for dev tbi file
         dev_proj_id (str): DNAnexus project ID for 003 dev project
         ref_proj_id (str): DNAnexus project ID for 001 reference project
+        bin_folder (str): path to bin folder
+        genome_build (str): path to genome build
 
     Returns:
         dev_id: str
@@ -66,13 +69,16 @@ def generate_config_files(dev_version, dev_annotation_file_id,
     return dev_id, prod_id
 
 
-def make_config_file(filename, annotation_file_id, index_file_id, bin_folder):
+def make_config_file(
+    filename, annotation_file_id, index_file_id, bin_folder
+) -> str:
     """makes vep config file from template
 
     Args:
         filename (str): name of vep config file to be output
         annotation_file_id (str): DNAnexus file ID of vcf file
         index_file_id (str): DNAnexus file ID of vcf index file
+        bin_folder (str): path to bin folder
 
     Returns:
         str: path to config file created

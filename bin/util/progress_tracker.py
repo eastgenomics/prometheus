@@ -20,8 +20,10 @@ class ClinvarProgressTracker:
     STATUS_PASSED = "passed"
     STATUS_REVIEW = "awaiting review"
 
-    def __init__(self, dev_proj_id, ref_proj_id, evidence_folder,
-                 ref_deploy_folder, genome_build, dev_version):
+    def __init__(
+        self, dev_proj_id, ref_proj_id, evidence_folder, ref_deploy_folder,
+        genome_build, dev_version
+    ) -> None:
         self.dev_proj_id = dev_proj_id
         self.ref_proj_id = ref_proj_id
         self.evidence_folder = evidence_folder
@@ -41,7 +43,9 @@ class ClinvarProgressTracker:
         self.vep_config_dev = ""
         self.vep_config_prod = ""
 
-    def perform_checks(self):
+    def perform_checks(self) -> None:
+        """check if any stages have already been completed
+        """
         self.clinvar_fetched = False
         self.configs_made = False
         self.evidence_uploaded = False
@@ -63,7 +67,7 @@ class ClinvarProgressTracker:
             return
         self.check_clinvar_deployed()
 
-    def check_clinvar_fetched(self):
+    def check_clinvar_fetched(self) -> None:
         """checks if clinvar files have been uploaded to 003 dev project
         """
         # check .vcf and .tbi files exist for update in DNAnexus
@@ -89,7 +93,7 @@ class ClinvarProgressTracker:
         except IOError:
             self.clinvar_fetched = False
 
-    def check_configs_made(self):
+    def check_configs_made(self) -> None:
         """checks if VEP config files have been uploaded to dev project
         """
         # check dev and prod vep config files exist for update in DNAnexus
@@ -109,7 +113,7 @@ class ClinvarProgressTracker:
         except IOError:
             self.configs_made = False
 
-    def check_evidence_uploaded(self):
+    def check_evidence_uploaded(self) -> None:
         """checks if evidence of VEP testing has been uploaded
         """
         # check evidence files have been uploaded to DNAnexus
@@ -135,7 +139,7 @@ class ClinvarProgressTracker:
         except IOError:
             self.evidence_uploaded = False
 
-    def check_changes_status(self):
+    def check_changes_status(self) -> None:
         """checks if evidence passes validation checks
         """
         # check if manual or automatic review has been performed
@@ -213,7 +217,7 @@ class ClinvarProgressTracker:
         self.upload_check_passed()
         self.changes_status = self.STATUS_PASSED
 
-    def check_clinvar_deployed(self):
+    def check_clinvar_deployed(self) -> None:
         """checks if clinvar files have been deployed to 001 reference project
         """
         # check that clinvar files have been deployed to 001
@@ -232,7 +236,7 @@ class ClinvarProgressTracker:
         except IOError:
             self.clinvar_deployed = False
 
-    def upload_check_passed(self):
+    def upload_check_passed(self) -> None:
         """upload text file to 003 folder confirming auto-review passed
         """
         # upload txt file to 003 evidence folder
@@ -252,10 +256,11 @@ class VepProgressTracker:
     STATUS_PASSED = "passed"
     STATUS_FAILED = "failed"
 
-    def __init__(self, dev_proj_id, ref_proj_id, evidence_folder,
-                 ref_deploy_folder, genome_build, dev_version,
-                 config_github_link, assay, github_token,
-                 clinvar_id):
+    def __init__(
+        self, dev_proj_id, ref_proj_id, evidence_folder, ref_deploy_folder,
+        genome_build, dev_version, config_github_link, assay, github_token,
+        clinvar_id
+    ) -> None:
         self.dev_proj_id = dev_proj_id
         self.ref_proj_id = ref_proj_id
         self.evidence_folder = evidence_folder
@@ -276,7 +281,9 @@ class VepProgressTracker:
         self.config_name = ""
         self.config_version = ""
 
-    def perform_checks(self):
+    def perform_checks(self) -> None:
+        """check if any stages have already been completed
+        """
         self.pr_merged = False
         self.evidence_uploaded = False
         # unchecked, passed, failed
@@ -293,7 +300,7 @@ class VepProgressTracker:
             return
         self.check_config_deployed()
 
-    def check_pr_merged(self):
+    def check_pr_merged(self) -> None:
         """checks if VEP config PR has been merged and new config is present
         """
         # download repo locally
@@ -326,7 +333,7 @@ class VepProgressTracker:
         else:
             self.pr_merged = False
 
-    def check_evidence_uploaded(self):
+    def check_evidence_uploaded(self) -> None:
         """checks if evidence of VEP testing has been uploaded
         """
         # check evidence files have been uploaded to DNAnexus
@@ -354,7 +361,7 @@ class VepProgressTracker:
         if passed or failed:
             self.evidence_uploaded = True
 
-    def check_testing_status(self):
+    def check_testing_status(self) -> None:
         """checks if evidence passes validation checks
         """
         # check if manual or automatic review has been performed
@@ -370,7 +377,7 @@ class VepProgressTracker:
         except Exception:
             self.changes_status = self.STATUS_FAILED
 
-    def check_config_deployed(self):
+    def check_config_deployed(self) -> None:
         """checks if clinvar files have been deployed to 001 reference project
         """
         # check that clinvar files have been deployed to 001

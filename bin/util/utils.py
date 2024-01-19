@@ -15,7 +15,7 @@ from dxpy.bindings.dxfile_functions import list_subfolders
 from dxpy.bindings.dxanalysis import DXAnalysis
 
 
-def check_analyses_finished(id_list, timer, max_wait_time):
+def check_analyses_finished(id_list, timer, max_wait_time) -> None:
     """checks if analyses have finished or until max time has elapsed
 
     Args:
@@ -60,7 +60,7 @@ def check_analyses_finished(id_list, timer, max_wait_time):
         )
 
 
-def check_jobs_finished(job_id_list, timer, max_wait_time):
+def check_jobs_finished(job_id_list, timer, max_wait_time) -> None:
     """checks if jobs have finished or until max time has elapsed
 
     Args:
@@ -104,7 +104,7 @@ def check_jobs_finished(job_id_list, timer, max_wait_time):
             + f" {max_wait_time} minutes to complete")
 
 
-def check_project_exists(project_id):
+def check_project_exists(project_id) -> bool:
     """checks if a DNAnexus project exists from project ID
 
     Args:
@@ -120,7 +120,7 @@ def check_project_exists(project_id):
         return False
 
 
-def check_proj_folder_exists(project_id, folder_path):
+def check_proj_folder_exists(project_id, folder_path) -> bool:
     """checks if a DNAnexus folder exists in a given project
 
     Args:
@@ -147,7 +147,9 @@ def check_proj_folder_exists(project_id, folder_path):
         return False
 
 
-def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
+def get_prod_version(
+    ref_proj_id, ref_proj_folder, genome_build
+) -> tuple[str, str, str]:
     """gets information on latest production ClinVar file
 
     Args:
@@ -208,7 +210,7 @@ def get_prod_version(ref_proj_id, ref_proj_folder, genome_build):
     return recent_version, vcf_id, index_id
 
 
-def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
+def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
     """gets information on latest production ClinVar file
 
     Args:
@@ -261,7 +263,7 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay):
         return latest["id"]
 
 
-def find_dx_file(project_id, folder_path, file_name):
+def find_dx_file(project_id, folder_path, file_name) -> str:
     """gets file ID of DNAnexus file from file name
 
     Args:
@@ -321,7 +323,7 @@ def find_dx_file(project_id, folder_path, file_name):
         return latest["id"]
 
 
-def find_all_dx_files(project_id, folder_path, file_name):
+def find_all_dx_files(project_id, folder_path, file_name) -> list[str]:
     """gets file ID of DNAnexus file from file name
 
     Args:
@@ -378,8 +380,12 @@ def find_all_dx_files(project_id, folder_path, file_name):
     return file_ids
 
 
-def load_config(bin_path, config_path):
+def load_config(bin_path, config_path) -> tuple[str, str, str]:
     """loads config file
+
+    Args:
+        bin_path (str): path to bin directory
+        config_path (str): path to config file
 
     Returns:
         ref_proj_id: str
@@ -399,8 +405,13 @@ def load_config(bin_path, config_path):
     return ref_proj_id, dev_proj_id, slack_channel
 
 
-def load_config_repo(assay, bin_path, config_path):
+def load_config_repo(assay, bin_path, config_path) -> str:
     """loads config file for VEP config update
+
+    Args:
+        assay (str): name of assay
+        bin_path (str): path to bin directory
+        config_path (str): path to config file
 
     Returns:
         repo: str
@@ -419,7 +430,9 @@ def load_config_repo(assay, bin_path, config_path):
     return repo
 
 
-def update_json(json_path_glob, first_match, replace_regex, replace_with):
+def update_json(
+    json_path_glob, first_match, replace_regex, replace_with
+) -> None:
     """updates json file by replacing specific string from regex
 
     Args:
@@ -468,8 +481,9 @@ def update_json(json_path_glob, first_match, replace_regex, replace_with):
         f.writelines(new_lines)
 
 
-def is_json_content_different(json_path_glob, first_match,
-                              file_id_regex, new_file_id):
+def is_json_content_different(
+    json_path_glob, first_match, file_id_regex, new_file_id
+) -> bool:
     """checks if specific file ID in json is different to ID provided
 
     Args:
@@ -483,7 +497,7 @@ def is_json_content_different(json_path_glob, first_match,
         RuntimeError: file ID regex has no match
 
     Returns:
-        _type_: _description_
+        bool: is content different
     """
     config_filename = glob.glob(json_path_glob)[0]
     with open(config_filename, "r") as f:
@@ -514,8 +528,9 @@ def is_json_content_different(json_path_glob, first_match,
         )
 
 
-def search_json(json_path_glob, first_match,
-                search_regex):
+def search_json(
+    json_path_glob, first_match, search_regex
+) -> str:
     """attempts to find string matching regex in json
 
     Args:
@@ -555,7 +570,7 @@ def search_json(json_path_glob, first_match,
         )
 
 
-def increment_version(version):
+def increment_version(version) -> str:
     """increments version number by 1
 
     Args:
@@ -580,7 +595,7 @@ def increment_version(version):
     return return_version
 
 
-def get_recent_002_projects(assay, months):
+def get_recent_002_projects(assay, months) -> pd.DataFrame:
     """get 002 projects matching assay name in past n months
 
     Args:
@@ -627,7 +642,7 @@ def get_recent_002_projects(assay, months):
     return df
 
 
-def match_folder_name(project_id, base_path, folder_regex):
+def match_folder_name(project_id, base_path, folder_regex) -> str:
     """finds path to folder in project from folder name regex
 
     Args:
@@ -659,7 +674,7 @@ def match_folder_name(project_id, base_path, folder_regex):
         + f" in path {base_path} of project {project_id}")
 
 
-def search_for_regex(log_file, regex):
+def search_for_regex(log_file, regex) -> list[str]:
     """returns all lines containing regex in text file
 
     Args:
