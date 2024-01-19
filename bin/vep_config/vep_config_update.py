@@ -336,12 +336,26 @@ def exit_prometheus() -> None:
 
 
 if __name__ == "__main__":
-    # Send either "bin" or "nextflow-bin" from nextflow script depending
-    # on where program is run
-    # This will either be "bin" for local, or "nextflow-bin" for running it as
-    # a DNAnexus app/applet
-    # This is followed by the assay name from nextflow script e.g., TSO500
-    # Followed by the genome build e.g., b38
+    """
+    Send either "bin" or "nextflow-bin" from nextflow script depending
+    on where program is run
+    This will either be "bin" for local, or "nextflow-bin" for running it as
+    a DNAnexus app/applet
+    This is followed by the assay name from nextflow script e.g., TSO500
+    followed by the genome build e.g., b38
+
+    Example command:
+        python3 bin/vep_config_update.py nextflow-bin TSO500 b38
+        path/config.json path.creds.json
+
+    Args:
+        bin_folder (str): folder scripts are run from
+        assay (str): vep assay being updated
+        genome_build (str): genome build used for update
+        config_path (str): path to config file
+        creds_path (str): path to credentials file
+    """
+    
 
     # validate arguments
     num_args = len(sys.argv)
