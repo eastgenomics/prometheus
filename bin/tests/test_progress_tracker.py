@@ -10,17 +10,23 @@ os.chdir("..")
 os.chdir("..")
 
 
-class testCase(unittest.TestCase):
+class testProgressTracker(unittest.TestCase):
 
     def test_perform_checks(self):
-        (ref_proj_id,
-         dev_proj_id,
-         slack_channel) = annotation_update.load_config()
+        """test that ClinvarProgressTracker can complete all check stages
+        """
+        (
+            ref_proj_id,
+            dev_proj_id,
+            slack_channel
+        ) = annotation_update.load_config()
 
-        (recent_vcf_file,
-         recent_tbi_file,
-         earliest_time,
-         clinvar_version) = get_clinvar_files.get_ftp_files()
+        (
+            recent_vcf_file,
+            recent_tbi_file,
+            earliest_time,
+            clinvar_version
+        ) = get_clinvar_files.get_ftp_files()
         update_folder = (
             f"/ClinVar_version_{clinvar_version}_annotation_resource_update"
         )

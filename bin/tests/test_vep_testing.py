@@ -7,9 +7,11 @@ os.chdir("..")
 os.chdir("..")
 
 
-class testCase(unittest.TestCase):
+class testVepTesting(unittest.TestCase):
 
     def test_get_diff_output(self):
+        """test get_diff_output generates output file successfully
+        """
         dev_content = [
             "1:2488153:A:G 135349 not_provided .",
             "1:11181327:C:T 516652 Benign .",
@@ -41,6 +43,8 @@ class testCase(unittest.TestCase):
         os.remove("test_prod.txt")
 
     def test_make_job_report(self):
+        """test make_job_report generates job report file successfully
+        """
         dev_twe_job = "job-myjob12345"
         dev_tso_job = "job-myjob12346"
         prod_twe_job = "job-myjob12347"
@@ -55,11 +59,15 @@ class testCase(unittest.TestCase):
             os.remove(output)
 
     def test_get_recent_vep_vcf_bed(self):
+        """test get_recent_vcf_bed returns a value for a vcf file and bed file
+        """
         assay = "TSO500"
         ref_proj = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         vcf, bed = vt.get_recent_vep_vcf_bed(assay, ref_proj)
-        assert vcf is not None
-        assert bed is not None
+        assert (
+            vcf is not None
+            and bed is not None
+        )
 
 
 if __name__ == "__main__":

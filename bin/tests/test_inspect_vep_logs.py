@@ -6,8 +6,11 @@ os.chdir("..")
 os.chdir("..")
 
 
-class testCase(unittest.TestCase):
-    def test_inspect_logs(self):
+class testInspectVepLogs(unittest.TestCase):
+    def test_inspect_logs_pass(self):
+        """test that inspect_vep_logs passes with correct file name
+        when provided with data which should cause testing to pass
+        """
         log_path = "temp/unittest_vep_job_log.txt"
         log_lines = [
             "2023-11-17 08:53:55 eggd_vep STDERR + local file=/home/dnanexus/in/config_file/my_config.json\n",
@@ -23,9 +26,23 @@ class testCase(unittest.TestCase):
         test_passed, results_file = ivl.inspect_logs(
             log_path, vep_job, config_name, vcf_name, assay)
         os.remove(results_file)
-        assert test_passed
         output_filename = f"temp/pass_{assay}_testing_summary.txt"
-        assert results_file == output_filename
+        assert (
+            test_passed
+            and results_file == output_filename
+        )
+
+    def test_inspect_logs_fail(self):
+        """test that inspect_vep_logs fails with correct file name
+        when provided with data which should cause testing to fail
+        """
+        log_path = "temp/unittest_vep_job_log.txt"
+        log_lines = [
+            "2023-11-17 08:53:55 eggd_vep STDERR + local file=/home/dnanexus/in/config_file/my_config.json\n",
+            "2023-11-17 08:53:53 eggd_vep STDERR + ANNOTATION_STRING+=/data/clinvar_12345678_b37.vcf.gz,\n"
+        ]
+        with open(log_path, "w") as file:
+            file.writelines(log_lines)
 
         config_name = "my_incorrect_config.json"
         vcf_name = "clinvar_87654321_b37.vcf"
@@ -35,13 +52,17 @@ class testCase(unittest.TestCase):
             log_path, vep_job, config_name, vcf_name, assay
         )
         os.remove(results_file)
-        assert not test_passed
         output_filename = f"temp/fail_{assay}_testing_summary.txt"
-        assert results_file == output_filename
+        assert (
+            not test_passed
+            and results_file == output_filename
+        )
 
         os.remove(log_path)
 
     def test_generate_test_summary(self):
+        """test that generate_test_summary generates summary file
+        """
         filename = "temp/unittest_file.txt"
         test_passed = True
         config_name = "config.json"

@@ -3,17 +3,22 @@ import unittest
 from .context import annotation_update
 
 import os
+import re
 os.chdir("..")
 os.chdir("..")
 
 
-class testCase(unittest.TestCase):
+class testAnnotationUpdate(unittest.TestCase):
 
     def test_load_config(self):
-        assert annotation_update.load_config() == (
-            "project-GXZ0qvj4kbfjZ2fKpKZbxy8q",
-            "project-GXXb2K04FK2bGyvV5GVxpYFf",
-            "egg-test"
+        """tests that the contents of the config file match
+            the desired format
+        """
+        reference, development, channel = annotation_update.load_config()
+        assert (
+            re.match(r"project\-(.{24})", reference)
+            and re.match(r"project\-(.{24})", development)
+            and re.match(r".+\-.+", channel)
         )
 
 

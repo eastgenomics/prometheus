@@ -355,7 +355,6 @@ if __name__ == "__main__":
         config_path (str): path to config file
         creds_path (str): path to credentials file
     """
-    
 
     # validate arguments
     num_args = len(sys.argv)
