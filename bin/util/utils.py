@@ -112,7 +112,7 @@ def get_prod_version(
     # get index file based on clinvar version
     index_id = find_dx_file(
         ref_proj_id, f"/annotation/{genome_build}/clinvar",
-        f"clinvar_{recent_version}_{genome_build}.vcf.gz.tbi"
+        f"clinvar_{recent_version}_{genome_build}.vcf.gz.tbi", False
     )
 
     # return latest production version
@@ -172,121 +172,66 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
         return latest["id"]
 
 
-def find_dx_file(project_id, folder_path, file_name) -> str:
-    """gets file ID of DNAnexus file from file name
+def find_dx_file(
+        project_id, folder_path, file_name, return_all
+) -> str | list[str]:
+    """gets file IDs of DNAnexus files from file name.
+    returns latest file if return_all is false
+    returns all file matches if return_all is true
 
     Args:
         project_id (str): DNAnexus project ID to search in
         folder_path (str): DNAnexus folder path to search in
         file_name (str): DNAnexus file name to search for
+        return_all (bool): return all matches if true latest match if false
 
     Raises:
         IOError: DNAnexus file does not exist
 
     Returns:
         str: DNAnexus file ID
+        list (str): list of DNAnexus file IDs
     """
     if folder_path == "":
-        file_list = list(dxpy.find_data_objects(
-            name=file_name,
-            name_mode="glob",
-            project=project_id,
-            describe={
-                "fields": {
-                    "id": True,
-                    "name": True,
-                    "created": True,
-                    "archivalState": True
-                }
+        folder_path = None
+
+    file_list = list(dxpy.find_data_objects(
+        name=file_name,
+        name_mode='glob',
+        project=project_id,
+        folder=folder_path,
+        describe={
+            "fields": {
+                "id": True,
+                "name": True,
+                "created": True,
+                "archivalState": True
             }
-        ))
-    else:
-        file_list = list(dxpy.find_data_objects(
-            name=file_name,
-            name_mode='glob',
-            project=project_id,
-            folder=folder_path,
-            describe={
-                "fields": {
-                    "id": True,
-                    "name": True,
-                    "created": True,
-                    "archivalState": True
-                }
-            }
-        ))
+        }
+    ))
+
     if len(file_list) < 1:
         raise IOError(
             f"DNAnexus file {file_name} does not exist in project"
             + f" {project_id} folder {folder_path}"
         )
 
-    # return the most recent file uploaded found
-    if len(file_list) == 1:
-        return file_list[0]["id"]
-    else:
-        latest = file_list[0]
+    if return_all:
+        # return all files found
+        file_ids = []
         for file in file_list:
-            if file["describe"]["created"] > latest["describe"]["created"]:
-                latest = file
-        return latest["id"]
-
-
-def find_all_dx_files(project_id, folder_path, file_name) -> list[str]:
-    """gets file ID of DNAnexus file from file name
-
-    Args:
-        project_id (str): DNAnexus project ID to search in
-        folder_path (str): DNAnexus folder path to search in
-        file_name (str): DNAnexus file name to search for
-
-    Raises:
-        IOError: DNAnexus file does not exist
-
-    Returns:
-        list (str): DNAnexus file IDs
-    """
-    if folder_path == "":
-        file_list = list(dxpy.find_data_objects(
-            name=file_name,
-            name_mode="glob",
-            project=project_id,
-            describe={
-                "fields": {
-                    "id": True,
-                    "name": True,
-                    "created": True,
-                    "archivalState": True
-                }
-            }
-        ))
+            file_ids.append(file["id"])
+        return file_ids
     else:
-        file_list = list(dxpy.find_data_objects(
-            name=file_name,
-            name_mode='glob',
-            project=project_id,
-            folder=folder_path,
-            describe={
-                "fields": {
-                    "id": True,
-                    "name": True,
-                    "created": True,
-                    "archivalState": True
-                }
-            }
-        ))
-    if len(file_list) < 1:
-        raise IOError(
-            f"DNAnexus file {file_name} does not exist in project"
-            + f" {project_id} folder {folder_path}"
-        )
-
-    # return the most recent file uploaded found
-    file_ids = []
-    for file in file_list:
-        file_ids.append(file["id"])
-
-    return file_ids
+        # return the most recent file uploaded found
+        if len(file_list) == 1:
+            return file_list[0]["id"]
+        else:
+            latest = file_list[0]
+            for file in file_list:
+                if file["describe"]["created"] > latest["describe"]["created"]:
+                    latest = file
+            return latest["id"]
 
 
 def load_config(bin_path, config_path) -> tuple[str, str, str, str]:

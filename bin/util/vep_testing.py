@@ -358,7 +358,7 @@ def get_recent_vep_vcf_bed(
         try:
             project_id = row["id"]
             # final all vcf files matching name glob and pick first
-            vcf = find_dx_file(project_id, "", vcf_name)
+            vcf = find_dx_file(project_id, "", vcf_name, False)
             break
         except IOError:
             pass
@@ -369,7 +369,7 @@ def get_recent_vep_vcf_bed(
         )
 
     try:
-        bed = find_dx_file(ref_proj_id, folder_bed, bed_name)
+        bed = find_dx_file(ref_proj_id, folder_bed, bed_name, False)
     except IOError:
         pass
 

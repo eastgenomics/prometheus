@@ -84,7 +84,7 @@ class testUtils(unittest.TestCase):
         folder = "/annotation/b37/clinvar/"
         file = "invalid_file.xyz"
         with self.assertRaises(IOError):
-            find_dx_file(ref_proj_id, folder, file)
+            find_dx_file(ref_proj_id, folder, file, False)
 
     def test_find_dx_file_valid(self):
         """test find_dx_file returns valid file id when provided with
@@ -93,7 +93,7 @@ class testUtils(unittest.TestCase):
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar/"
         file = "clinvar_20230107_b37.vcf.gz"
-        file_id = find_dx_file(ref_proj_id, folder, file)
+        file_id = find_dx_file(ref_proj_id, folder, file, False)
         assert re.match(r"^file-.+$", file_id)
 
     def test_load_config(self):

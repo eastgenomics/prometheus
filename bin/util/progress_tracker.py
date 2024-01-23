@@ -79,13 +79,13 @@ class ClinvarProgressTracker:
         try:
             vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
             vcf = utils.find_dx_file(
-                self.dev_proj_id, self.evidence_folder, vcf_name
+                self.dev_proj_id, self.evidence_folder, vcf_name, False
             )
             tbi_name = (
                 f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz.tbi"
             )
             tbi = utils.find_dx_file(
-                self.dev_proj_id, self.evidence_folder, tbi_name
+                self.dev_proj_id, self.evidence_folder, tbi_name, False
             )
             self.clinvar_fetched = True
             self.clinvar_vcf_id = vcf
@@ -102,10 +102,10 @@ class ClinvarProgressTracker:
             dev_filename = "Clinvar_annotation_vep_config_dev_*.json"
             prod_filename = "Clinvar_annotation_vep_config_prod_*.json"
             dev = utils.find_dx_file(
-                self.dev_proj_id, folder, dev_filename
+                self.dev_proj_id, folder, dev_filename, False
             )
             prod = utils.find_dx_file(
-                self.dev_proj_id, folder, prod_filename
+                self.dev_proj_id, folder, prod_filename, False
             )
             self.configs_made = True
             self.vep_config_dev = dev
@@ -124,16 +124,16 @@ class ClinvarProgressTracker:
             changed = "changed_variants.csv"
             jobs = "job_report.txt"
             utils.find_dx_file(
-                self.dev_proj_id, folder, added
+                self.dev_proj_id, folder, added, False
             )
             utils.find_dx_file(
-                self.dev_proj_id, folder, deleted
+                self.dev_proj_id, folder, deleted, False
             )
             utils.find_dx_file(
-                self.dev_proj_id, folder, changed
+                self.dev_proj_id, folder, changed, False
             )
             utils.find_dx_file(
-                self.dev_proj_id, folder, jobs
+                self.dev_proj_id, folder, jobs, False
             )
             self.evidence_uploaded = True
         except IOError:
@@ -149,8 +149,9 @@ class ClinvarProgressTracker:
         try:
             folder = f"{self.evidence_folder}/Evidence"
             auto = ("auto_review.txt")
-            utils.find_dx_file(self.dev_proj_id, folder,
-                               auto)
+            utils.find_dx_file(
+                self.dev_proj_id, folder, auto, False
+            )
             self.changes_status = self.STATUS_PASSED
             return
         except IOError:
@@ -159,7 +160,9 @@ class ClinvarProgressTracker:
         try:
             folder = f"{self.evidence_folder}/Evidence"
             auto = ("manual_review.txt")
-            utils.find_dx_file(self.dev_proj_id, folder, auto)
+            utils.find_dx_file(
+                self.dev_proj_id, folder, auto, False
+            )
             self.changes_status = self.STATUS_PASSED
             return
         except IOError:
@@ -169,7 +172,7 @@ class ClinvarProgressTracker:
         folder = f"{self.evidence_folder}/Evidence"
         changed = "changed_variants.csv"
         changed_id = utils.find_dx_file(
-            self.dev_proj_id, folder, changed
+            self.dev_proj_id, folder, changed, False
         )
         Path("temp/validation").mkdir(parents=True, exist_ok=True)
         download_dest = "temp/validation/changed_variants.csv"
@@ -225,13 +228,14 @@ class ClinvarProgressTracker:
             folder = self.ref_deploy_folder
             vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
             utils.find_dx_file(
-                self.ref_proj_id, folder, vcf_name
+                self.ref_proj_id, folder, vcf_name, False
             )
             tbi_name = (
                 f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz.tbi"
             )
-            utils.find_dx_file(self.ref_proj_id, folder,
-                               tbi_name)
+            utils.find_dx_file(
+                self.ref_proj_id, folder, tbi_name, False
+            )
             self.clinvar_deployed = True
         except IOError:
             self.clinvar_deployed = False
@@ -342,7 +346,7 @@ class VepProgressTracker:
             folder = self.evidence_folder
             summary = f"pass_{self.assay}_testing_summary.txt"
             utils.find_dx_file(
-                self.dev_proj_id, folder, summary
+                self.dev_proj_id, folder, summary, False
             )
             passed = True
         except IOError:
@@ -352,7 +356,7 @@ class VepProgressTracker:
             folder = self.evidence_folder
             summary = f"fail_{self.assay}_testing_summary.txt"
             utils.find_dx_file(
-                self.dev_proj_id, folder, summary
+                self.dev_proj_id, folder, summary, False
             )
             failed = True
         except IOError:
@@ -371,7 +375,7 @@ class VepProgressTracker:
         output_filename = f"pass_{self.assay}_testing_summary.txt"
         try:
             utils.find_dx_file(
-                self.dev_proj_id, self.evidence_folder, output_filename
+                self.dev_proj_id, self.evidence_folder, output_filename, False
             )
             self.changes_status = self.STATUS_PASSED
         except Exception:
@@ -383,7 +387,8 @@ class VepProgressTracker:
         # check that clinvar files have been deployed to 001
         try:
             utils.find_dx_file(
-                self.ref_proj_id, self.ref_deploy_folder, self.config_name
+                self.ref_proj_id, self.ref_deploy_folder, self.config_name,
+                False
             )
             self.config_deployed = True
         except IOError:
