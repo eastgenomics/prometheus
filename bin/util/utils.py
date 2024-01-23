@@ -11,6 +11,7 @@ import dxpy
 from dxpy.bindings.dxproject import DXProject
 import pandas as pd
 from dxpy.bindings.dxfile_functions import list_subfolders
+from packaging import version
 
 
 def check_project_exists(project_id) -> bool:
@@ -175,11 +176,40 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
     if len(config_files) == 1:
         return config_files[0]["id"]
     else:
-        latest = config_files[0]
-        for file in config_files:
-            if file["describe"]["created"] > latest["describe"]["created"]:
-                latest = file
-        return latest["id"]
+        return get_latest_version(config_files)["id"]
+
+
+def get_latest_version(files) -> str:
+    """get latest file in list by version
+
+    Args:
+        file_names (list[list[str]]): results of dxpy.find_data_objects
+        to compare
+
+    Raises:
+        RuntimeError: all config files have invalid versions
+
+    Returns:
+        list[str]: name of latest file
+    """
+    regex = r"[0-9]+\.[0-9]+\.[0-9]+"
+    latest_version = version.parse("0.0.1")
+    latest_file = None
+    for file in files:
+        name = file["describe"]["name"]
+        version_str = re.search(regex, name)
+        # if cannot find match for regex continue
+        if not version_str:
+            continue
+        version_parsed = version.parse(version_str)
+        if version > latest_version:
+            latest_version = version_parsed
+            latest_file = file
+
+    if latest_file is None:
+        raise RuntimeError("All config files have invalid version numbers")
+    else:
+        return latest_file
 
 
 def find_dx_file(
