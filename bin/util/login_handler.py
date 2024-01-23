@@ -15,17 +15,15 @@ class LoginHandler:
     def __init__(self, bin_folder, config_path) -> None:
         """loads credentials
         """
-        (self.dx_token,
-         self.slack_token,
-         self.github_token) = self.load_credentials(
-             bin_folder, config_path
-        )
+        (
+            self.dx_token, self.slack_token, self.github_token
+        ) = self.load_credentials(bin_folder, config_path)
 
     def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
 
         Raises:
-            Exception: DNAnexus user authentification check fails
+            RuntimeError: DNAnexus user authentification check fails
         """
         DX_SECURITY_CONTEXT = {
             "auth_token_type": "Bearer",
@@ -42,7 +40,7 @@ class LoginHandler:
         try:
             dx.api.system_whoami()
             logger.info("DNAnexus login successful")
-        except Exception:
+        except RuntimeError:
             logger.error("Error logging in to DNAnexus")
             sys.exit(1)
 
