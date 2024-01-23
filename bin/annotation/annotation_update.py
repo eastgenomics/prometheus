@@ -32,16 +32,18 @@ def run_annotation_update(
     # make temp dir
     os.makedirs("temp", exist_ok=True)
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel = load_config(bin_folder,
-                                                          config_path)
+    ref_proj_id, dev_proj_id, slack_channel, base_vcf_link = load_config(
+        bin_folder, config_path
+    )
     login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
     # check which clinvar version is most recent
     logger.info("Fetching latest ClinVar annotation resource files")
-    (recent_vcf_file, recent_tbi_file,
-     earliest_time, clinvar_version) = get_ftp_files()
+    (
+        recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version
+    ) = get_ftp_files(base_vcf_link, genome_build)
     update_folder = (
         f"/ClinVar_version_{clinvar_version}_annotation_resource_update"
     )

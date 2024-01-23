@@ -380,7 +380,7 @@ def find_all_dx_files(project_id, folder_path, file_name) -> list[str]:
     return file_ids
 
 
-def load_config(bin_path, config_path) -> tuple[str, str, str]:
+def load_config(bin_path, config_path) -> tuple[str, str, str, str]:
     """loads config file
 
     Args:
@@ -394,15 +394,18 @@ def load_config(bin_path, config_path) -> tuple[str, str, str]:
             DNAnexus project ID for 003 development project
         slack_channel: str
             Slack API token
+        clinvar_link: str
+            Base link used to fetch clinvar files
     """
     with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)
 
-    ref_proj_id = config.get('001_REFERENCE_PROJ_ID')
-    dev_proj_id = config.get('003_DEV_CLINVAR_UPDATE_PROJ_ID')
-    slack_channel = config.get('SLACK_CHANNEL')
+    ref_proj_id = config.get("001_REFERENCE_PROJ_ID")
+    dev_proj_id = config.get("003_DEV_CLINVAR_UPDATE_PROJ_ID")
+    slack_channel = config.get("SLACK_CHANNEL")
+    clinvar_link = config.get("CLINVAR_BASE_LINK")
 
-    return ref_proj_id, dev_proj_id, slack_channel
+    return ref_proj_id, dev_proj_id, slack_channel, clinvar_link
 
 
 def load_config_repo(assay, bin_path, config_path) -> str:

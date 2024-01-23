@@ -130,11 +130,14 @@ class testUtils(unittest.TestCase):
     def test_load_config(self):
         """test load_config loads contents of config file
         """
-        ref_proj_id, dev_proj_id, slack_channel = utils.load_config()
+        (
+            ref_proj_id, dev_proj_id, slack_channel, clinvar_link
+        ) = utils.load_config()
         assert (
             ref_proj_id is not None
             and dev_proj_id is not None
             and slack_channel is not None
+            and clinvar_link is not None
         )
 
     def test_load_config_repo_TSO500(self):

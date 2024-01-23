@@ -9,8 +9,14 @@ import dxpy
 import time
 
 
-def get_ftp_files() -> tuple[str, str, datetime, str]:
+def get_ftp_files(
+        base_vcf_link, genome_build
+) -> tuple[str, str, datetime, str]:
     """retrieves information about latest ClinVar file
+
+    Args:
+        base_vcf_link (str): link used to download clivar files
+        genome_build (str): build of genome
 
     Returns:
         recent_vcf_file: str
@@ -23,7 +29,7 @@ def get_ftp_files() -> tuple[str, str, datetime, str]:
             version of latest ClinVar file
     """
     clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
-    ftp = connect_to_website()
+    ftp = connect_to_website(base_vcf_link, genome_build)
 
     file_list = []
     ftp.retrlines('LIST', file_list.append)
@@ -60,7 +66,8 @@ def get_ftp_files() -> tuple[str, str, datetime, str]:
 
 
 def retrieve_clinvar_files(
-    project_id, recent_vcf_file, recent_tbi_file, clinvar_version, genome_build
+    project_id, recent_vcf_file, recent_tbi_file, clinvar_version,
+    genome_build, base_vcf_link
 ) -> tuple[str, str]:
     """download latest ClinVar files to 003 development project
 
@@ -70,6 +77,7 @@ def retrieve_clinvar_files(
         recent_tbi_file (str): file name of most recent ClinVar tbi file
         clinvar_version (str): version of latest Clinvar file
         genome_build (str): genome build of ClinVar file to be retrieved
+        base_vcf_link (str): link used to download clivar files
 
     Raises:
         Exception: invalid genome build provided
@@ -92,10 +100,10 @@ def retrieve_clinvar_files(
 
     build_number = genome_build[1:]
     vcf_link = (
-        "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+        f"{base_vcf_link}/vcf_GRCh"
         + f"{build_number}/weekly/{recent_vcf_file}")
     tbi_link = (
-        "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh"
+        f"{base_vcf_link}/vcf_GRCh"
         + f"{build_number}/weekly/{recent_tbi_file}")
     vcf_base_name = recent_vcf_file.split(".")[0]
     renamed_vcf = f"{vcf_base_name}_{genome_build}.vcf.gz"
@@ -177,8 +185,12 @@ def run_url_fetcher(
     return job_id
 
 
-def connect_to_website() -> FTP:
+def connect_to_website(base_vcf_link, genome_build) -> FTP:
     """generates a FTP object to enable download from ncbi website
+
+    Args:
+        base_vcf_link (str): link used to download clivar files
+        genome_build (str): build of genome
 
     Raises:
         RuntimeError: cannot connect to ncbi website
@@ -193,7 +205,11 @@ def connect_to_website() -> FTP:
     try:
         ftp = FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()
-        ftp.cwd("/pub/clinvar/vcf_GRCh37/weekly/")
+        vcf_link = (
+            f"{base_vcf_link}/vcf_GRCh"
+            + f"{genome_build}/weekly/"
+        )
+        ftp.cwd(vcf_link)
     except OSError:
         raise RuntimeError("Error: cannot connect to ncbi website")
 

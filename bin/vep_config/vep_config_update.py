@@ -39,7 +39,7 @@ def run_vep_config_update(
     # make temp dir
     os.mkdir("temp", exist_ok=True)
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel = load_config(
+    ref_proj_id, dev_proj_id, slack_channel, clinvar_link = load_config(
         bin_folder, config_path
     )
     assay_repo = load_config_repo(assay, bin_folder, config_path)
