@@ -51,8 +51,15 @@ def vep_testing_config(
     log = "temp/vep_job_log.txt"
     os.system(f"dx watch {vep_job} > {log}")
 
-    config_name = DXFile(dxid=dev_config_id,
-                         project=project_id).describe()["name"]
+    try:
+        config_name = DXFile(
+            dxid=dev_config_id, project=project_id
+        ).describe()["name"]
+    except dxpy.DXError:
+        raise RuntimeError(
+            f"DXfile {dev_config_id} could not be found in"
+            + f" project {project_id}"
+        )
     test_passed, results_file = inspect_logs(
         log, vep_job, config_name, clinvar_id, assay
     )
@@ -216,6 +223,8 @@ def parse_vep_output(project_id, folder, label, update_folder) -> str:
         for record in vcf_reader:
             csq_fields = (record.INFO["CSQ"][0]).split("|")
             info = "."
+            if len(csq_fields) != 5:
+                raise RuntimeError("VEP output vcf has invalid format")
             if csq_fields[4] != "":
                 info = csq_fields[4]
 

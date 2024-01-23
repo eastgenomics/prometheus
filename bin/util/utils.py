@@ -69,6 +69,7 @@ def get_prod_version(
     Raises:
         RuntimeError: no ClinVar files could be found in ref project folder
         RuntimeError: project folder does not exist
+        RuntimeError: all found files had invalid dates in name
 
     Returns:
         recent_version: str
@@ -85,7 +86,7 @@ def get_prod_version(
     name_regex = f"clinvar_*_{genome_build}.vcf.gz"
     vcf_files = list(dxpy.find_data_objects(
         name=name_regex, name_mode='glob', project=ref_proj_id,
-        folder=ref_proj_folder
+        folder=ref_proj_folder, describe=True
     ))
 
     # Error handling if files are not found in 001 reference
@@ -99,15 +100,24 @@ def get_prod_version(
     recent_version = vcf_id = index_id = version = ""
 
     for file in vcf_files:
-        name = dxpy.describe(
-                    file['id']
-                )['name']
-        version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
+        name = file['name']
+        # if name does not match regex, skip file
+        try:
+            version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
+        except AttributeError:
+            continue
         version_date = datetime.strptime(version, '%Y%m%d').date()
         if version_date > latest_time:
             latest_time = version_date
             recent_version = version
             vcf_id = file['id']
+
+    # if no recent version could be found
+    if recent_version == "":
+        raise RuntimeError(
+            f"All clinvar files matching {name_regex}"
+            + " in 001 reference project had invalid dates in name"
+        )
 
     # get index file based on clinvar version
     index_id = find_dx_file(
@@ -270,6 +280,9 @@ def load_config_repo(assay, bin_path, config_path) -> str:
         bin_path (str): path to bin directory
         config_path (str): path to config file
 
+    Raises:
+        RuntimeError: invalid assay name
+
     Returns:
         repo: str
             URL to github repo for assay config file
@@ -283,6 +296,8 @@ def load_config_repo(assay, bin_path, config_path) -> str:
         repo = config.get('TWE_CONFIG_REPO')
     elif assay == "CEN":
         repo = config.get('CEN_CONFIG_REPO')
+    else:
+        raise RuntimeError("Invalid assay name provided to load_config_repo")
 
     return repo
 
