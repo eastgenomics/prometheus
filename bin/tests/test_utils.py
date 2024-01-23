@@ -2,7 +2,6 @@ import unittest
 
 from .context import check_project_exists
 from .context import check_proj_folder_exists
-from .context import check_jobs_finished
 from .context import get_prod_version
 from .context import find_dx_file
 from .context import utils
@@ -40,36 +39,6 @@ class testUtils(unittest.TestCase):
         test_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         test_folder = "/this-folder-does-not-exist"
         assert not check_proj_folder_exists(test_proj_id, test_folder)
-
-    def test_check_jobs_finished_single_invalid(self):
-        """test check_jobs_finished fails for single invalid id
-        """
-        test_job_id_list = ["job-this-id-will-fail"]
-        with self.assertRaises(IOError):
-            check_jobs_finished(test_job_id_list, 1, 2)
-
-    def test_check_jobs_finished_multiple_invalid(self):
-        """test check_jobs_finished fails for multiple invalid ids
-        """
-        test_job_id_list = ["job-this-id-will-fail",
-                            "job-this-id-will-also-fail",
-                            "job-this-id-will-fail-too"]
-        with self.assertRaises(IOError):
-            check_jobs_finished(test_job_id_list, 1, 2)
-
-    def test_check_jobs_finished_single_valid(self):
-        """test check_jobs_finished succeeds for single valid id
-        """
-        test_job_id_list = ["job-GYJYgp04FK2b07Pyxb04zk6V"]
-        assert check_jobs_finished(test_job_id_list, 1, 2) is None
-
-    def test_check_jobs_finished_multiple_valid(self):
-        """test check_jobs_finished succeeds for multiple valid ids
-        """
-        test_job_id_list = ["job-GYJYgp04FK2b07Pyxb04zk6V",
-                            "job-GYJYgkj4FK2g7KBpKvV5Y8xy",
-                            "job-GYJYbv84FK2yg6K4BZ07YPkK"]
-        assert check_jobs_finished(test_job_id_list, 1, 2) is None
 
     def test_get_prod_version_valid(self):
         """test get_prod_version returns valid version and file ids

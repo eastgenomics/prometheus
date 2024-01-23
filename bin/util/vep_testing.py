@@ -12,7 +12,6 @@ import os
 
 # local modules
 import annotation.compare_annotation as compare_annotation
-from utils import check_jobs_finished
 from utils import check_proj_folder_exists
 from utils import find_dx_file
 from inspect_vep_logs import inspect_logs
@@ -47,9 +46,7 @@ def vep_testing_config(
         vcf_id, bed_id, dx_update_folder
     )
     # Pause until jobs have finished
-    # Max wait time provided is 60 minutes
-    job_list = [vep_job]
-    check_jobs_finished(job_list, 2, 60)
+    vep_job.wait_on_done()
 
     log = "temp/vep_job_log.txt"
     os.system(f"dx watch {vep_job} > {log}")
@@ -136,9 +133,10 @@ def vep_testing_annotation(
         tso_vcf_id, tso_bed_id, update_folder
     )
 
-    # Pause until jobs have finished
+    # Wait until jobs have finished
     job_list = [dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job]
-    check_jobs_finished(job_list, 2, 20)
+    for job in job_list:
+        job.wait_on_done()
 
     # Add job IDs to report text file
     job_report = make_job_report(
