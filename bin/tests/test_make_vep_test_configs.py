@@ -7,7 +7,7 @@ os.chdir("..")
 os.chdir("..")
 
 
-class testMakeVepTestCOnfigs(unittest.TestCase):
+class testMakeVepTestConfigs(unittest.TestCase):
 
     def test_make_config_file(self):
         """test that make_config_file can generate a config file

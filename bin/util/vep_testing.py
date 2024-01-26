@@ -331,7 +331,7 @@ def run_vep(
 
 def get_recent_vep_vcf_bed(
     assay, ref_proj_id, genome_build
-) -> tuple(str, str):
+) -> tuple[str, str]:
     """gets most recent vcf and panel bed files in use for given assay
 
     Args:

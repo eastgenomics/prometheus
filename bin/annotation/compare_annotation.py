@@ -301,9 +301,7 @@ def make_dataframes(
     added_df = added_df[["added"]]
 
     deleted_df = pandas.DataFrame(
-        data=deleted_list, columns=[
-            "mutation", "clinvar ID", "category", "info"
-        ]
+        data=deleted_list, columns=standard_cols
     )
     deleted_df["deleted"] = get_categories(
         deleted_df, bin_folder
@@ -365,7 +363,7 @@ def make_dataframes(
         ]
     )
 
-    detailed_df[[
+    evidence_col_names = [
         "benign_prod", "benign_dev",
         "likely_benign_prod", "likely_benign_dev",
         "uncertain_prod", "uncertain_dev",
@@ -373,15 +371,9 @@ def make_dataframes(
         "pathogenic_prod", "pathogenic_dev",
         "path_low_penetrance_prod", "path_low_penetrance_dev",
         "unknown_prod", "unknown_dev"
-    ]] = evidence_df[[
-        "benign_prod", "benign_dev",
-        "likely_benign_prod", "likely_benign_dev",
-        "uncertain_prod", "uncertain_dev",
-        "likely_pathogenic_prod", "likely_pathogenic_dev",
-        "pathogenic_prod", "pathogenic_dev",
-        "path_low_penetrance_prod", "path_low_penetrance_dev",
-        "unknown_prod", "unknown_dev"
-    ]]
+    ]
+
+    detailed_df[evidence_col_names] = evidence_df[evidence_col_names]
     detailed_df.drop(columns=["from info", "to info"], inplace=True)
 
     return added_df, deleted_df, changed_df, detailed_df

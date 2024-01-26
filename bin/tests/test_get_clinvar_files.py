@@ -1,9 +1,10 @@
 from .context import get_clinvar_files as gc
 import unittest
-
+from unittest.mock import Mock
 import ftplib
 import re
 import os
+
 os.chdir("..")
 os.chdir("..")
 
@@ -18,10 +19,12 @@ class testGetClinvarFiles(unittest.TestCase):
     def test_get_ftp_files(self):
         """test get_ftp_files returns valid file names
         """
-        (recent_vcf_file,
-         recent_tbi_file,
-         latest_time,
-         recent_vcf_version) = gc.get_ftp_files()
+        (
+            recent_vcf_file,
+            recent_tbi_file,
+            latest_time,
+            recent_vcf_version
+        ) = gc.get_ftp_files()
 
         assert (
             re.match(r".+.vcf.gz", recent_vcf_file)
