@@ -1,6 +1,6 @@
 from .context import get_clinvar_files as gc
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import ftplib
 import re
 import os
@@ -11,6 +11,8 @@ os.chdir("..")
 
 class testGetClinvarFiles(unittest.TestCase):
 
+    @patch("ftplib.FTP.login", Mock(return_value=None))
+    @patch("ftplib.FTP.cwd", Mock(return_value=None))
     def test_connect_to_website(self):
         """test connect_to_website can connect to website
         """
@@ -19,6 +21,7 @@ class testGetClinvarFiles(unittest.TestCase):
     def test_get_ftp_files(self):
         """test get_ftp_files returns valid file names
         """
+        # TODO: patch over ftp.retrlines call
         (
             recent_vcf_file,
             recent_tbi_file,
