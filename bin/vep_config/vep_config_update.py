@@ -100,10 +100,9 @@ def run_vep_config_update(
 
         # check if production clinvar files are already in config
         filename_glob = f"{repo_dir}/*_vep_config_v*.json"
-        match_regex = r"\"name\": \"ClinVar\""
-        file_id_regex = r"\"file_id\":\"(.*)\""
+        nested_path = ("custom_annotations", "resource_files", "file_id")
         is_different = utils.is_json_content_different(
-            filename_glob, match_regex, file_id_regex, vcf_id
+            filename_glob, nested_path, vcf_id
         )
         if not is_different:
             error_message = (
@@ -115,9 +114,9 @@ def run_vep_config_update(
             slack_handler.send_message(slack_channel, error_message)
             exit_prometheus()
 
-        file_id_regex = r"\"index_id\":\"(.*)\""
+        nested_path = ("custom_annotations", "resource_files", "index_id")
         is_different = utils.is_json_content_different(
-            filename_glob, match_regex, file_id_regex, index_id
+            filename_glob, nested_path, index_id
         )
         if not is_different:
             error_message = (
@@ -143,8 +142,10 @@ def run_vep_config_update(
                 version = match.group(2)
                 split_version = version.split(".")
                 new_version_end = str(int(split_version[2]) + 1)
-                new_version = (f"{split_version[0]}.{split_version[1]}"
-                               f".{new_version_end}")
+                new_version = (
+                    f"{split_version[0]}.{split_version[1]}"
+                    + f".{new_version_end}"
+                )
                 new_config = f"{match.group(1)}{new_version}.json"
                 break
         if old_config == "":
@@ -159,15 +160,13 @@ def run_vep_config_update(
         )
         # edit file contents to update version and config files
         filename_glob = f"{repo_dir}/*_vep_config_v*.json"
-        match_regex = r"\"name\": \"ClinVar\""
-        replace_regex = r"\"file_id\":\"(.*)\""
-        utils.update_json(filename_glob, match_regex, replace_regex, vcf_id)
-        replace_regex = r"\"index_id\":\"(.*)\""
-        utils.update_json(filename_glob, match_regex, replace_regex, index_id)
+        nested_path = ("custom_annotations", "resource_files", "file_id")
+        utils.update_json(filename_glob, nested_path, vcf_id)
+        nested_path = ("custom_annotations", "resource_files", "index_id")
+        utils.update_json(filename_glob, nested_path, index_id)
         # replace version
-        match_regex = r"\"config_information\":"
-        replace_regex = r"\"config_version\": \"(.*)\""
-        utils.update_json(filename_glob, match_regex, replace_regex, version)
+        nested_path = ("config_information", "genome_build")
+        utils.update_json(filename_glob, nested_path, version)
 
         git_handler.add_file(new_config)
         commit_message = (

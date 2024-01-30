@@ -12,6 +12,7 @@ from dxpy.bindings.dxproject import DXProject
 import pandas as pd
 from dxpy.bindings.dxfile_functions import list_subfolders
 from packaging import version
+from flatten_dict import flatten, unflatten
 
 
 def check_project_exists(project_id) -> bool:
@@ -332,144 +333,102 @@ def load_config_repo(assay, bin_path, config_path) -> str:
     return repo
 
 
-def update_json(
-    json_path_glob, first_match, replace_regex, replace_with
-) -> None:
+def update_json(json_path_glob, nested_path, replace_with) -> None:
     """updates json file by replacing specific string from regex
 
     Args:
         json_path_glob (str): glob path to json
-        first_match (str): first regex to match before replace pattern
-        replace_regex (str): regex pattern to replace
-        replace_with (str): string to replace the replace regex
+        nested_path (tuple): tuple of n strings representing nested structure
+        string to be replaced
+        replace_with (str): string to replace the found string
 
     Raises:
-        RuntimeError: first match regex has not match
-        RuntimeError: replace regex has no match
+        RuntimeError: json did not contain value at nested path
     """
-    old_config_filename = glob.glob(json_path_glob)[0]
-    new_lines = []
-    with open(old_config_filename, "r") as f:
-        match_found = False
-        regex_found = False
-        for line in f:
-            if not match_found:
-                # find first match regex
-                new_lines.append(line)
-                if re.search(first_match, line):
-                    match_found = True
-            else:
-                match = re.search(replace_regex, line)
-                if match and not regex_found:
-                    regex_found = True
-                    replace_string = match[1]
-                    modified = re.sub(replace_string, replace_with, line)
-                    new_lines.append(modified)
-                else:
-                    new_lines.append(line)
-    if not match_found:
+    config_filename = glob.glob(json_path_glob)[0]
+    key_found = False
+    with open(config_filename, "r") as json_file:
+        config = json.load(json_file)
+
+    flat_config = flatten(config)
+    for key in flat_config:
+        if key == nested_path:
+            flat_config[key] = replace_with
+            key_found = True
+            break
+    if not key_found:
         raise RuntimeError(
-            f"Regex {first_match} had no match in file {old_config_filename}"
+            f"Json did not contain value at nested path {nested_path}"
         )
-    elif not regex_found:
-        raise RuntimeError(
-            f"Regex {replace_regex} had no match in file {old_config_filename}"
-        )
+
+    config = unflatten(flat_config)
     try:
-        os.remove(old_config_filename)
+        os.remove(config_filename)
     except OSError:
         pass
-    with open(old_config_filename, "w") as f:
-        f.writelines(new_lines)
+    with open(config_filename, "w") as f:
+        json.dump(config, f)
 
 
-def is_json_content_different(
-    json_path_glob, first_match, file_id_regex, new_file_id
-) -> bool:
-    """checks if specific file ID in json is different to ID provided
+def is_json_content_different(json_path_glob, nested_path, new_string) -> bool:
+    """checks if specific string in json is different to string provided
 
     Args:
         json_path_glob (str): glob path to json
-        first_match (str): regex match before file ID regex
-        file_id_regex (str): regex for json file ID
-        new_file_id (str): new file ID to be compared against
+        nested_path (tuple): tuple of n strings representing nested structure
+        string to be compared against
+        new_string (str): new string to be compared against
 
     Raises:
-        RuntimeError: first match regex has no match
-        RuntimeError: file ID regex has no match
+        RuntimeError: json did not contain value at nested path
 
     Returns:
         bool: is content different
     """
     config_filename = glob.glob(json_path_glob)[0]
-    with open(config_filename, "r") as f:
-        match_found = False
-        regex_found = False
-        for line in f:
-            if not match_found:
-                # find first match regex
-                if re.search(first_match, line):
-                    match_found = True
+    with open(config_filename, "r") as json_file:
+        config = json.load(json_file)
+
+    flat_config = flatten(config)
+    for key in flat_config:
+        if key == nested_path:
+            if new_string == flat_config[key]:
+                return False
             else:
-                match = re.search(file_id_regex, line)
-                if match:
-                    regex_found = True
-                    # get file ID portion of match in parentheses
-                    file_id = match[1]
-                    if file_id == new_file_id:
-                        return False
-                    else:
-                        return True
-    if not match_found:
-        raise RuntimeError(
-            f"Regex {first_match} had no match in file {config_filename}"
-        )
-    elif not regex_found:
-        raise RuntimeError(
-            f"Regex {file_id_regex} had no match in file {config_filename}"
-        )
+                return True
+    # if nested path could not be found
+    raise RuntimeError(
+        f"Json did not contain value at nested path {nested_path}"
+    )
 
 
-def search_json(
-    json_path_glob, first_match, search_regex
-) -> str:
-    """attempts to find string matching regex in json
+def search_json(json_path_glob, nested_path) -> str:
+    """attempts to find string at nested path in json
 
     Args:
         json_path_glob (str): glob path to json
-        first_match (str): regex to match before search regex
-        search_regex (str): regex to search for
+        nested_path (tuple): tuple of n strings representing nested structure
+        string to be found
 
     Raises:
-        RuntimeError: first match regex not found
-        RuntimeError: search regex not found
+        RuntimeError: json did not contain value at nested path
 
     Returns:
-        str: string matching search regex
+        str: string found at nested path
     """
     config_filename = glob.glob(json_path_glob)[0]
-    with open(config_filename, "r") as f:
-        match_found = False
-        regex_found = False
-        for line in f:
-            if not match_found:
-                # find first match regex
-                if re.search(first_match, line):
-                    match_found = True
-            else:
-                match = re.search(search_regex, line)
-                if match:
-                    regex_found = True
-                    # get portion of match in parentheses
-                    return match[1]
-    if not match_found:
-        raise RuntimeError(
-            f"Regex {first_match} had no match in file {config_filename}"
-        )
-    elif not regex_found:
-        raise RuntimeError(
-            f"Regex {search_regex} had no match in file {config_filename}"
-        )
+    with open(config_filename, "r") as json_file:
+        config = json.load(json_file)
+
+    flat_config = flatten(config)
+    for key in flat_config:
+        if key == nested_path:
+            return flat_config[key]
+
+    # if nested path could not be found
+    raise RuntimeError(
+        f"Json did not contain value at nested path {nested_path}"
+    )
 
 
 def increment_version(version) -> str:
