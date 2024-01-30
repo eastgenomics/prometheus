@@ -1,9 +1,6 @@
-from .context import inspect_vep_logs as ivl
+from bin.util import inspect_vep_logs as ivl
 import unittest
-
 import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testInspectVepLogs(unittest.TestCase):
@@ -78,3 +75,7 @@ class testInspectVepLogs(unittest.TestCase):
         assert file_exists
         if file_exists:
             os.remove(filename)
+
+
+if __name__ == "__main__":
+    unittest.main()

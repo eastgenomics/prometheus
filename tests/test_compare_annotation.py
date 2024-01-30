@@ -1,11 +1,8 @@
-from .context import compare_annotation as ca
+from bin.annotation import compare_annotation as ca
 import unittest
-
 import pandas
 import json
 import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testCompareAnnotation(unittest.TestCase):
@@ -181,10 +178,12 @@ class testCompareAnnotation(unittest.TestCase):
             f.write(parse_text)
             f.write("\n")
 
-        (added_df,
-         deleted_df,
-         changed_df,
-         detailed_df) = ca.parse_diff("test_diff.txt")
+        (
+            added_df,
+            deleted_df,
+            changed_df,
+            detailed_df
+        ) = ca.parse_diff("test_diff.txt")
 
         # check output type is correct
         assert (
@@ -253,13 +252,15 @@ class testCompareAnnotation(unittest.TestCase):
             "Conflicting_interpretations_of_pathogenicity",
             "Benign(1)&Likely_benign(1)&Pathogenic(4)"
         ]]
+        bin_folder = ""
         (
             added_df,
             deleted_df,
             changed_df,
             detailed_df
         ) = ca.make_dataframes(
-            added_list, deleted_list, changed_list_from, changed_list_to
+            added_list, deleted_list, changed_list_from, changed_list_to,
+            bin_folder
         )
 
         # check output type is correct

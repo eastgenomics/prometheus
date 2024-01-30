@@ -3,7 +3,6 @@ Handles all logins for Prometheus
 """
 
 import sys
-
 import dxpy as dx
 import logging
 import json

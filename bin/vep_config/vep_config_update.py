@@ -10,16 +10,16 @@ import re
 import glob
 import sys
 
-import util.vep_testing as vep_testing
-import util.deployer as deployer
-from util.login_handler import LoginHandler
-from util.slack_handler import SlackHandler
-from util.utils import (
+from ..util import vep_testing as vep_testing
+from ..util import deployer as deployer
+from ..util.login_handler import LoginHandler
+from ..util.slack_handler import SlackHandler
+from ..util.utils import (
     get_prod_version, load_config, load_config_repo, check_proj_folder_exists
 )
-from util.git_handler import GitHandler
-import util.utils as utils
-from util.progress_tracker import VepProgressTracker as Tracker
+from ..util.git_handler import GitHandler
+from ..util import utils as utils
+from ..util.progress_tracker import VepProgressTracker as Tracker
 
 logger = logging.getLogger("main log")
 

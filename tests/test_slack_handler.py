@@ -1,11 +1,7 @@
 import unittest
 
-from .context import slack_handler as sh
-from .context import login_handler as lh
-
-import os
-os.chdir("..")
-os.chdir("..")
+from bin.util import slack_handler as sh
+from bin.util import login_handler as lh
 
 
 class testSlackHandler(unittest.TestCase):

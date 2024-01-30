@@ -11,11 +11,11 @@ import vcfpy
 import os
 
 # local modules
-import annotation.compare_annotation as compare_annotation
-from utils import check_proj_folder_exists
-from utils import find_dx_file
-from inspect_vep_logs import inspect_logs
-from utils import get_recent_002_projects
+from ..annotation.compare_annotation import compare_annotation
+from .utils import check_proj_folder_exists
+from .utils import find_dx_file
+from .inspect_vep_logs import inspect_logs
+from .utils import get_recent_002_projects
 
 
 def vep_testing_config(
@@ -177,7 +177,7 @@ def vep_testing_annotation(
 
     # Get detailed table of differences for twe and tso500
     (added_csv, deleted_csv, changed_csv, detailed_csv) = (
-        compare_annotation.compare_annotation(
+        compare_annotation(
             twe_diff_filename, tso_diff_filename, bin_folder
         )
     )

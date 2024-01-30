@@ -32,8 +32,9 @@ class GitHandler:
         # git setup
         self.repo = Repo.init(repo_directory, bare=False)
         try:
-            self.origin = self.repo.create_remote("origin",
-                                                  url=remote_repo_url)
+            self.origin = self.repo.create_remote(
+                "origin", url=remote_repo_url
+            )
         except Exception:
             # ignore if origin already exists
             self.origin = self.repo.remotes["origin"]

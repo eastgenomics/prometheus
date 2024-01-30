@@ -7,14 +7,16 @@ import logging
 import sys
 import os
 
-from get_clinvar_files import get_ftp_files, retrieve_clinvar_files
-import make_vep_test_configs as vep
-import util.vep_testing as vep_testing
-import util.deployer as deployer
-from util.login_handler import LoginHandler
-from util.slack_handler import SlackHandler
-from util.progress_tracker import ClinvarProgressTracker as Tracker
-from util.utils import load_config
+from .get_clinvar_files import get_ftp_files, retrieve_clinvar_files
+from .make_vep_test_configs import generate_config_files
+from ..util.vep_testing import vep_testing_annotation
+from ..util.deployer import (
+    deploy_testing_to_development, deploy_clinvar_to_production
+)
+from ..util.login_handler import LoginHandler
+from ..util.slack_handler import SlackHandler
+from ..util.progress_tracker import ClinvarProgressTracker as Tracker
+from ..util.utils import load_config
 
 logger = logging.getLogger("main log")
 
@@ -90,7 +92,7 @@ def run_annotation_update(
             "Creating development and production config files from template"
         )
         (vep_config_dev,
-         vep_config_prod) = vep.generate_config_files(
+         vep_config_prod) = generate_config_files(
             clinvar_version, clinvar_vcf_id, clinvar_tbi_id,
             dev_proj_id, ref_proj_id, bin_folder, genome_build)
     else:
@@ -115,14 +117,14 @@ def run_annotation_update(
          deleted_csv,
          changed_csv,
          detailed_csv,
-         job_report) = vep_testing.vep_testing_annotation(
+         job_report) = vep_testing_annotation(
             dev_proj_id, vep_config_dev, vep_config_prod,
             clinvar_version, bin_folder, ref_proj_id, genome_build
         )
 
         # step 4 - upload .csv files to DNAnexus
         logger.info("Documenting testing on DNAnexus")
-        deployer.deploy_testing_to_development(
+        deploy_testing_to_development(
             dev_proj_id, clinvar_version, added_csv, deleted_csv,
             changed_csv, detailed_csv, job_report)
     else:
@@ -159,7 +161,7 @@ def run_annotation_update(
     # Step 5 - deploy clinvar file to 001
     if not tracker.clinvar_deployed:
         logger.info("Deploying clinvar files to 001 reference project")
-        deployer.deploy_clinvar_to_production(
+        deploy_clinvar_to_production(
             ref_proj_id, dev_proj_id, clinvar_vcf_id, clinvar_tbi_id,
             genome_build_folder
         )

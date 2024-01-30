@@ -2,7 +2,7 @@
 Inspects the contents of VEP log files searching for specific strings
 """
 
-from utils import search_for_regex
+from .utils import search_for_regex
 
 regex_config_location = "resources/annotation_regex.json"
 output_location = "temp"

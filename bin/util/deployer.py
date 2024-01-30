@@ -7,7 +7,7 @@ from dxpy.bindings.dxproject import DXProject
 from dxpy import upload_local_file
 from dxpy.bindings.dxworkflow import DXWorkflow
 
-import utils
+from .utils import check_proj_folder_exists
 
 
 def deploy_config_to_production(
@@ -24,7 +24,7 @@ def deploy_config_to_production(
     Raises:
         Exception: project folder does not exist
     """
-    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+    if not check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(
             f"Folder {deploy_folder} does not exist"
             + f" in project {reference_project_id}"
@@ -49,7 +49,7 @@ def deploy_workflow_to_production(
     Raises:
         Exception: project folder does not exist
     """
-    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+    if not check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(f"Folder {deploy_folder} does not exist"
                         + f" in project {reference_project_id}")
     workflow = DXWorkflow(dxid=workflow_id, project=dev_project_id)
@@ -72,7 +72,7 @@ def deploy_clinvar_to_production(
     Raises:
         Exception: project folder does not exist
     """
-    if not utils.check_proj_folder_exists(reference_project_id, deploy_folder):
+    if not check_proj_folder_exists(reference_project_id, deploy_folder):
         raise Exception(
             f"Folder {deploy_folder} does not exist"
             + f" in project {reference_project_id}"

@@ -1,10 +1,6 @@
 import unittest
-
-from .context import vep_testing as vt
-
+from bin.util import vep_testing as vt
 import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testVepTesting(unittest.TestCase):

@@ -1,13 +1,8 @@
 import unittest
 
-from .context import progress_tracker
-from progress_tracker import ClinvarProgressTracker as Tracker
-from .context import annotation_update
-from .context import get_clinvar_files
-
-import os
-os.chdir("..")
-os.chdir("..")
+from bin.util.progress_tracker import ClinvarProgressTracker as Tracker
+from bin.annotation import annotation_update
+from bin.annotation import get_clinvar_files
 
 
 class testProgressTracker(unittest.TestCase):
@@ -18,7 +13,8 @@ class testProgressTracker(unittest.TestCase):
         (
             ref_proj_id,
             dev_proj_id,
-            slack_channel
+            slack_channel,
+            clinvar_link
         ) = annotation_update.load_config()
 
         (

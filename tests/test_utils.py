@@ -1,15 +1,13 @@
 import unittest
 
-from .context import check_project_exists
-from .context import check_proj_folder_exists
-from .context import get_prod_version
-from .context import find_dx_file
-from .context import utils
-
+from bin.util.utils import (
+    check_project_exists, check_proj_folder_exists, get_prod_version,
+    find_dx_file
+)
+from bin.util import utils
+from unittest.mock import Mock, patch, mock_open
 import re
 import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testUtils(unittest.TestCase):
@@ -96,12 +94,22 @@ class testUtils(unittest.TestCase):
         file_id = find_dx_file(ref_proj_id, folder, file, False)
         assert re.match(r"^file-.+$", file_id)
 
+    @patch("builtins.open", mock_open(read_data="data"))
     def test_load_config(self):
         """test load_config loads contents of config file
         """
-        (
-            ref_proj_id, dev_proj_id, slack_channel, clinvar_link
-        ) = utils.load_config()
+        bin_path = ""
+        config_path = ""
+        json_content = {
+            "001_REFERENCE_PROJ_ID": "project-123456789012345678901234",
+            "003_DEV_CLINVAR_UPDATE_PROJ_ID": "project-123456789012345678901234",
+            "SLACK_CHANNEL": "egg-test",
+            "CLINVAR_BASE_LINK": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar"
+        }
+        with patch("json.load", Mock(return_value=json_content)):
+            (
+                ref_proj_id, dev_proj_id, slack_channel, clinvar_link
+            ) = utils.load_config(bin_path, config_path)
         assert (
             ref_proj_id is not None
             and dev_proj_id is not None

@@ -1,4 +1,4 @@
-from .context import get_clinvar_files as gc
+from bin.annotation import get_clinvar_files as gc
 import unittest
 from unittest.mock import Mock, patch
 import ftplib

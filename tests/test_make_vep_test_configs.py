@@ -1,10 +1,6 @@
 import unittest
-
-from .context import make_vep_test_configs as mv
-
+from bin.annotation import make_vep_test_configs as mv
 import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testMakeVepTestConfigs(unittest.TestCase):

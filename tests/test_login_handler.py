@@ -1,11 +1,6 @@
 import unittest
-
-from .context import login_handler as lh
-
+from bin.util import login_handler as lh
 import re
-import os
-os.chdir("..")
-os.chdir("..")
 
 
 class testLoginHandler(unittest.TestCase):

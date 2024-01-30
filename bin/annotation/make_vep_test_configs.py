@@ -5,7 +5,7 @@ Generates vep config files for development and production ClinVar vcfs
 import dxpy
 import shutil
 
-import util.utils as utils
+from ..util.utils import get_prod_version
 
 
 def generate_config_files(
@@ -32,7 +32,7 @@ def generate_config_files(
     # make prod testing file from template
     (prod_version,
      prod_annotation_file_id,
-     prod_index_file_id) = utils.get_prod_version(
+     prod_index_file_id) = get_prod_version(
          ref_proj_id, "/annotation/b37/clinvar", genome_build
     )
     prod_filename = (
