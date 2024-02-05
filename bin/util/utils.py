@@ -88,7 +88,12 @@ def get_prod_version(
     name_regex = f"clinvar_*_{genome_build}.vcf.gz"
     vcf_files = list(dxpy.find_data_objects(
         name=name_regex, name_mode='glob', project=ref_proj_id,
-        folder=ref_proj_folder, describe=True
+        folder=ref_proj_folder,
+        describe={
+            "fields": {
+                "name": True
+            }
+        }
     ))
 
     # Error handling if files are not found in 001 reference
@@ -102,7 +107,7 @@ def get_prod_version(
     recent_version = vcf_id = index_id = version = ""
 
     for file in vcf_files:
-        name = file['name']
+        name = file["describe"]["name"]
         # if name does not match regex, skip file
         try:
             version = re.search(r"clinvar_([0-9]{8})", name).groups()[0]
@@ -112,7 +117,7 @@ def get_prod_version(
         if version_date > latest_time:
             latest_time = version_date
             recent_version = version
-            vcf_id = file['id']
+            vcf_id = file["id"]
 
     # if no recent version could be found
     if recent_version == "":

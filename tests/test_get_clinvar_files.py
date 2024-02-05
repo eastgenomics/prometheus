@@ -3,10 +3,6 @@ import unittest
 from unittest.mock import Mock, patch
 import ftplib
 import re
-import os
-
-os.chdir("..")
-os.chdir("..")
 
 
 class testGetClinvarFiles(unittest.TestCase):
@@ -16,8 +12,12 @@ class testGetClinvarFiles(unittest.TestCase):
     def test_connect_to_website(self):
         """test connect_to_website can connect to website
         """
-        assert type(gc.connect_to_website()) is ftplib.FTP
+        assert type(gc.connect_to_website("", "b37")) is ftplib.FTP
 
+    @patch(
+        "bin.annotation.get_clinvar_files.connect_to_website",
+        Mock(return_value=None)
+    )
     def test_get_ftp_files(self):
         """test get_ftp_files returns valid file names
         """
@@ -27,7 +27,7 @@ class testGetClinvarFiles(unittest.TestCase):
             recent_tbi_file,
             latest_time,
             recent_vcf_version
-        ) = gc.get_ftp_files()
+        ) = gc.get_ftp_files("", "b37")
 
         assert (
             re.match(r".+.vcf.gz", recent_vcf_file)

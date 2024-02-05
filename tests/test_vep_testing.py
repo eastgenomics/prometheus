@@ -59,7 +59,8 @@ class testVepTesting(unittest.TestCase):
         """
         assay = "TSO500"
         ref_proj = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
-        vcf, bed = vt.get_recent_vep_vcf_bed(assay, ref_proj)
+        genome_build = "b37"
+        vcf, bed = vt.get_recent_vep_vcf_bed(assay, ref_proj, genome_build)
         assert (
             vcf is not None
             and bed is not None

@@ -461,7 +461,7 @@ def get_categories(dataframe_extract, bin_folder) -> list:
     except IOError:
         raise RuntimeError(
             f"The json file {location} could not be found within the"
-            + "resources folder"
+            + " resources folder"
         )
     for index, row in dataframe_extract.iterrows():
         base_name = row["category"]
@@ -531,8 +531,10 @@ def get_full_category_name(base_name, info, regex_dict) -> str:
                         # remove numbers in brackets
                         new_info = []
                         for my_str in split_info:
-                            match = (re.match(r"(.+)\([0-9]+\)", my_str)
-                                     .groups()[0])
+                            match = (
+                                re.match(r"(.+)\([0-9]+\)", my_str)
+                                .groups()[0]
+                            )
                             if match:
                                 new_info.append(match)
                             else:
@@ -545,7 +547,7 @@ def get_full_category_name(base_name, info, regex_dict) -> str:
                         # order this list of categories so the order is uniform
                         # for all variants
                         match_found = False
-                        output_string = name + " "
+                        output_string = key + " "
                         for regex_category in evidence_regex:
                             for evidence in new_info:
                                 if re.match(evidence_regex[regex_category],

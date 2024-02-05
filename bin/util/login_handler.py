@@ -2,7 +2,6 @@
 Handles all logins for Prometheus
 """
 
-import sys
 import dxpy as dx
 import logging
 import json
@@ -33,15 +32,15 @@ class LoginHandler:
         logger = logging.getLogger("main log")
 
         dx.set_security_context(DX_SECURITY_CONTEXT)
-        # to prevent files being accidentally generated outside of dev project
+        # prevent files being accidentally generated outside of dev project
         dx.set_workspace_id(dev_proj_id)
 
         try:
             dx.api.system_whoami()
             logger.info("DNAnexus login successful")
-        except RuntimeError:
+        except Exception:
             logger.error("Error logging in to DNAnexus")
-            sys.exit(1)
+            raise RuntimeError("DNAnexus user authentification failed")
 
     def load_credentials(self, bin_folder, config_path) -> tuple[str, str]:
         """loads credentials from json file
