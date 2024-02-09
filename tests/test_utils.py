@@ -7,7 +7,6 @@ from bin.util.utils import (
 from bin.util import utils
 from unittest.mock import Mock, patch, mock_open
 import re
-import os
 import dxpy
 
 
@@ -33,7 +32,12 @@ class testUtils(unittest.TestCase):
         test_folder = "/annotation/b37/clinvar"
         assert check_proj_folder_exists(test_proj_id, test_folder)
 
-    @patch("dxpy.api.project_list_folder", Mock(side_effect=dxpy.exceptions.ResourceNotFound({"error": {"type": "test", "message": "test"}}, "")))
+    @patch(
+        "dxpy.api.project_list_folder",
+        Mock(side_effect=dxpy.exceptions.ResourceNotFound(
+            {"error": {"type": "test", "message": "test"}}, "")
+        )
+    )
     def test_check_proj_folder_exists_invalid(self):
         """test check_proj_folder_exists fails for folder not present
         """
@@ -206,69 +210,21 @@ class testUtils(unittest.TestCase):
                 json_path_glob, nested_path, old_file_id
             )
 
-    def test_is_json_content_different_invalid_header(self):
-        """test is_json_content_different raises exception when provided with
-        invalid header
-        """
-        path = "temp/unittest_content_different.txt"
-        lines = [
-            "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
-            "End\n"
-        ]
-        with open(path, "w") as file:
-            file.writelines(lines)
-        json_path_glob = "temp/unit*_content_different.txt"
-        file_id_regex = r"File ID: \"(.+)\""
-        new_file_id = "file-myfile23456"
-        first_match = "Header12345"
-        with self.assertRaises(Exception):
-            utils.is_json_content_different(
-                json_path_glob, first_match, file_id_regex, new_file_id
-            )
-        os.remove(path)
-
-    def test_is_json_content_different_invalid_match(self):
-        """test is_json_content_different raises exception when provided with
-        invalid match regex
-        """
-        path = "temp/unittest_content_different.txt"
-        lines = [
-            "Content\n", "Header\n", "File ID: \"file-myfile12345\"\n",
-            "End\n"
-        ]
-        with open(path, "w") as file:
-            file.writelines(lines)
-        json_path_glob = "temp/unit*_content_different.txt"
-        new_file_id = "file-myfile23456"
-        first_match = "Header"
-        file_id_regex = r"File ID Incorrect: \"(.+)\""
-        with self.assertRaises(Exception):
-            utils.is_json_content_different(
-                json_path_glob, first_match, file_id_regex, new_file_id
-            )
-        os.remove(path)
-
+    @patch("glob.glob", Mock(return_value="test"))
+    @patch("builtins.open", mock_open(read_data="data"))
     def test_search_json_invalid(self):
         """test search_json raises exception when provided with
-        invalid search regex
+        invalid nested path
         """
-        path = "temp/unittest_search_json.txt"
-        lines = [
-            "This\n", "sentence\n", "is\n", "false\n"
-        ]
-        with open(path, "w") as file:
-            file.writelines(lines)
+        json_content = {"Header": {"File ID": "file-myfile12345"}}
         json_path_glob = "temp/unit*_search_json.txt"
-        first_match = "sentence"
-        search_regex = "(is12345)"
-
-        with self.assertRaises(Exception):
-            utils.search_json(
-                json_path_glob,
-                first_match,
-                search_regex
-            )
-        os.remove(path)
+        nested_path = ("Header", "Incorrect File ID")
+        with patch("json.load", Mock(return_value=json_content)):
+            with self.assertRaises(RuntimeError):
+                utils.search_json(
+                    json_path_glob,
+                    nested_path
+                )
 
     @patch("glob.glob", Mock(return_value="test"))
     @patch("builtins.open", mock_open(read_data="data"))
