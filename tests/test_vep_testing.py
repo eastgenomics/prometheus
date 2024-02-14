@@ -1,6 +1,7 @@
 import unittest
 from bin.util import vep_testing as vt
 from unittest.mock import Mock, patch, mock_open
+import pandas as pd
 
 
 class testVepTesting(unittest.TestCase):
@@ -40,15 +41,35 @@ class testVepTesting(unittest.TestCase):
         output = "temp/unittest_file.txt"
         assert vt.make_job_report(
             dev_twe_job, dev_tso_job, prod_twe_job, prod_tso_job, output
-        ) is None
+        ) == output
 
+    @patch("bin.util.utils.find_dx_file", Mock(return_value="test"))
     def test_get_recent_vep_vcf_bed(self):
         """test get_recent_vcf_bed returns a value for a vcf file and bed file
         """
         assay = "TSO500"
         ref_proj = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         genome_build = "b37"
-        vcf, bed = vt.get_recent_vep_vcf_bed(assay, ref_proj, genome_build)
+        response = [{
+            "id": "file-1234512345",
+            "describe": {"name": "clinvar_20240101"}
+        }]
+        projects = [{
+            "id": "project-1234512345",
+            "describe": {
+                "id": "project-1234512345",
+                "name": "my_project",
+                "created": "240101"
+            }
+        }]
+        with patch(
+            "dxpy.find_projects",
+            Mock(return_value=projects)
+        ):
+            with patch("dxpy.find_data_objects", Mock(return_value=response)):
+                vcf, bed = vt.get_recent_vep_vcf_bed(
+                    assay, ref_proj, genome_build
+                )
         assert (
             vcf is not None
             and bed is not None

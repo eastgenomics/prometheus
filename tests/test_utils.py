@@ -45,21 +45,25 @@ class testUtils(unittest.TestCase):
         test_folder = "/this-folder-does-not-exist"
         assert not check_proj_folder_exists(test_proj_id, test_folder)
 
+    @patch("bin.util.utils.check_proj_folder_exists", Mock(return_value=True))
+    @patch("bin.util.utils.find_dx_file", Mock(return_value="test"))
     def test_get_prod_version_valid(self):
         """test get_prod_version returns valid version and file ids
         for valid input data
         """
+        response = [{"id": "file-1234512345", "describe": {"name": "clinvar_20240101"}}]
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar"
-        check_proj_folder_exists(ref_proj_id, folder)
-        (prod_version, prod_annotation_file_id,
-            prod_index_file_id) = get_prod_version(
+        with patch("dxpy.find_data_objects", Mock(return_value=response)):
+            (
+                prod_version, prod_annotation_file_id, prod_index_file_id
+            ) = get_prod_version(
                 ref_proj_id, folder, "b37"
             )
         assert (
             re.match(r"\d{6}", prod_version)
-            and re.match(r"^file-.+$", prod_annotation_file_id)
-            and re.match(r"^file-.+$", prod_index_file_id)
+            and prod_annotation_file_id == "file-1234512345"
+            and prod_index_file_id == "test"
         )
 
     def test_get_prod_version_invalid_project(self):
@@ -88,17 +92,21 @@ class testUtils(unittest.TestCase):
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar/"
         file = "invalid_file.xyz"
-        with self.assertRaises(IOError):
-            find_dx_file(ref_proj_id, folder, file, False)
+        response = []
+        with patch("dxpy.find_data_objects", Mock(return_value=response)):
+            with self.assertRaises(IOError):
+                find_dx_file(ref_proj_id, folder, file, False)
 
     def test_find_dx_file_valid(self):
         """test find_dx_file returns valid file id when provided with
         existing file
         """
+        response = [{"id": "file-1234512345", "describe": {"name": "clinvar_20240101"}}]
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b37/clinvar/"
         file = "clinvar_20230107_b37.vcf.gz"
-        file_id = find_dx_file(ref_proj_id, folder, file, False)
+        with patch("dxpy.find_data_objects", Mock(return_value=response)):
+            file_id = find_dx_file(ref_proj_id, folder, file, False)
         assert re.match(r"^file-.+$", file_id)
 
     @patch("builtins.open", mock_open(read_data="data"))
