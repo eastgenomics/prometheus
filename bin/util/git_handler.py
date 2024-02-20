@@ -118,7 +118,7 @@ class GitHandler:
         # set local branch_name to track remote branch_name
         self.origin.fetch()
         (self.repo.heads[branch_name]
-         .set_tracking_branch(self.origin.refs[branch_name]))
+            .set_tracking_branch(self.origin.refs[branch_name]))
 
     def switch_branch(self, branch_name) -> None:
         """switches active branch of active local git repo

@@ -10,16 +10,17 @@ import re
 import glob
 import sys
 
-from ..util import vep_testing as vep_testing
-from ..util import deployer as deployer
-from ..util.login_handler import LoginHandler
-from ..util.slack_handler import SlackHandler
-from ..util.utils import (
-    get_prod_version, load_config, load_config_repo, check_proj_folder_exists
+from util import vep_testing as vep_testing
+from util import deployer as deployer
+from util.login_handler import LoginHandler
+from util.slack_handler import SlackHandler
+from util.utils import (
+    get_prod_version, load_config, load_config_repo, check_proj_folder_exists,
+    is_vep_config_id_different
 )
-from ..util.git_handler import GitHandler
-from ..util import utils as utils
-from ..util.progress_tracker import VepProgressTracker as Tracker
+from util.git_handler import GitHandler
+from util import utils as utils
+from util.progress_tracker import VepProgressTracker as Tracker
 
 logger = logging.getLogger("main log")
 
@@ -37,11 +38,11 @@ def run_vep_config_update(
         creds_path (str): path to credentials file
     """
     # make temp dir
-    os.mkdir("temp", exist_ok=True)
+    os.makedirs("temp", exist_ok=True)
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel, clinvar_link = load_config(
-        bin_folder, config_path
-    )
+    (
+        ref_proj_id, dev_proj_id, slack_channel, clinvar_link, clinvar_path
+    ) = load_config(bin_folder, config_path)
     assay_repo = load_config_repo(assay, bin_folder, config_path)
     login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
@@ -100,9 +101,8 @@ def run_vep_config_update(
 
         # check if production clinvar files are already in config
         filename_glob = f"{repo_dir}/*_vep_config_v*.json"
-        nested_path = ("custom_annotations", "resource_files", "file_id")
-        is_different = utils.is_json_content_different(
-            filename_glob, nested_path, vcf_id
+        is_different = is_vep_config_id_different(
+            filename_glob, vcf_id, True
         )
         if not is_different:
             error_message = (
@@ -114,9 +114,8 @@ def run_vep_config_update(
             slack_handler.send_message(slack_channel, error_message)
             exit_prometheus()
 
-        nested_path = ("custom_annotations", "resource_files", "index_id")
-        is_different = utils.is_json_content_different(
-            filename_glob, nested_path, index_id
+        is_different = is_vep_config_id_different(
+            filename_glob, index_id, False
         )
         if not is_different:
             error_message = (
@@ -160,12 +159,10 @@ def run_vep_config_update(
         )
         # edit file contents to update version and config files
         filename_glob = f"{repo_dir}/*_vep_config_v*.json"
-        nested_path = ("custom_annotations", "resource_files", "file_id")
-        utils.update_json(filename_glob, nested_path, vcf_id)
-        nested_path = ("custom_annotations", "resource_files", "index_id")
-        utils.update_json(filename_glob, nested_path, index_id)
+        utils.update_vep_config_file_id(filename_glob, vcf_id, True)
+        utils.update_vep_config_file_id(filename_glob, index_id, False)
         # replace version
-        nested_path = ("config_information", "genome_build")
+        nested_path = ("config_information", "config_version")
         utils.update_json(filename_glob, nested_path, version)
 
         git_handler.add_file(new_config)
@@ -228,13 +225,8 @@ def run_vep_config_update(
                 dev_proj_id, dev_config_id, config_subfolder, ref_proj_id,
                 assay, genome_build, vcf_id
             )
-        except Exception:
-            error_message = (
-                f"Error: Vep config file for assay {assay}"
-                + f" build {genome_build} took over max wait time"
-                + " for DNAnexus vep job to complete"
-            )
-            slack_handler.send_message(slack_channel, error_message)
+        except RuntimeError as e:
+            slack_handler.send_message(slack_channel, f"Error: {e.message}")
             exit_prometheus()
         git_handler.exit_github()
     else:
@@ -294,7 +286,7 @@ def run_vep_config_update(
         # find dev config id from 003 project
         folder_path = f"{config_subfolder}/Testing"
         dev_config_id = utils.find_dx_file(
-            dev_proj_id, folder_path, tracker.config_name
+            dev_proj_id, folder_path, tracker.config_name, False
         )
         deployer.deploy_config_to_production(
             ref_proj_id, dev_proj_id, dev_config_id, deploy_folder

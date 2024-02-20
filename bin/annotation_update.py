@@ -7,16 +7,18 @@ import logging
 import sys
 import os
 
-from .get_clinvar_files import get_ftp_files, retrieve_clinvar_files
-from .make_vep_test_configs import generate_config_files
-from ..util.vep_testing import vep_testing_annotation
-from ..util.deployer import (
+from annotation.get_clinvar_files import (
+    get_ftp_files, retrieve_clinvar_files
+)
+from annotation.make_vep_test_configs import generate_config_files
+from util.vep_testing import vep_testing_annotation
+from util.deployer import (
     deploy_testing_to_development, deploy_clinvar_to_production
 )
-from ..util.login_handler import LoginHandler
-from ..util.slack_handler import SlackHandler
-from ..util.progress_tracker import ClinvarProgressTracker as Tracker
-from ..util.utils import load_config
+from util.login_handler import LoginHandler
+from util.slack_handler import SlackHandler
+from util.progress_tracker import ClinvarProgressTracker as Tracker
+from util.utils import load_config
 
 logger = logging.getLogger("main log")
 
@@ -34,9 +36,9 @@ def run_annotation_update(
     # make temp dir
     os.makedirs("temp", exist_ok=True)
     # load config files and log into websites
-    ref_proj_id, dev_proj_id, slack_channel, base_vcf_link = load_config(
-        bin_folder, config_path
-    )
+    (
+        ref_proj_id, dev_proj_id, slack_channel, base_vcf_link, base_vcf_path
+    ) = load_config(bin_folder, config_path)
     login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
@@ -45,7 +47,7 @@ def run_annotation_update(
     logger.info("Fetching latest ClinVar annotation resource files")
     (
         recent_vcf_file, recent_tbi_file, earliest_time, clinvar_version
-    ) = get_ftp_files(base_vcf_link, genome_build)
+    ) = get_ftp_files(base_vcf_link, base_vcf_path, genome_build)
     update_folder = (
         f"/ClinVar_version_{clinvar_version}_annotation_resource_update"
     )
@@ -64,10 +66,11 @@ def run_annotation_update(
             "Downloading the clinvar annotation resource files "
             + f"{recent_vcf_file} and {recent_tbi_file} from {earliest_time}"
         )
+        full_clinvar_link = base_vcf_link + base_vcf_path
         (clinvar_vcf_id,
          clinvar_tbi_id) = retrieve_clinvar_files(
             dev_proj_id, recent_vcf_file, recent_tbi_file,
-            clinvar_version, genome_build
+            clinvar_version, genome_build, full_clinvar_link
         )
     else:
         clinvar_vcf_id = tracker.clinvar_vcf_id
@@ -147,8 +150,9 @@ def run_annotation_update(
                 slack_handler, slack_channel, dev_proj_id, update_folder
             )
         else:
-            error_message = ("Error: Clinvar changes status could not"
-                             + " be checked")
+            error_message = (
+                "Error: Clinvar changes status could not be checked"
+            )
             slack_handler.send_message(slack_channel, error_message)
             exit_prometheus()
     elif tracker.changes_status == Tracker.STATUS_PASSED:

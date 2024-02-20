@@ -481,7 +481,7 @@ def get_full_category_name(base_name, info, regex_dict) -> str:
         regex_dict (str): path to regex dictionary
 
     Raises:
-        Exception: Invalid input format in 'info' field
+        RuntimeError: Invalid input format in 'info' field
 
     Returns:
         str: full category name
@@ -524,22 +524,30 @@ def get_full_category_name(base_name, info, regex_dict) -> str:
                 else:
                     # check info
                     if info == ".":
-                        raise Exception("Invalid input format in 'info' field")
+                        raise RuntimeError(
+                            "Invalid input format in 'info' field"
+                            + f" found when parsing name '{base_name}'"
+                            + f" and info field '{info}'"
+                        )
                     else:
                         # try to parse info
-                        split_info = info.split("&")
+                        # handles case in which "&" is in the middle of string
+                        # e.g., Pathogenic&_low_penetrance(1)
+                        regex = r"[a-zA-Z_]+&*[a-zA-Z_]*\([0-9]+\)"
+                        split_info = re.findall(regex, info)
                         # remove numbers in brackets
                         new_info = []
                         for my_str in split_info:
                             match = (
                                 re.match(r"(.+)\([0-9]+\)", my_str)
-                                .groups()[0]
                             )
                             if match:
-                                new_info.append(match)
+                                new_info.append(match.groups()[0])
                             else:
-                                raise Exception(
+                                raise RuntimeError(
                                     "Invalid input format in 'info' field"
+                                    + f" found when parsing name '{base_name}'"
+                                    + f" and info field '{info}'"
                                 )
 
                         # we now have a vec (new_info) containing all evidence

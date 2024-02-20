@@ -280,7 +280,7 @@ def find_dx_file(
             return latest["id"]
 
 
-def load_config(bin_path, config_path) -> tuple[str, str, str, str]:
+def load_config(bin_path, config_path) -> tuple[str, str, str, str, str]:
     """loads config file
 
     Args:
@@ -304,8 +304,9 @@ def load_config(bin_path, config_path) -> tuple[str, str, str, str]:
     dev_proj_id = config.get("003_DEV_CLINVAR_UPDATE_PROJ_ID")
     slack_channel = config.get("SLACK_CHANNEL")
     clinvar_link = config.get("CLINVAR_BASE_LINK")
+    clinvar_path = config.get("CLINVAR_BASE_PATH")
 
-    return ref_proj_id, dev_proj_id, slack_channel, clinvar_link
+    return ref_proj_id, dev_proj_id, slack_channel, clinvar_link, clinvar_path
 
 
 def load_config_repo(assay, bin_path, config_path) -> str:
@@ -336,6 +337,44 @@ def load_config_repo(assay, bin_path, config_path) -> str:
         raise RuntimeError("Invalid assay name provided to load_config_repo")
 
     return repo
+
+
+def update_vep_config_file_id(json_path_glob, replace_with, is_vcf) -> None:
+    """updates json file by replacing specific string from regex
+
+    Args:
+        json_path_glob (str): glob path to json
+        nested_path (tuple): tuple of n strings representing nested structure
+        string to be replaced
+        replace_with (str): string to replace the found string
+
+    Raises:
+        RuntimeError: json did not contain value at nested path
+    """
+    config_filename = glob.glob(json_path_glob)[0]
+    with open(config_filename, "r") as json_file:
+        config = json.load(json_file)
+
+    if is_vcf:
+        file_id_key = "file_id"
+    else:
+        file_id_key = "index_id"
+
+    try:
+        config["custom_annotations"][0]["resource_files"][0][file_id_key] = (
+            replace_with
+        )
+    except Exception:
+        raise RuntimeError(
+            f"Could not locate key {file_id_key} in file {config_filename}"
+        )
+
+    try:
+        os.remove(config_filename)
+    except OSError:
+        pass
+    with open(config_filename, "w") as f:
+        json.dump(config, f, indent=4)
 
 
 def update_json(json_path_glob, nested_path, replace_with) -> None:
@@ -372,7 +411,49 @@ def update_json(json_path_glob, nested_path, replace_with) -> None:
     except OSError:
         pass
     with open(config_filename, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
+
+
+def is_vep_config_id_different(json_path_glob, file_id, is_vcf_id) -> bool:
+    """_summary_
+
+    Args:
+        json_path_glob (str): glob path to json
+        file_id (str): string of file ID to compare against
+
+    Returns:
+        bool: is content different
+    """
+    config_filename = glob.glob(json_path_glob)[0]
+    with open(config_filename, "r") as json_file:
+        config = json.load(json_file)
+
+    # name of key pointing to file ID value provided
+    if is_vcf_id:
+        key_name = "file_id"
+    else:
+        key_name = "index_id"
+
+    nested_path = ("custom_annotations",)
+    flat_config = flatten(config)
+    for key in flat_config:
+        if key == nested_path:
+            try:
+                found_id = (
+                    flat_config[key][0].get("resource_files")[0].get(key_name)
+                )
+                if file_id == found_id:
+                    return False
+                else:
+                    return True
+            except Exception:
+                raise RuntimeError(
+                    f"Json did not contain value at nested path {nested_path}"
+                )
+    # if nested path could not be found
+    raise RuntimeError(
+        f"Json did not contain value at nested path {nested_path}"
+    )
 
 
 def is_json_content_different(json_path_glob, nested_path, new_string) -> bool:

@@ -3,6 +3,7 @@ Get latest weekly release of ClinVar files
 """
 
 import re
+from ftplib import error_perm
 from ftplib import FTP
 from datetime import datetime
 import dxpy
@@ -10,12 +11,14 @@ import time
 
 
 def get_ftp_files(
-        base_vcf_link, genome_build
+        base_vcf_link, base_vcf_path, genome_build
 ) -> tuple[str, str, datetime, str]:
     """retrieves information about latest ClinVar file
 
     Args:
         base_vcf_link (str): link used to download clivar files
+        base_vcf_path (str): path appended to link used to download clinvar
+        files
         genome_build (str): build of genome
 
     Returns:
@@ -29,7 +32,7 @@ def get_ftp_files(
             version of latest ClinVar file
     """
     clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
-    ftp = connect_to_website(base_vcf_link, genome_build)
+    ftp = connect_to_website(base_vcf_link, base_vcf_path, genome_build)
 
     file_list = []
     ftp.retrlines('LIST', file_list.append)
@@ -185,15 +188,18 @@ def run_url_fetcher(
     return job_id
 
 
-def connect_to_website(base_vcf_link, genome_build) -> FTP:
+def connect_to_website(base_vcf_link, base_vcf_path, genome_build) -> FTP:
     """generates a FTP object to enable download from ncbi website
 
     Args:
         base_vcf_link (str): link used to download clivar files
+        base_vcf_path (str): path appended to link used to download clinvar
         genome_build (str): build of genome
 
     Raises:
         RuntimeError: cannot connect to ncbi website
+        RuntimeError: invalid base vcf link provided to connect_to_website
+        RuntimeError: cannot find directory provided as base_vcf_path
 
     Returns:
         ftplib.FTP: FTP object to enable download from ncbi website
@@ -201,16 +207,29 @@ def connect_to_website(base_vcf_link, genome_build) -> FTP:
     """
     # safety feature to prevent too many requests to server
     time.sleep(1)
+    genome_version = genome_build[1:]
+
+    # remove "https://" from link"
+    pattern = r"(http|https)://(.+)"
+    result = re.search(pattern, base_vcf_link)
+    if result is None or len(result.groups()) < 2:
+        raise RuntimeError(
+            "Error: invalid base vcf link provided to connect_to_website"
+        )
+    else:
+        vcf_link = result.group(2)
 
     try:
-        ftp = FTP("ftp.ncbi.nlm.nih.gov")
+        ftp = FTP(vcf_link)
         ftp.login()
-        vcf_link = (
-            f"{base_vcf_link}/vcf_GRCh"
-            + f"{genome_build}/weekly/"
+        vcf_path = (
+            f"{base_vcf_path}/vcf_GRCh"
+            + f"{genome_version}/weekly/"
         )
-        ftp.cwd(vcf_link)
+        ftp.cwd(vcf_path)
     except OSError:
         raise RuntimeError("Error: cannot connect to ncbi website")
+    except error_perm:
+        raise RuntimeError(f"Error: cannot find directory {vcf_path}")
 
     return ftp

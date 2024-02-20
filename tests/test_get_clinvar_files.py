@@ -2,7 +2,6 @@ from bin.annotation import get_clinvar_files as gc
 import unittest
 from unittest.mock import Mock, patch
 import ftplib
-import re
 
 
 class testGetClinvarFiles(unittest.TestCase):

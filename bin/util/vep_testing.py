@@ -11,7 +11,7 @@ import vcfpy
 import os
 
 # local modules
-from ..annotation.compare_annotation import compare_annotation
+from annotation.compare_annotation import compare_annotation
 from .utils import check_proj_folder_exists
 from .utils import find_dx_file
 from .inspect_vep_logs import inspect_logs
@@ -49,7 +49,8 @@ def vep_testing_config(
     vep_job.wait_on_done()
 
     log = "temp/vep_job_log.txt"
-    os.system(f"dx watch {vep_job} > {log}")
+    job_id = vep_job.get_id()
+    os.system(f"dx watch {job_id} > {log}")
 
     try:
         config_name = DXFile(
@@ -147,8 +148,11 @@ def vep_testing_annotation(
 
     # Add job IDs to report text file
     job_report = make_job_report(
-        dev_twe_job, dev_tso_job, prod_twe_job,
-        prod_tso_job, "./temp/job_report.txt"
+        dev_twe_job.describe().get("id"),
+        dev_tso_job.describe().get("id"),
+        prod_twe_job.describe().get("id"),
+        prod_tso_job.describe().get("id"),
+        "./temp/job_report.txt"
     )
 
     # parse VEP run output vcf using bcftools
@@ -223,7 +227,7 @@ def parse_vep_output(project_id, folder, label, update_folder) -> str:
         for record in vcf_reader:
             csq_fields = (record.INFO["CSQ"][0]).split("|")
             info = "."
-            if len(csq_fields) != 5:
+            if len(csq_fields) < 5:
                 raise RuntimeError("VEP output vcf has invalid format")
             if csq_fields[4] != "":
                 info = csq_fields[4]
@@ -297,7 +301,7 @@ def make_job_report(
 def run_vep(
     project_id, project_folder, config_file, vcf_file, panel_bed_file,
     update_folder
-) -> str:
+) -> dxpy.bindings.DXJob:
     """runs the DNAnexus app vep
 
     Args:
@@ -309,7 +313,7 @@ def run_vep(
         update_folder (str): DNAnexus folder in 003 project for current update
 
     Returns:
-        str: DNAnexus job ID for vep run
+        dxpy.bindings.DXJob: DNAnexus job for vep run
     """
     inputs = {
         "config_file": {'$dnanexus_link': config_file},
@@ -324,9 +328,7 @@ def run_vep(
         folder=folder_path, priority='high'
     )
 
-    job_id = job.describe().get('id')
-
-    return job_id
+    return job
 
 
 def get_recent_vep_vcf_bed(
