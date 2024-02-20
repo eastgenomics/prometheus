@@ -119,17 +119,20 @@ class testUtils(unittest.TestCase):
             "001_REFERENCE_PROJ_ID": "project-123456789012345678901234",
             "003_DEV_CLINVAR_UPDATE_PROJ_ID": "project-123456789012345678901234",
             "SLACK_CHANNEL": "egg-test",
-            "CLINVAR_BASE_LINK": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar"
+            "CLINVAR_BASE_LINK": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar",
+            "CLINVAR_BASE_PATH": "path/to/content"
         }
         with patch("json.load", Mock(return_value=json_content)):
             (
-                ref_proj_id, dev_proj_id, slack_channel, clinvar_link
+                ref_proj_id, dev_proj_id, slack_channel, clinvar_link,
+                clinvar_path
             ) = utils.load_config(bin_path, config_path)
         assert (
             ref_proj_id is not None
             and dev_proj_id is not None
             and slack_channel is not None
             and clinvar_link is not None
+            and clinvar_path is not None
         )
 
     @patch("builtins.open", mock_open(read_data="data"))

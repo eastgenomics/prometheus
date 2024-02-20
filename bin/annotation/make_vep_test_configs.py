@@ -5,7 +5,7 @@ Generates vep config files for development and production ClinVar vcfs
 import dxpy
 import shutil
 
-from util.utils import get_prod_version
+from ..util.utils import get_prod_version
 
 
 def generate_config_files(

@@ -11,7 +11,7 @@ import vcfpy
 import os
 
 # local modules
-from annotation.compare_annotation import compare_annotation
+from ..annotation.compare_annotation import compare_annotation
 from .utils import check_proj_folder_exists
 from .utils import find_dx_file
 from .inspect_vep_logs import inspect_logs

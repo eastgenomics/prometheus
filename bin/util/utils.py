@@ -296,6 +296,8 @@ def load_config(bin_path, config_path) -> tuple[str, str, str, str, str]:
             Slack API token
         clinvar_link: str
             Base link used to fetch clinvar files
+        clinvar_path: str
+            Base path used to fetch clinvar files
     """
     with open(config_path, "r", encoding="utf8") as json_file:
         config = json.load(json_file)

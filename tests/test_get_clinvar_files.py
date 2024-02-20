@@ -11,7 +11,9 @@ class testGetClinvarFiles(unittest.TestCase):
     def test_connect_to_website(self):
         """test connect_to_website can connect to website
         """
-        assert type(gc.connect_to_website("", "b37")) is ftplib.FTP
+        link = "https://ftp.ncbi.nlm.nih.gov"
+        path = "/path/to/file"
+        assert type(gc.connect_to_website(link, path, "b37")) is ftplib.FTP
 
 
 if __name__ == "__main__":

@@ -1,8 +1,12 @@
 dxpy==0.351.0
+flatten_dict==0.4.2
 githubrelease==1.5.9
-GitPython==3.1.40
+GitPython==3.1.37
+GitPython==3.1.42
+packaging==23.2
 pandas==2.0.3
 PyGithub==2.1.1
+PyGithub==2.2.0
 Requests==2.31.0
 urllib3==1.26.5
 vcfpy==0.13.6
