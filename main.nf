@@ -25,7 +25,7 @@ process getClinvarFiles
     script:
         
         """
-        python3 ${pathToBin}/annotation/annotation_update.py ${pathToBin} ${genomeBuild} ${config_path} ${cred_path}
+        python3 ${pathToBin}/annotation_update.py ${pathToBin} ${genomeBuild} ${config_path} ${cred_path}
         """
 }
 
@@ -43,7 +43,7 @@ process updateVepConfigs
     script:
         
         """
-        python3 ${pathToBin}/vep_config/vep_config_update.py ${pathToBin} ${assay} ${genomeBuild} ${config_path} ${cred_path}
+        python3 ${pathToBin}/vep_config_update.py ${pathToBin} ${assay} ${genomeBuild} ${config_path} ${cred_path}
         """
 }
 

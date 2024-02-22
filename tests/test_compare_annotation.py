@@ -113,7 +113,7 @@ class testCompareAnnotation(unittest.TestCase):
         )
 
     def test_regex_conflicting_invalid(self):
-        """test that get_full_categoty_name fails when conflicting category
+        """test that get_full_category_name fails when conflicting category
         does not contain information in info column
         """
         conflicting = "Conflicting_interpretations_of_pathogenicity"
@@ -131,7 +131,7 @@ class testCompareAnnotation(unittest.TestCase):
         )
 
     def test_regex_conflicting_other_invalid(self):
-        """test that get_full_categoty_name fails when conflicting other
+        """test that get_full_category_name fails when conflicting other
         category does not contain information in info column
         """
         conflict_other = ("Conflicting_interpretations_of_pathogenicity&other")
