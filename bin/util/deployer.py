@@ -78,19 +78,16 @@ def deploy_clinvar_to_production(
             + f" in project {reference_project_id}"
         )
 
-    with open_dxfile(dxid=vcf_file_id, project=dev_project_id) as vcf_file:
-        vcf_file.clone(project=reference_project_id, folder=deploy_folder)
-        vcf_file.close()
-
-    with open_dxfile(dxid=tbi_file_id, project=dev_project_id) as tbi_file:
-        tbi_file.clone(project=reference_project_id, folder=deploy_folder)
-        vcf_file.close()
+    for file_id in [vcf_file_id, tbi_file_id]:
+        with open_dxfile(dxid=file_id, project=dev_project_id) as file:
+            file.clone(project=reference_project_id, folder=deploy_folder)
+            file.close()
 
 
 def deploy_testing_to_development(
     dev_project_id, clinvar_version, added_csv, deleted_csv, changed_csv,
     detailed_csv, job_report
-) -> tuple[str, str, str, str, str]:
+) -> None:
     """uploads all files output from testing to subfolder of 003 dev project
 
     Args:
@@ -114,28 +111,19 @@ def deploy_testing_to_development(
         job_report_id: str
             DNAnexus file ID for txt file containing job IDs
     """
-    subfolder = (f"ClinVar_version_{clinvar_version}"
-                 + "_annotation_resource_update")
+    subfolder = (
+        f"ClinVar_version_{clinvar_version}"
+        + "_annotation_resource_update"
+    )
     folder_path = f"/{subfolder}/Evidence"
 
     # make new subfolder for documenting evidence
     dev_project = DXProject(dev_project_id)
     dev_project.new_folder(folder_path, parents=True)
 
-    added_id = upload_local_file(
-        filename=added_csv, project=dev_project_id, folder=folder_path
-    )
-    deleted_id = upload_local_file(
-        filename=deleted_csv, project=dev_project_id, folder=folder_path
-    )
-    changed_id = upload_local_file(
-        filename=changed_csv, project=dev_project_id, folder=folder_path
-    )
-    detailed_id = upload_local_file(
-        filename=detailed_csv, project=dev_project_id, folder=folder_path
-    )
-    job_report_id = upload_local_file(
-        filename=job_report, project=dev_project_id, folder=folder_path
-    )
-
-    return added_id, deleted_id, changed_id, detailed_id, job_report_id
+    for csv_filename in [
+        added_csv, deleted_csv, changed_csv, detailed_csv, job_report
+    ]:
+        upload_local_file(
+            filename=csv_filename, project=dev_project_id, folder=folder_path
+        )

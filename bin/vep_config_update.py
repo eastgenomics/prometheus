@@ -10,8 +10,8 @@ import re
 import glob
 import sys
 
-from util import vep_testing as vep_testing
-from util import deployer as deployer
+from util import vep_testing
+from util import deployer
 from util.login_handler import LoginHandler
 from util.slack_handler import SlackHandler
 from util.utils import (
@@ -42,8 +42,8 @@ def run_vep_config_update(
     # load config files and log into websites
     (
         ref_proj_id, dev_proj_id, slack_channel, clinvar_link, clinvar_path
-    ) = load_config(bin_folder, config_path)
-    assay_repo = load_config_repo(assay, bin_folder, config_path)
+    ) = load_config(config_path)
+    assay_repo = load_config_repo(assay, config_path)
     login_handler = LoginHandler(bin_folder, creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
@@ -89,6 +89,15 @@ def run_vep_config_update(
     # push repo to github
     # create pull request
     # merge pull request to main branch
+
+    # regex check that assay_repo is correctly formatted
+    assay_format = r"https://github.com/.+/.+"
+    if not re.match(assay_format, assay_repo):
+        error_message = (
+            f"Error: The assay repo {assay_repo} has bene incorectly formatted"
+        )
+        slack_handler.send_message(slack_channel, error_message)
+        exit_prometheus()
     split_assay_url = assay_repo.split("/")
     repo_name = f"{split_assay_url[3]}/{split_assay_url[4]}"
     if not tracker.pr_merged:
@@ -105,27 +114,17 @@ def run_vep_config_update(
             filename_glob, vcf_id, True
         )
         if not is_different:
-            error_message = (
-                "Error: The ClinVar vcf ID in the production"
-                + f" {assay} VEP config is identical to the new ClinVar vcf ID"
-                + f" {vcf_id}. Therefore, this config file does not need to be"
-                + " updated"
+            report_vep_config_error(
+                slack_handler, slack_channel, assay, vcf_id, "VCF"
             )
-            slack_handler.send_message(slack_channel, error_message)
-            exit_prometheus()
 
         is_different = is_vep_config_id_different(
             filename_glob, index_id, False
         )
         if not is_different:
-            error_message = (
-                "Error: The ClinVar vcf index ID in the current"
-                + " VEP config is identical to the new ClinVar"
-                + f" vcf index ID {index_id}. Therefore, this"
-                + " config file does not need to be updated"
+            report_vep_config_error(
+                slack_handler, slack_channel, assay, index_id, "VCF index"
             )
-            slack_handler.send_message(slack_channel, error_message)
-            exit_prometheus()
 
         # switch to new branch
         branch_name = f"prometheus_dev_branch_{clinvar_version}"
@@ -324,6 +323,29 @@ def exit_prometheus() -> None:
     """
     logger.info("Exiting prometheus")
     exit()
+
+
+def report_vep_config_error(
+        slack_handler, slack_channel, assay, file_id, file_description
+) -> None:
+    """reports error with vep config via slack
+
+    Args:
+        slack_handler (SlackHandler): slack handler used to send message
+        slack_channel (str): slack channel to post error message to
+        assay (str): current assay
+        file_id (str): DNAnexus file ID being tested
+        file_description (str): description of file being tested, e.g.,
+            vcf or index
+    """
+    error_message = (
+        "Error: The ClinVar vcf ID in the production"
+        + f" {assay} VEP config is identical to the new ClinVar"
+        + f" {file_description} ID {file_id}. Therefore, this config file"
+        + " does not need to be updated"
+    )
+    slack_handler.send_message(slack_channel, error_message)
+    exit_prometheus()
 
 
 if __name__ == "__main__":

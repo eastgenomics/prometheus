@@ -113,8 +113,10 @@ def vep_testing_annotation(
         "TSO500", ref_proj_id, genome_build
     )
 
-    update_folder = (f"/ClinVar_version_{clinvar_version}"
-                     + "_annotation_resource_update")
+    update_folder = (
+        f"/ClinVar_version_{clinvar_version}"
+        + "_annotation_resource_update"
+    )
 
     # Run on Dev TWE VCF
     dev_twe_folder = "clinvar_testing_dev_twe"

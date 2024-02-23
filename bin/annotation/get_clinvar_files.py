@@ -11,7 +11,7 @@ import time
 
 
 def get_ftp_files(
-        base_vcf_link, base_vcf_path, genome_build
+    base_vcf_link, base_vcf_path, genome_build
 ) -> tuple[str, str, datetime, str]:
     """retrieves information about latest ClinVar file
 
@@ -33,6 +33,7 @@ def get_ftp_files(
     """
     clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
     ftp = connect_to_website(base_vcf_link, base_vcf_path, genome_build)
+    print(f"ftp = {ftp}")
 
     file_list = []
     ftp.retrlines('LIST', file_list.append)

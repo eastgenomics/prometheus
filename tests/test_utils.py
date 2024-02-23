@@ -60,11 +60,12 @@ class testUtils(unittest.TestCase):
             ) = get_prod_version(
                 ref_proj_id, folder, "b37"
             )
-        assert (
-            re.match(r"\d{6}", prod_version)
-            and prod_annotation_file_id == "file-1234512345"
-            and prod_index_file_id == "test"
-        )
+        with self.subTest():
+            assert re.match(r"\d{6}", prod_version)
+        with self.subTest():
+            assert prod_annotation_file_id == "file-1234512345"
+        with self.subTest():
+            assert prod_index_file_id == "test"
 
     def test_get_prod_version_invalid_project(self):
         """test get_prod_version raises exception when provided
@@ -113,7 +114,6 @@ class testUtils(unittest.TestCase):
     def test_load_config(self):
         """test load_config loads contents of config file
         """
-        bin_path = ""
         config_path = ""
         json_content = {
             "001_REFERENCE_PROJ_ID": "project-123456789012345678901234",
@@ -126,14 +126,17 @@ class testUtils(unittest.TestCase):
             (
                 ref_proj_id, dev_proj_id, slack_channel, clinvar_link,
                 clinvar_path
-            ) = utils.load_config(bin_path, config_path)
-        assert (
-            ref_proj_id is not None
-            and dev_proj_id is not None
-            and slack_channel is not None
-            and clinvar_link is not None
-            and clinvar_path is not None
-        )
+            ) = utils.load_config(config_path)
+        with self.subTest():
+            assert ref_proj_id is not None
+        with self.subTest():
+            assert dev_proj_id is not None
+        with self.subTest():
+            assert slack_channel is not None
+        with self.subTest():
+            assert clinvar_link is not None
+        with self.subTest():
+            assert clinvar_path is not None
 
     @patch("builtins.open", mock_open(read_data="data"))
     def test_load_config_repo_TSO500(self):

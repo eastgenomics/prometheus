@@ -34,10 +34,7 @@ def inspect_logs(
     else:
         test_passed = False
 
-    if test_passed:
-        pass_fail = "pass"
-    else:
-        pass_fail = "fail"
+    pass_fail = pass_fail_to_text(test_passed)
     output_filename = f"temp/{pass_fail}_{assay}_testing_summary.txt"
     output_file = generate_test_summary(
         output_filename, test_passed, config_name, vcf_name,
@@ -66,43 +63,62 @@ def generate_test_summary(
         filename (str): path to summary file generated
     """
     with open(filename, "w") as f:
-        if test_passed:
-            test_results = "Pass"
-        else:
-            test_results = "Fail"
+        test_results = pass_fail_to_text(test_passed)
         f.write(f"Overall testing result: {test_results}\n\n")
         f.write(f"DNAnexus Job ID: {job_id}\n\n")
-        f.write(f"Name of new config file: {config_name}\n")
         config_line_count = len(config_results)
-        if config_line_count > 0:
-            f.write(
-                f"Pass: There were {config_line_count}"
-                + f" lines containing \"{config_name}\"\n"
-            )
-            f.write("Lines containing new config file name:\n\n")
-            for line in config_results:
-                f.write(line)
-        else:
-            f.write(
-                f"Fail: There were {config_line_count} lines"
-                + f" containing \"{config_name}\"\n"
-            )
-        f.write("\n\n")
-
-        f.write(f"Name of new vcf file: {vcf_name}\n\n")
         vcf_line_count = len(vcf_results)
-        if vcf_line_count > 0:
-            f.write(
-                f"Pass: There were {vcf_line_count} lines"
-                + f" containing \"{vcf_name}\"\n"
-            )
-            f.write("Lines containing new vcf file name:\n\n")
-            for line in vcf_results:
-                f.write(line)
-        else:
-            f.write(
-                f"Fail: There were {vcf_line_count} lines"
-                + f" containing \"{vcf_name}\"\n"
-            )
+
+        write_summary_content(
+            f, True, config_name, config_line_count, config_results
+        )
+        write_summary_content(
+            f, False, vcf_name, vcf_line_count, vcf_results
+        )
 
     return filename
+
+
+def write_summary_content(
+        file, include_linebreaks, file_name, line_count, results
+):
+    """writes content to summary file
+
+    Args:
+        f (TextIOWrapper): text IO wrapper for wriitng to file
+        include_linebreaks (bool): sould 2 new lines be included after content
+        file_name (str): name of file being commented on
+        line_count (int): number of lines found within file summarised
+        results (list[str]): list containing strings found in file summarised
+    """
+    file.write(f"Name of new config file: {file_name}\n")
+    if line_count > 0:
+        file.write(
+            f"Pass: There were {line_count}"
+            + f" lines containing \"{file_name}\"\n"
+        )
+        file.write("Lines containing new file name:\n\n")
+        for line in results:
+            file.write(line)
+    else:
+        file.write(
+            f"Fail: There were {line_count} lines"
+            + f" containing \"{file_name}\"\n"
+        )
+    if include_linebreaks:
+        file.write("\n\n")
+
+
+def pass_fail_to_text(has_passed) -> str:
+    """converts boolean to Pass or Fail
+
+    Args:
+        has_passed (bool): has test passed
+
+    Returns:
+        str: Pass or Fail
+    """
+    if has_passed:
+        return "Pass"
+    else:
+        return "Fail"

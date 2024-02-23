@@ -280,11 +280,10 @@ def find_dx_file(
             return latest["id"]
 
 
-def load_config(bin_path, config_path) -> tuple[str, str, str, str, str]:
+def load_config(config_path) -> tuple[str, str, str, str, str]:
     """loads config file
 
     Args:
-        bin_path (str): path to bin directory
         config_path (str): path to config file
 
     Returns:
@@ -311,7 +310,7 @@ def load_config(bin_path, config_path) -> tuple[str, str, str, str, str]:
     return ref_proj_id, dev_proj_id, slack_channel, clinvar_link, clinvar_path
 
 
-def load_config_repo(assay, bin_path, config_path) -> str:
+def load_config_repo(assay, config_path) -> str:
     """loads config file for VEP config update
 
     Args:
@@ -417,11 +416,12 @@ def update_json(json_path_glob, nested_path, replace_with) -> None:
 
 
 def is_vep_config_id_different(json_path_glob, file_id, is_vcf_id) -> bool:
-    """_summary_
+    """checks if specific ID in vep config is different to ID provided
 
     Args:
         json_path_glob (str): glob path to json
         file_id (str): string of file ID to compare against
+        is_vcf_id (bool): is this a vcf ID (True) or an index ID (False)
 
     Returns:
         bool: is content different

@@ -49,7 +49,7 @@ class GitHandler:
             pass
         # set local branch_name to track remote branch_name
         (self.repo.heads[branch_name]
-         .set_tracking_branch(self.origin.refs[branch_name]))
+            .set_tracking_branch(self.origin.refs[branch_name]))
         # checkout local branch_name to working tree
         self.repo.heads[branch_name].checkout()
 

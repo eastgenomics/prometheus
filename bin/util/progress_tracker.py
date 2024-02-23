@@ -97,8 +97,8 @@ class ClinvarProgressTracker:
 
     def check_configs_made(self) -> None:
         """checks if VEP config files have been uploaded to dev project
+        check dev and prod vep config files exist for update in DNAnexus
         """
-        # check dev and prod vep config files exist for update in DNAnexus
         try:
             folder = f"{self.evidence_folder}/Testing"
             dev_filename = "Clinvar_annotation_vep_config_dev_*.json"
@@ -116,9 +116,8 @@ class ClinvarProgressTracker:
             self.configs_made = False
 
     def check_evidence_uploaded(self) -> None:
-        """checks if evidence of VEP testing has been uploaded
+        """checks if evidence of VEP testing has been uploaded to DNAnexus
         """
-        # check evidence files have been uploaded to DNAnexus
         try:
             folder = f"{self.evidence_folder}/Evidence"
             added = "added_variants.csv"
@@ -143,32 +142,22 @@ class ClinvarProgressTracker:
 
     def check_changes_status(self) -> None:
         """checks if evidence passes validation checks
+        check if manual or automatic review has been performed
+        for testing purposes, this is a text file named "manual_review.txt"
+        for manual review or "auto_review.txt" for automatic.
+        this must be present in the DNAnexus update evidence directory
         """
-        # check if manual or automatic review has been performed
-        # for testing purposes, this is a text file named "manual_review.txt"
-        # for manual review or "auto_review.txt" for automatic.
-        # this must be present in the DNAnexus update evidence directory
-        try:
-            folder = f"{self.evidence_folder}/Evidence"
-            auto = ("auto_review.txt")
-            find_dx_file(
-                self.dev_proj_id, folder, auto, False
-            )
-            self.changes_status = self.STATUS_PASSED
-            return
-        except IOError:
-            pass
-
-        try:
-            folder = f"{self.evidence_folder}/Evidence"
-            manual = ("manual_review.txt")
-            find_dx_file(
-                self.dev_proj_id, folder, manual, False
-            )
-            self.changes_status = self.STATUS_PASSED
-            return
-        except IOError:
-            pass
+        for file_name in ["auto_review.txt", "manual_review.txt"]:
+            try:
+                folder = f"{self.evidence_folder}/Evidence"
+                review = file_name
+                find_dx_file(
+                    self.dev_proj_id, folder, review, False
+                )
+                self.changes_status = self.STATUS_PASSED
+                return
+            except IOError:
+                pass
 
         # get file ID, download file
         folder = f"{self.evidence_folder}/Evidence"
@@ -225,19 +214,16 @@ class ClinvarProgressTracker:
     def check_clinvar_deployed(self) -> None:
         """checks if clinvar files have been deployed to 001 reference project
         """
-        # check that clinvar files have been deployed to 001
         try:
             folder = self.ref_deploy_folder
             vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
-            find_dx_file(
-                self.ref_proj_id, folder, vcf_name, False
-            )
             tbi_name = (
                 f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz.tbi"
             )
-            find_dx_file(
-                self.ref_proj_id, folder, tbi_name, False
-            )
+            for name in [vcf_name, tbi_name]:
+                find_dx_file(
+                    self.ref_proj_id, folder, name, False
+                )
             self.clinvar_deployed = True
         except IOError:
             self.clinvar_deployed = False
@@ -245,7 +231,6 @@ class ClinvarProgressTracker:
     def upload_check_passed(self) -> None:
         """upload text file to 003 folder confirming auto-review passed
         """
-        # upload txt file to 003 evidence folder
         file_name = "temp/auto_review.txt"
         with open(file_name, "w") as file:
             file.write("ClinVar changes have passed automatic review")
@@ -338,40 +323,31 @@ class VepProgressTracker:
             self.pr_merged = False
 
     def check_evidence_uploaded(self) -> None:
-        """checks if evidence of VEP testing has been uploaded
+        """checks if evidence of VEP testing has been uploaded to DNAnexus
         """
-        # check evidence files have been uploaded to DNAnexus
-        passed = False
-        try:
-            folder = self.evidence_folder
-            summary = f"pass_{self.assay}_testing_summary.txt"
-            find_dx_file(
-                self.dev_proj_id, folder, summary, False
-            )
-            passed = True
-        except IOError:
-            passed = False
-        failed = False
-        try:
-            folder = self.evidence_folder
-            summary = f"fail_{self.assay}_testing_summary.txt"
-            find_dx_file(
-                self.dev_proj_id, folder, summary, False
-            )
-            failed = True
-        except IOError:
-            failed = False
+        pass_or_fail = False
+        for name_start in ["pass", "fail"]:
+            try:
+                folder = self.evidence_folder
+                summary = f"{name_start}_{self.assay}_testing_summary.txt"
+                find_dx_file(
+                    self.dev_proj_id, folder, summary, False
+                )
+                pass_or_fail = True
+            except IOError:
+                pass
 
-        if passed or failed:
+        if pass_or_fail:
             self.evidence_uploaded = True
 
     def check_testing_status(self) -> None:
         """checks if evidence passes validation checks
+        check if manual or automatic review has been performed
+        for testing purposes, this is a text file named "manual_review.txt"
+        for manual review or "auto_review.txt" for automatic.
+        this must be present in the DNAnexus update evidence directory
         """
-        # check if manual or automatic review has been performed
-        # for testing purposes, this is a text file named "manual_review.txt"
-        # for manual review or "auto_review.txt" for automatic.
-        # this must be present in the DNAnexus update evidence directory
+
         output_filename = f"pass_{self.assay}_testing_summary.txt"
         try:
             find_dx_file(
@@ -384,7 +360,6 @@ class VepProgressTracker:
     def check_config_deployed(self) -> None:
         """checks if clinvar files have been deployed to 001 reference project
         """
-        # check that clinvar files have been deployed to 001
         try:
             find_dx_file(
                 self.ref_proj_id, self.ref_deploy_folder, self.config_name,

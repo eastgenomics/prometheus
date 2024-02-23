@@ -205,20 +205,24 @@ class testCompareAnnotation(unittest.TestCase):
                 ) = ca.parse_diff("test_diff.txt", "")
 
         # check output type is correct
-        assert (
-            isinstance(added_df, pandas.DataFrame)
-            and isinstance(deleted_df, pandas.DataFrame)
-            and isinstance(changed_df, pandas.DataFrame)
-            and isinstance(detailed_df, pandas.DataFrame)
-        )
+        with self.subTest():
+            assert isinstance(added_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(deleted_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(changed_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(detailed_df, pandas.DataFrame)
 
         # check contents are correct
-        assert (
-            len(added_df) == 1
-            and len(deleted_df) == 4
-            and len(changed_df) == 5
-            and len(detailed_df) == 3
-        )
+        with self.subTest():
+            assert len(added_df) == 1
+        with self.subTest():
+            assert len(added_df) == 4
+        with self.subTest():
+            assert len(added_df) == 5
+        with self.subTest():
+            assert len(added_df) == 3
 
     def test_split_variant_info(self):
         """test that variant info string can be split into columns
@@ -229,13 +233,16 @@ class testCompareAnnotation(unittest.TestCase):
             "< 1:247587997:G:A 1985408 Benign ."
         ]
         output = ca.split_variant_info(input)
-        assert (
-            len(output) == 2
-            and output[0][0] == "1:10689814:G:C"
-            and output[0][1] == "2125983"
-            and output[0][2] == "Uncertain_significance"
-            and output[0][3] == "."
-        )
+        with self.subTest():
+            assert len(output) == 2
+        with self.subTest():
+            assert output[0][0] == "1:10689814:G:C"
+        with self.subTest():
+            assert output[0][1] == "2125983"
+        with self.subTest():
+            assert output[0][2] == "Uncertain_significance"
+        with self.subTest():
+            assert output[0][3] == "."
 
     def test_get_evidence_counts_low(self):
         """test if get_evidence_counts can obtain counts from a string of
@@ -283,12 +290,14 @@ class testCompareAnnotation(unittest.TestCase):
             )
 
         # check output type is correct
-        assert (
-            isinstance(added_df, pandas.DataFrame)
-            and isinstance(deleted_df, pandas.DataFrame)
-            and isinstance(changed_df, pandas.DataFrame)
-            and isinstance(detailed_df, pandas.DataFrame)
-        )
+        with self.subTest():
+            assert isinstance(added_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(deleted_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(changed_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(detailed_df, pandas.DataFrame)
 
 
 if __name__ == "__main__":
