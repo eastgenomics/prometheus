@@ -110,15 +110,15 @@ def write_summary_content(
 
 
 def pass_fail_to_text(has_passed) -> str:
-    """converts boolean to Pass or Fail
+    """converts boolean to pass or fail
 
     Args:
         has_passed (bool): has test passed
 
     Returns:
-        str: Pass or Fail
+        str: pass or fail
     """
     if has_passed:
-        return "Pass"
+        return "pass"
     else:
-        return "Fail"
+        return "fail"

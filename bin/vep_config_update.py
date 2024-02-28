@@ -94,7 +94,8 @@ def run_vep_config_update(
     assay_format = r"https://github.com/.+/.+"
     if not re.match(assay_format, assay_repo):
         error_message = (
-            f"Error: The assay repo {assay_repo} has bene incorectly formatted"
+            f"Error: The assay repo {assay_repo} has been"
+            + " incorrectly formatted"
         )
         slack_handler.send_message(slack_channel, error_message)
         exit_prometheus()

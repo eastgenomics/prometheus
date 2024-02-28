@@ -1,7 +1,11 @@
 import unittest
-from bin.util import vep_testing as vt
 from unittest.mock import Mock, patch, mock_open
-import pandas as pd
+import sys
+import os
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../bin')
+))
+from bin.util import vep_testing as vt
 
 
 class testVepTesting(unittest.TestCase):

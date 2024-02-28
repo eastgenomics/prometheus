@@ -1,4 +1,9 @@
 import unittest
+import sys
+import os
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../bin')
+))
 from bin.annotation import make_vep_test_configs as mv
 from unittest.mock import Mock, patch, mock_open
 

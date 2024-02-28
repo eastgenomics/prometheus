@@ -138,6 +138,15 @@ class testCompareAnnotation(unittest.TestCase):
         with self.assertRaises(Exception):
             ca.get_full_category_name(conflict_other, ".", self.REGEX_DICT)
 
+    def test_regex_unknown(self):
+        """test if new category can be classed as unknown if not in regex dict
+        """
+        assert (
+            ca.get_full_category_name(
+                "New_name", ".", self.REGEX_DICT
+            ) == "unknown"
+        )
+
     def test_parse_line_count_no_commas(self):
         """test if line count can be found for 0 commas
         """
@@ -218,11 +227,11 @@ class testCompareAnnotation(unittest.TestCase):
         with self.subTest():
             assert len(added_df) == 1
         with self.subTest():
-            assert len(added_df) == 4
+            assert len(deleted_df) == 4
         with self.subTest():
-            assert len(added_df) == 5
+            assert len(changed_df) == 5
         with self.subTest():
-            assert len(added_df) == 3
+            assert len(detailed_df) == 3
 
     def test_split_variant_info(self):
         """test that variant info string can be split into columns
@@ -243,6 +252,18 @@ class testCompareAnnotation(unittest.TestCase):
             assert output[0][2] == "Uncertain_significance"
         with self.subTest():
             assert output[0][3] == "."
+
+    def test_split_variant_info_invalid(self):
+        """test that variant info string can be split into columns
+        by split_variant_info
+        """
+        input = ["- invalid input ."]
+        expected_err = (
+            "Invalid string provided to split_variant_info"
+            + ". Each string must begin with either '>' or '<'"
+        )
+        with self.assertRaisesRegex(RuntimeError, expected_err):
+            ca.split_variant_info(input)
 
     def test_get_evidence_counts_low(self):
         """test if get_evidence_counts can obtain counts from a string of
@@ -298,6 +319,24 @@ class testCompareAnnotation(unittest.TestCase):
             assert isinstance(changed_df, pandas.DataFrame)
         with self.subTest():
             assert isinstance(detailed_df, pandas.DataFrame)
+
+
+@patch("json.load")
+@patch("builtins.open", mock_open())
+def test_parse_diff_file_not_found(self, mocked_open, mock_json):
+    """test error message raised if file is not found
+    """
+    mocked_open.side_effect = FileNotFoundError()
+    mock_json.return_value = self.REGEX_DICT
+    diff_filename = "test_diff.txt"
+    expected_err = f"Error: the diff file {diff_filename} could not be found!"
+    with self.assertRaisesRegex(FileNotFoundError, expected_err):
+        (
+            added_df,
+            deleted_df,
+            changed_df,
+            detailed_df
+        ) = ca.parse_diff(diff_filename, "")
 
 
 if __name__ == "__main__":

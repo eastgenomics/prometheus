@@ -10,12 +10,12 @@ import json
 class LoginHandler:
     """Handles all logins for Prometheus
     """
-    def __init__(self, bin_folder, config_path) -> None:
+    def __init__(self, config_path) -> None:
         """loads credentials
         """
         (
             self.dx_token, self.slack_token, self.github_token
-        ) = self.load_credentials(bin_folder, config_path)
+        ) = self.load_credentials(config_path)
 
     def login_DNAnexus(self, dev_proj_id) -> None:
         """logs into DNAnexus
@@ -42,11 +42,10 @@ class LoginHandler:
             logger.error("Error logging in to DNAnexus")
             raise RuntimeError("DNAnexus user authentification failed")
 
-    def load_credentials(self, bin_folder, config_path) -> tuple[str, str]:
+    def load_credentials(self, config_path) -> tuple[str, str]:
         """loads credentials from json file
 
         Args:
-            bin_folder (str): path to bin folder
             config_path (str): path to config file
 
         Returns:

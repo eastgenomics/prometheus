@@ -70,12 +70,14 @@ class SlackHandler:
         http.mount("https://", HTTPAdapter(max_retries=retries))
 
         try:
-            response = http.post(
+            post = http.post(
                 "https://slack.com/api/chat.postMessage", {
                     "token": self.slack_token,
                     "channel": f"#{channel}",
                     "text": full_message
-                }).json()
+                }
+            )
+            response = post.json()
 
             if not response['ok']:
                 # error in sending slack notification

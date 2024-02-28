@@ -1,5 +1,5 @@
 """
-Get latest weekly release of ClinVar files
+Get most recent weekly release of ClinVar files
 """
 
 import re
@@ -13,7 +13,7 @@ import time
 def get_ftp_files(
     base_vcf_link, base_vcf_path, genome_build
 ) -> tuple[str, str, datetime, str]:
-    """retrieves information about latest ClinVar file
+    """retrieves information about most recent ClinVar file
 
     Args:
         base_vcf_link (str): link used to download clivar files
@@ -23,13 +23,13 @@ def get_ftp_files(
 
     Returns:
         recent_vcf_file: str
-            name of latest vcf file on ncbi website
+            name of most recent vcf file on ncbi website
         recent_tbi_file: str
-            name of latest vcf index file on ncbi website
-        latest_time: datetime
-            version date of latest ClinVar file
+            name of most recent vcf index file on ncbi website
+        most recent_time: datetime
+            version date of most recent ClinVar file
         recent_vcf_version: str
-            version of latest ClinVar file
+            version of most recent ClinVar file
     """
     clinvar_gz_regex = re.compile(r"^clinvar_[0-9]+\.vcf\.gz$")
     ftp = connect_to_website(base_vcf_link, base_vcf_path, genome_build)
@@ -38,9 +38,9 @@ def get_ftp_files(
     file_list = []
     ftp.retrlines('LIST', file_list.append)
 
-    latest_time = datetime.strptime("20200101", '%Y%m%d').date()
+    most_recent_time = datetime.strptime("20100101", '%Y%m%d').date()
     recent_vcf_version = ""
-    recent_vcf_file = ""
+    recent_vcf_file = None
 
     for file_name in file_list:
 
@@ -55,31 +55,39 @@ def get_ftp_files(
             ftp_vcf_ver = str(ftp_vcf.split("_")[1].split(".")[0])
             date_object = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
 
-            if latest_time < date_object:
-                latest_time = date_object
+            if most_recent_time < date_object:
+                most_recent_time = date_object
                 recent_vcf_version = ftp_vcf_ver
                 recent_vcf_file = file_name
-
-        # get corresponding .vcf.gz.tbi file based on vcf name
-        recent_tbi_file = recent_vcf_file + ".tbi"
 
     # safety feature to prevent too many requests to server
     time.sleep(1)
 
-    return recent_vcf_file, recent_tbi_file, latest_time, recent_vcf_version
+    if recent_vcf_file is None:
+        raise RuntimeError(
+            "No VCF files could be found on clinvar website"
+            + f" for link {base_vcf_link} path {base_vcf_path}"
+        )
+    else:
+        # get corresponding .vcf.gz.tbi file based on vcf name
+        recent_tbi_file = recent_vcf_file + ".tbi"
+
+    return (
+        recent_vcf_file, recent_tbi_file, most_recent_time, recent_vcf_version
+    )
 
 
 def retrieve_clinvar_files(
     project_id, recent_vcf_file, recent_tbi_file, clinvar_version,
     genome_build, base_vcf_link
 ) -> tuple[str, str]:
-    """download latest ClinVar files to 003 development project
+    """download most recent ClinVar files to 003 development project
 
     Args:
         project_id (str): DNAnexus file ID of 003 dev project
         recent_vcf_file (str): file name of most recent ClinVar vcf file
         recent_tbi_file (str): file name of most recent ClinVar tbi file
-        clinvar_version (str): version of latest Clinvar file
+        clinvar_version (str): version of most recent Clinvar file
         genome_build (str): genome build of ClinVar file to be retrieved
         base_vcf_link (str): link used to download clivar files
 

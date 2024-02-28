@@ -38,8 +38,8 @@ def run_annotation_update(
     # load config files and log into websites
     (
         ref_proj_id, dev_proj_id, slack_channel, base_vcf_link, base_vcf_path
-    ) = load_config(bin_folder, config_path)
-    login_handler = LoginHandler(bin_folder, creds_path)
+    ) = load_config(config_path)
+    login_handler = LoginHandler(creds_path)
     login_handler.login_DNAnexus(dev_proj_id)
     slack_handler = SlackHandler(login_handler.slack_token)
 
@@ -67,8 +67,7 @@ def run_annotation_update(
             + f"{recent_vcf_file} and {recent_tbi_file} from {earliest_time}"
         )
         full_clinvar_link = base_vcf_link + base_vcf_path
-        (clinvar_vcf_id,
-         clinvar_tbi_id) = retrieve_clinvar_files(
+        (clinvar_vcf_id, clinvar_tbi_id) = retrieve_clinvar_files(
             dev_proj_id, recent_vcf_file, recent_tbi_file,
             clinvar_version, genome_build, full_clinvar_link
         )
@@ -94,8 +93,7 @@ def run_annotation_update(
         logger.info(
             "Creating development and production config files from template"
         )
-        (vep_config_dev,
-         vep_config_prod) = generate_config_files(
+        (vep_config_dev, vep_config_prod) = generate_config_files(
             clinvar_version, clinvar_vcf_id, clinvar_tbi_id,
             dev_proj_id, ref_proj_id, bin_folder, genome_build)
     else:

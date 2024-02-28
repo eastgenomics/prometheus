@@ -24,10 +24,10 @@ class testInspectVepLogs(unittest.TestCase):
                 log_path, vep_job, config_name, vcf_name, assay
             )
         output_filename = f"temp/pass_{assay}_testing_summary.txt"
-        assert (
-            test_passed
-            and results_file == output_filename
-        )
+        with self.subTest():
+            assert test_passed
+        with self.subTest():
+            assert results_file == output_filename
 
     def test_inspect_logs_fail(self):
         """test that inspect_vep_logs fails with correct file name
@@ -48,10 +48,11 @@ class testInspectVepLogs(unittest.TestCase):
                 log_path, vep_job, config_name, vcf_name, assay
             )
         output_filename = f"temp/fail_{assay}_testing_summary.txt"
-        assert (
-            not test_passed
-            and results_file == output_filename
-        )
+        print(f"{results_file} == {output_filename}")
+        with self.subTest():
+            assert not test_passed
+        with self.subTest():
+            assert results_file == output_filename
 
     @patch("builtins.open", mock_open(read_data="data"))
     def test_generate_test_summary(self):

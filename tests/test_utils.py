@@ -149,7 +149,7 @@ class testUtils(unittest.TestCase):
         }
         assay = "TSO500"
         with patch("json.load", Mock(return_value=json_data)):
-            repo = utils.load_config_repo(assay, "", "")
+            repo = utils.load_config_repo(assay, "")
             assert repo == "test1"
 
     @patch("builtins.open", mock_open(read_data="data"))
@@ -163,7 +163,7 @@ class testUtils(unittest.TestCase):
         }
         assay = "TWE"
         with patch("json.load", Mock(return_value=json_data)):
-            repo = utils.load_config_repo(assay, "", "")
+            repo = utils.load_config_repo(assay, "")
             assert repo == "test2"
 
     @patch("builtins.open", mock_open(read_data="data"))
@@ -177,7 +177,7 @@ class testUtils(unittest.TestCase):
         }
         assay = "CEN"
         with patch("json.load", Mock(return_value=json_data)):
-            repo = utils.load_config_repo(assay, "", "")
+            repo = utils.load_config_repo(assay, "")
             assert repo == "test3"
 
     def test_increment_version(self):
