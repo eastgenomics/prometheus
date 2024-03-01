@@ -203,6 +203,14 @@ class testCompareAnnotation(unittest.TestCase):
 < 1:11854476:T:G 3521 Conflicting_interpretations_of_pathogenicity Benign(500)&Likely_benign(1)
 ---
 > 1:11854476:T:G 3521 Conflicting_interpretations_of_pathogenicity Likely_pathogenic(1)&Uncertain_significance(2)&Benign(5)
+24c25
+< 1:63782951:C:A   .
+---
+> 1:63782951:C:A 2113858 Benign .
+25c26
+< 1:63788951:C:A 2113858 Benign .
+---
+> 1:63788951:C:A   .
         """
         with patch("json.load", Mock(return_value=self.REGEX_DICT)):
             with patch("builtins.open", mock_open(read_data=parse_text)):
@@ -225,9 +233,9 @@ class testCompareAnnotation(unittest.TestCase):
 
         # check contents are correct
         with self.subTest():
-            assert len(added_df) == 1
+            assert len(added_df) == 2
         with self.subTest():
-            assert len(deleted_df) == 4
+            assert len(deleted_df) == 5
         with self.subTest():
             assert len(changed_df) == 5
         with self.subTest():
@@ -272,8 +280,10 @@ class testCompareAnnotation(unittest.TestCase):
         input = (
             "Benign(1)&Likely_benign(1)&Uncertain_significance(2)"
             + "&Likely_pathogenic(3)&Pathogenic(4)"
+            + "&Pathogenic&_low_penetrance(2)"
+            + "&New_category_outside_regex(1)"
         )
-        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 0, 0]
+        assert ca.get_evidence_counts(input) == [1, 1, 2, 3, 4, 2, 1]
 
     def test_get_evidence_counts_high(self):
         """test if get_evidence_counts can obtain counts from a string of
@@ -320,6 +330,35 @@ class testCompareAnnotation(unittest.TestCase):
         with self.subTest():
             assert isinstance(detailed_df, pandas.DataFrame)
 
+    @patch("builtins.open", mock_open(read_data="data"))
+    def test_make_dataframes_empty(self):
+        """test if make_dataframes can generate dataframes from input lists
+        """
+        added_list = []
+        deleted_list = []
+        changed_list_from = []
+        changed_list_to = []
+        bin_folder = ""
+        with patch("json.load", Mock(return_value=self.REGEX_DICT)):
+            (
+                added_df,
+                deleted_df,
+                changed_df,
+                detailed_df
+            ) = ca.make_dataframes(
+                added_list, deleted_list, changed_list_from, changed_list_to,
+                bin_folder
+            )
+
+        # check output type is correct
+        with self.subTest():
+            assert isinstance(added_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(deleted_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(changed_df, pandas.DataFrame)
+        with self.subTest():
+            assert isinstance(detailed_df, pandas.DataFrame)
 
 @patch("json.load")
 @patch("builtins.open", mock_open())

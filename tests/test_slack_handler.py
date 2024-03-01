@@ -25,7 +25,7 @@ class testSlackHandler(unittest.TestCase):
         """test slack message fails to send when invalid slack channel is
         provided
         """
-        mock_json.return_value = {'ok': False, 'error': 'invalid_channel'}
+        mock_json.return_value = {"ok": False, "error": "invalid_channel"}
         slack_token = "slack_token"
 
         handler = sh.SlackHandler(slack_token)
@@ -39,7 +39,7 @@ class testSlackHandler(unittest.TestCase):
         """test slack message fails to send when invalid slack token
         and channel are provided
         """
-        mock_json.return_value = {'ok': False, 'error': 'invalid_token'}
+        mock_json.return_value = {"ok": False, "error": "invalid_token"}
         handler = sh.SlackHandler("invalid-token")
         test_message = "This message is part of a Prometheus unit test"
         with self.assertRaises(Exception):

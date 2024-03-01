@@ -4,24 +4,6 @@ from unittest.mock import Mock, patch
 import ftplib
 
 
-class TestGetFTPFiles(unittest.TestCase):
-
-    @patch("time.sleep")
-    @patch('bin.annotation.get_clinvar_files.FTP.retrlines')
-    @patch('bin.annotation.get_clinvar_files.connect_to_website')
-    def test_mocking_connect_to_website(self, mock_connect, mock_retr, mock_sleep):
-        mock_connect.return_value.mock_retr.return_values = [
-            'file1_240227.vcf.gz'
-        ]
-
-        (
-            recent_vcf_file,
-            recent_tbi_file,
-            latest_time,
-            recent_vcf_version
-        ) = gc.get_ftp_files('_', '_', '_')
-
-
 class testGetClinvarFiles(unittest.TestCase):
 
     @patch("ftplib.FTP.login", Mock(return_value=None))
@@ -34,8 +16,8 @@ class testGetClinvarFiles(unittest.TestCase):
         assert type(gc.connect_to_website(link, path, "b37")) is ftplib.FTP
 
     @patch("time.sleep")
-    @patch('bin.annotation.get_clinvar_files.FTP.retrlines')
-    @patch('bin.annotation.get_clinvar_files.connect_to_website')
+    @patch("bin.annotation.get_clinvar_files.FTP.retrlines")
+    @patch("bin.annotation.get_clinvar_files.connect_to_website")
     def test_get_ftp_files(self, mock_connect, mock_retr, mock_sleep):
         """test get_ftp_files can return latest clinvar vcf,
             index, date of most recent version, and version name

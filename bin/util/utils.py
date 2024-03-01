@@ -145,8 +145,8 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
         assay (str): name of assay of vep config (e.g., TWE, TSO500)
 
     Raises:
-        Exception: no vep config files could be found in ref project folder
-        Exception: project folder does not exist
+        RuntimeError: no vep config files could be found in ref project folder
+        RuntimeError: project folder does not exist
 
     Returns:
         id: str
@@ -175,8 +175,10 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
 
     # Error handling if files are not found in 001 reference
     if not config_files:
-        raise RuntimeError(f"No vep config files matching {name_regex}"
-                           + " were found in 001 reference project")
+        raise RuntimeError(
+            f"No vep config files matching {name_regex}"
+            + " were found in 001 reference project"
+        )
 
     # return the most recent file uploaded found
     if len(config_files) == 1:

@@ -10,24 +10,10 @@ from bin.util import vep_testing as vt
 
 class testVepTesting(unittest.TestCase):
 
-    # TODO: replace open for 2 different files
-    def test_get_diff_output(self):
+    @patch("subprocess.run")
+    def test_get_diff_output(self, mock_subprocess):
         """test get_diff_output generates output file successfully
         """
-        dev_content = (
-            "1:2488153:A:G 135349 not_provided .\n"
-            + "1:11181327:C:T 516652 Benign .\n"
-            + "1:11188164:G:A 584432 Pathogenic .\n"
-            + "1:11190646:G:A 380311 Likely_Benign ."
-        )
-
-        prod_content = (
-            "1:2488153:A:G 135349 not_provided .\n"
-            + "1:11181327:C:T 516652 Likely_Benign .\n"
-            + "1:11188164:G:A 584432 Pathogenic .\n"
-            + "1:11190646:G:A 380311 Benign ."
-        )
-
         output = "temp/tso500_diff_output.txt"
 
         assert vt.get_diff_output(
@@ -58,14 +44,24 @@ class testVepTesting(unittest.TestCase):
             "id": "file-1234512345",
             "describe": {"name": "clinvar_20240101"}
         }]
-        projects = [{
-            "id": "project-1234512345",
-            "describe": {
+        projects = [
+            {
                 "id": "project-1234512345",
-                "name": "my_project",
-                "created": "240101"
+                "describe": {
+                    "id": "project-1234512345",
+                    "name": "my_project",
+                    "created": "240101"
+                }
+            },
+            {
+                "id": "project-5432154321",
+                "describe": {
+                    "id": "project-5432154321",
+                    "name": "my_project_2",
+                    "created": "230101"
+                }
             }
-        }]
+        ]
         with patch(
             "dxpy.find_projects",
             Mock(return_value=projects)
@@ -74,10 +70,10 @@ class testVepTesting(unittest.TestCase):
                 vcf, bed = vt.get_recent_vep_vcf_bed(
                     assay, ref_proj, genome_build
                 )
-        assert (
-            vcf is not None
-            and bed is not None
-        )
+        with self.subTest():
+            assert vcf == "file-1234512345"
+        with self.subTest():
+            assert bed == "file-1234512345"
 
 
 if __name__ == "__main__":

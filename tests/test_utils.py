@@ -12,15 +12,18 @@ import dxpy
 
 class testUtils(unittest.TestCase):
 
-    def test_check_project_exists(self):
+    @patch("dxpy.bindings.dxproject.DXProject")
+    def test_check_project_exists(self, mock_proj):
         """test check_project_exists passes for existing id
         """
-        test_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
+        test_proj_id = "project-1234512345"
         assert check_project_exists(test_proj_id)
 
-    def test_check_project_exists_invalid(self):
+    @patch("dxpy.bindings.dxproject.DXProject")
+    def test_check_project_exists_invalid(self, mock_proj):
         """test check_project_exists fails for invalid id
         """
+        mock_proj.side_effect = dxpy.exceptions.DXError({"error": {"type": "test", "message": "test"}}, "")
         test_proj_id = "project-this-id-will-fail"
         assert not check_project_exists(test_proj_id)
 
@@ -67,24 +70,28 @@ class testUtils(unittest.TestCase):
         with self.subTest():
             assert prod_index_file_id == "test"
 
-    def test_get_prod_version_invalid_project(self):
+    @patch("bin.util.utils.check_proj_folder_exists")
+    def test_get_prod_version_invalid_project(self, mock_check):
         """test get_prod_version raises exception when provided
         with invalid project id
         """
+        mock_check.return_value = False
         ref_proj_id = "project-invalid"
         folder = "/annotation/b37/clinvar"
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(RuntimeError):
             get_prod_version(ref_proj_id, folder, "b37")
 
-    def test_get_prod_version_invalid_folder(self):
+    @patch("bin.util.utils.check_proj_folder_exists")
+    def test_get_prod_version_invalid_folder(self, mock_check):
         """test get_prod_version raises exception when provided
         with invalid folder path
         """
+        mock_check.return_value = False
         ref_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
         folder = "/annotation/b371/clinvar"
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(RuntimeError):
             get_prod_version(ref_proj_id, folder, "b37")
 
     def test_find_dx_file_invalid(self):
