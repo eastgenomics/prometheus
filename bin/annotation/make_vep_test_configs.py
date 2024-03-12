@@ -30,10 +30,10 @@ def generate_config_files(
             DNAnexus file ID for prod vep config file
     """
     # make prod testing file from template
-    (prod_version,
-     prod_annotation_file_id,
-     prod_index_file_id) = get_prod_version(
-         ref_proj_id, "/annotation/b37/clinvar", genome_build
+    (
+        prod_version, prod_annotation_file_id, prod_index_file_id
+    ) = get_prod_version(
+        ref_proj_id, "/annotation/b37/clinvar", genome_build
     )
     prod_filename = (
         f"Clinvar_annotation_vep_config_prod_{prod_version}.json"

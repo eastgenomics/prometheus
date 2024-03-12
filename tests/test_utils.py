@@ -12,7 +12,7 @@ import dxpy
 
 class testUtils(unittest.TestCase):
 
-    @patch("dxpy.bindings.dxproject.DXProject")
+    @patch("bin.util.utils.DXProject")
     def test_check_project_exists(self, mock_proj):
         """test check_project_exists passes for existing id
         """

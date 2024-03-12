@@ -360,22 +360,47 @@ class testCompareAnnotation(unittest.TestCase):
         with self.subTest():
             assert isinstance(detailed_df, pandas.DataFrame)
 
-@patch("json.load")
-@patch("builtins.open", mock_open())
-def test_parse_diff_file_not_found(self, mocked_open, mock_json):
-    """test error message raised if file is not found
-    """
-    mocked_open.side_effect = FileNotFoundError()
-    mock_json.return_value = self.REGEX_DICT
-    diff_filename = "test_diff.txt"
-    expected_err = f"Error: the diff file {diff_filename} could not be found!"
-    with self.assertRaisesRegex(FileNotFoundError, expected_err):
+    @patch("json.load")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_parse_diff_file_not_found(self, mocked_open, mock_json):
+        """test error message raised if file is not found
+        """
+        mocked_open.side_effect = FileNotFoundError()
+        mock_json.return_value = self.REGEX_DICT
+        diff_filename = "test_diff.txt"
+        expected_err = f"Error: the diff file {diff_filename} could not be found!"
+        with self.assertRaisesRegex(FileNotFoundError, expected_err):
+            (
+                added_df,
+                deleted_df,
+                changed_df,
+                detailed_df
+            ) = ca.parse_diff(diff_filename, "")
+
+    @patch("pandas.DataFrame.to_csv")
+    @patch("bin.annotation.compare_annotation.parse_diff")
+    def test_compare_annotation_empty(self, mock_parse, mock_csv):
+        """tests csv reports can be generated from diff outputs
+        """
+        mock_parse.return_value = (
+            pandas.DataFrame(columns=("added", "assay")),
+            pandas.DataFrame(columns=("deleted", "assay")),
+            pandas.DataFrame(columns=("changed from", "changed to", "assay")),
+            pandas.DataFrame(columns=("changed from", "changed to", "assay"))
+        )
         (
-            added_df,
-            deleted_df,
-            changed_df,
-            detailed_df
-        ) = ca.parse_diff(diff_filename, "")
+            added_output, deleted_output, changed_output, detailed_out
+        ) = ca.compare_annotation("twe.txt", "tso.txt", "bin")
+
+        # check output type is correct
+        with self.subTest():
+            assert added_output == "temp/added_variants.csv"
+        with self.subTest():
+            assert deleted_output == "temp/deleted_variants.csv"
+        with self.subTest():
+            assert changed_output == "temp/changed_variants.csv"
+        with self.subTest():
+            assert detailed_out == "temp/detailed_changed_variants.csv"
 
 
 if __name__ == "__main__":

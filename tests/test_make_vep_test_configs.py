@@ -26,6 +26,27 @@ class testMakeVepTestConfigs(unittest.TestCase):
                 ) == output
             )
 
+    @patch("bin.annotation.make_vep_test_configs.dxpy.bindings.dxproject.DXContainer.get_id")
+    @patch("dxpy.upload_local_file")
+    @patch("bin.annotation.make_vep_test_configs.make_config_file")
+    @patch("bin.annotation.make_vep_test_configs.get_prod_version")
+    def test_generate_config_files(
+        self, get_prod, make_config, upload_data, mock_id
+    ):
+        get_prod.return_value = (
+            "010203", "file-1234567890", "file-0987654321"
+        )
+        make_config.return_value.get_id.return_value = "temp/my_file.json"
+        upload_data.return_value.get_id.return_value = "file-1234555555"
+        dev_id, prod_id = mv.generate_config_files(
+            "020304", "file-1234", "file-2345", "project-1234",
+            "project-2345", "bin", "b37"
+            )
+        with self.subTest():
+            assert dev_id == "file-1234555555"
+        with self.subTest():
+            assert prod_id == "file-1234555555"
+
 
 if __name__ == "__main__":
     unittest.main()

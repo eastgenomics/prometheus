@@ -36,6 +36,7 @@ def get_ftp_files(
 
     file_list = []
     ftp.retrlines('LIST', file_list.append)
+    print(f"File list: {file_list}")
 
     most_recent_time = datetime.strptime("20100101", '%Y%m%d').date()
     recent_vcf_version = ""

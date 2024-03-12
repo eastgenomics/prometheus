@@ -44,7 +44,8 @@ class TestClinvarProgressTracker(unittest.TestCase):
 
         assert tracker_b37.perform_checks() is None
 
-    @patch("bin.util.utils.find_dx_file",  Mock(return_value="file-1234567890"))
+    @patch("bin.util.progress_tracker.find_dx_file",  Mock(return_value="file-1234567890"))
+    @patch("bin.util.progress_tracker.check_proj_folder_exists",  Mock(return_value=False))
     def test_check_clinvar_fetched_true(self):
         """tests that check can be made if clinvar was fetched
         """
