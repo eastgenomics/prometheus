@@ -52,7 +52,9 @@ def get_ftp_files(
             # get just the full clinvar vcf
             ftp_vcf = file_name
             ftp_vcf_ver = str(ftp_vcf.split("_")[1].split(".")[0])
-            vcf_file_date = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
+            vcf_file_date = datetime.strptime(
+                str(ftp_vcf_ver), '%Y%m%d'
+            ).date()
 
             if most_recent_time < vcf_file_date:
                 most_recent_time = vcf_file_date

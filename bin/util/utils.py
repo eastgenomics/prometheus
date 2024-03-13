@@ -104,7 +104,7 @@ def get_prod_version(
         )
 
     latest_time = datetime.strptime("20200101", '%Y%m%d').date()
-    recent_version = vcf_id = index_id = version = ""
+    recent_version = vcf_id = index_id = version = None
 
     for file in vcf_files:
         name = file["describe"]["name"]
@@ -120,7 +120,7 @@ def get_prod_version(
             vcf_id = file["id"]
 
     # if no recent version could be found
-    if recent_version == "":
+    if recent_version is None:
         raise RuntimeError(
             f"All clinvar files matching {name_regex}"
             + " in 001 reference project had invalid dates in name"
@@ -200,16 +200,22 @@ def get_latest_version(files) -> str:
     Returns:
         list[str]: name of latest file
     """
-    regex = r"[0-9]+\.[0-9]+\.[0-9]+"
+    # regex format: v, version number, file extension
+    regex = r"v(.+?)\.[a-zA-Z]+"
     latest_version = version.parse("0.0.1")
     latest_file = None
     for file in files:
         name = file["describe"]["name"]
         version_str = re.search(regex, name)
-        # if cannot find match for regex continue
+
         if not version_str:
+            # if cannot find match for regex continue
             continue
-        version_parsed = version.parse(version_str)
+        try:
+            version_parsed = version.parse(version_str[1])
+        except version.InvalidVersion:
+            # if version is in invalid format continue
+            continue
         if version > latest_version:
             latest_version = version_parsed
             latest_file = file
@@ -240,7 +246,7 @@ def find_dx_file(
         str: DNAnexus file ID
         list (str): list of DNAnexus file IDs
     """
-    if folder_path == "":
+    if folder_path.strip() == "":
         folder_path = None
 
     file_list = list(dxpy.find_data_objects(
