@@ -216,7 +216,7 @@ def get_latest_version(files) -> str:
         except version.InvalidVersion:
             # if version is in invalid format continue
             continue
-        if version > latest_version:
+        if version_parsed > latest_version:
             latest_version = version_parsed
             latest_file = file
 
