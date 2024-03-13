@@ -150,9 +150,8 @@ class ClinvarProgressTracker:
         for file_name in ["auto_review.txt", "manual_review.txt"]:
             try:
                 folder = f"{self.evidence_folder}/Evidence"
-                review = file_name
                 find_dx_file(
-                    self.dev_proj_id, folder, review, False
+                    self.dev_proj_id, folder, file_name, False
                 )
                 self.changes_status = self.STATUS_PASSED
                 return

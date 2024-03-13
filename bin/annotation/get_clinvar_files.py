@@ -36,7 +36,6 @@ def get_ftp_files(
 
     file_list = []
     ftp.retrlines('LIST', file_list.append)
-    print(f"File list: {file_list}")
 
     most_recent_time = datetime.strptime("20100101", '%Y%m%d').date()
     recent_vcf_version = ""
@@ -53,10 +52,10 @@ def get_ftp_files(
             # get just the full clinvar vcf
             ftp_vcf = file_name
             ftp_vcf_ver = str(ftp_vcf.split("_")[1].split(".")[0])
-            date_object = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
+            vcf_file_date = datetime.strptime(str(ftp_vcf_ver), '%Y%m%d').date()
 
-            if most_recent_time < date_object:
-                most_recent_time = date_object
+            if most_recent_time < vcf_file_date:
+                most_recent_time = vcf_file_date
                 recent_vcf_version = ftp_vcf_ver
                 recent_vcf_file = file_name
 
