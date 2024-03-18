@@ -353,7 +353,7 @@ class VepProgressTracker:
                 self.dev_proj_id, self.evidence_folder, output_filename, False
             )
             self.changes_status = self.STATUS_PASSED
-        except Exception:
+        except IOError:
             self.changes_status = self.STATUS_FAILED
 
     def check_config_deployed(self) -> None:
