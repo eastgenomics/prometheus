@@ -110,8 +110,9 @@ def retrieve_clinvar_files(
             f"Genome build \"{genome_build}\"specified in"
             + " retrieve_clinvar_files is invalid"
         )
-
     build_number = genome_build[1:]
+    name_ending = f"GRCh{build_number}"
+
     vcf_link = (
         f"{base_vcf_link}/vcf_GRCh"
         + f"{build_number}/weekly/{recent_vcf_file}")
@@ -119,8 +120,8 @@ def retrieve_clinvar_files(
         f"{base_vcf_link}/vcf_GRCh"
         + f"{build_number}/weekly/{recent_tbi_file}")
     vcf_base_name = recent_vcf_file.split(".")[0]
-    renamed_vcf = f"{vcf_base_name}_{genome_build}.vcf.gz"
-    renamed_tbi = f"{vcf_base_name}_{genome_build}.vcf.gz.tbi"
+    renamed_vcf = f"{vcf_base_name}_{name_ending}.vcf.gz"
+    renamed_tbi = f"{vcf_base_name}_{name_ending}.vcf.gz.tbi"
     subfolder = (
         f"ClinVar_version_{clinvar_version}"
         + "_annotation_resource_update"

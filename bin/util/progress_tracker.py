@@ -79,12 +79,12 @@ class ClinvarProgressTracker:
             return
 
         try:
-            vcf_name = f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz"
+            vcf_name = f"clinvar_{self.dev_version}_GRCh{self.genome_build[1:]}.vcf.gz"
             vcf = find_dx_file(
                 self.dev_proj_id, self.evidence_folder, vcf_name, False
             )
             tbi_name = (
-                f"clinvar_{self.dev_version}_{self.genome_build}.vcf.gz.tbi"
+                f"clinvar_{self.dev_version}_GRCh{self.genome_build[1:]}.vcf.gz.tbi"
             )
             tbi = find_dx_file(
                 self.dev_proj_id, self.evidence_folder, tbi_name, False

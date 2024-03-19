@@ -42,7 +42,7 @@ class SlackHandler:
             genome_build (str): genome build of config ClinVar file
             clinvar_version (str): version of clinvar
         """
-        vcf_name = f"clinvar_{clinvar_version}_{genome_build}.vcf.gz"
+        vcf_name = f"clinvar_{clinvar_version}_GRCh{genome_build[1:]}.vcf.gz"
         tbi_name = f"{vcf_name}.tbi"
         update_message = (
             f"The latest version of the {assay} vep config file has been"
