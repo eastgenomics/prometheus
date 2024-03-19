@@ -170,40 +170,32 @@ class ClinvarProgressTracker:
 
         # perform review to check if changes can be passed automatically
         changed_df = pd.read_csv(download_dest)
-        benign_1 = "benign"
-        benign_2 = "benign/likely benign"
-        patho_1 = "pathogenic"
-        patho_2 = "pathogenic/likely pathogenic"
+        # TODO: move whitelist to config file to enable it to
+        # be changed easily in future
+        whitelisted_changes = [
+            ("benign", "benign/likely benign"),
+            ("benign/likely benign", "benign"),
+            ("pathogenic", "pathogenic/likely pathogenic"),
+            ("pathogenic/likely pathogenic", "pathogenic"),
+            ("conflicting.*", "conflicting.*")
+        ]
         for index, row in changed_df.iterrows():
             # if variant classification is changed from benign to
             # pathogenic, flag changes for manual review
             # or if variant classification is changed from pathogenic to
             # benign, flag changes for manual review
-            if (
-                (
-                    (
-                        row["changed from"] == benign_1
-                        or row["changed from"] == benign_2
-                    )
-                    and
-                    (
-                        row["changed to"] == patho_1
-                        or row["changed to"] == patho_2
-                    )
-                )
-                or
-                (
-                    (
-                        row["changed to"] == benign_1
-                        or row["changed to"] == benign_2
-                    )
-                    and
-                    (
-                        row["changed from"] == patho_1
-                        or row["changed from"] == patho_2
-                    )
-                )
-            ):
+            # flag for manual review if any change is present which
+            # is not whitelisted
+            is_change_whitelisted = False
+            for tuple in whitelisted_changes:
+                if (
+                    re.match(tuple[0], row["changed from"])
+                    and re.match(tuple[1], row["changed to"])
+                ):
+                    is_change_whitelisted = True
+                    break
+
+            if not is_change_whitelisted:
                 self.changes_status == self.STATUS_REVIEW
                 return
 
