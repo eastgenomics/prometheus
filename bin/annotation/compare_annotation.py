@@ -510,7 +510,10 @@ def get_full_category_name(base_name, info, regex_dict) -> str:
         name_match = False
 
         for key in difference_regex:
-            if re.match(difference_regex[key], name):
+            for alias in difference_regex[key]:
+                if not re.match(alias, name):
+                    # if match is not found, keep searching
+                    continue
                 # value entered is valid
                 name_match = True
                 if (
