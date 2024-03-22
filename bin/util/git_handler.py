@@ -56,7 +56,6 @@ class GitHandler:
     def pull_repo(self) -> None:
         """pulls git repo from remote source
         """
-        # pull remote repo
         self.origin.pull()
 
     def rename_file(self, filepath, old_name, new_name) -> None:
@@ -143,7 +142,8 @@ class GitHandler:
             int: ID of pull request used by github
         """
         pr = self.github_repo.create_pull(
-            title=title, body=body, head=branch_name, base=base_name)
+            title=title, body=body, head=branch_name, base=base_name
+        )
         return pr.number
 
     def merge_pull_request(self, pr_number) -> None:

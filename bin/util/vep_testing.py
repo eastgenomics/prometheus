@@ -364,7 +364,7 @@ def get_recent_vep_vcf_bed(
         vcf_name = "*_markdup_recalibrated_Haplotyper.vcf.gz"
 
     bed_name = "*.bed"
-    vcf = bed = ""
+    vcf = bed = None
 
     for index, row in df.iterrows():
         # attempt to find vcf and bed files
@@ -376,7 +376,7 @@ def get_recent_vep_vcf_bed(
         except IOError:
             pass
 
-    if vcf == "":
+    if vcf is None:
         raise IOError(
             f"VCF file not found in recent 002 project for assay {assay}"
         )
@@ -386,7 +386,7 @@ def get_recent_vep_vcf_bed(
     except IOError:
         pass
 
-    if bed == "":
+    if bed is None:
         raise IOError(
             f"Panel bed file not found in 001 ref project for assay {assay}"
         )

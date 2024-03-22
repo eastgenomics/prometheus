@@ -184,7 +184,7 @@ def get_prod_vep_config(ref_proj_id, ref_proj_folder, assay) -> str:
     if len(config_files) == 1:
         return config_files[0]["id"]
     else:
-        return get_latest_version(config_files)["id"]
+        return get_latest_version(config_files)
 
 
 def get_latest_version(files) -> str:

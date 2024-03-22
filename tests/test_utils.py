@@ -27,26 +27,44 @@ class testUtils(unittest.TestCase):
         test_proj_id = "project-this-id-will-fail"
         assert not check_project_exists(test_proj_id)
 
-    @patch("dxpy.api.project_list_folder", Mock(return_value=None))
-    def test_check_proj_folder_exists(self):
+    @patch("bin.util.utils.check_project_exists")
+    @patch("bin.util.utils.dxpy.api.project_list_folder")
+    def test_check_proj_folder_exists(self, mock_folder, mock_project):
         """test check_proj_folder_exists passes for existing folder
         """
-        test_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
-        test_folder = "/annotation/b37/clinvar"
+        mock_project.return_value = True
+        test_proj_id = ""
+        test_folder = ""
         assert check_proj_folder_exists(test_proj_id, test_folder)
 
-    @patch(
-        "dxpy.api.project_list_folder",
-        Mock(side_effect=dxpy.exceptions.ResourceNotFound(
-            {"error": {"type": "test", "message": "test"}}, "")
-        )
-    )
-    def test_check_proj_folder_exists_invalid(self):
+    @patch("bin.util.utils.check_project_exists")
+    @patch("dxpy.api.project_list_folder")
+    def test_check_proj_folder_exists_invalid_folder(
+        self, mock_folder, mock_project
+    ):
         """test check_proj_folder_exists fails for folder not present
         """
-        test_proj_id = "project-GXZ0qvj4kbfjZ2fKpKZbxy8q"
-        test_folder = "/this-folder-does-not-exist"
+        mock_folder.side_effect = (
+            Mock(side_effect=dxpy.exceptions.ResourceNotFound(
+                {"error": {"type": "test", "message": "test"}}, "")
+            )
+        )
+        test_proj_id = ""
+        test_folder = ""
         assert not check_proj_folder_exists(test_proj_id, test_folder)
+
+    @patch("bin.util.utils.check_project_exists")
+    @patch("dxpy.api.project_list_folder")
+    def test_check_proj_folder_exists_invalid_project(
+        self, mock_folder, mock_project
+    ):
+        """test check_proj_folder_exists fails for folder not present
+        """
+        mock_project.return_value = False
+        test_proj_id = ""
+        test_folder = ""
+        with self.assertRaises(RuntimeError):
+            check_proj_folder_exists(test_proj_id, test_folder)
 
     @patch("bin.util.utils.check_proj_folder_exists", Mock(return_value=True))
     @patch("bin.util.utils.find_dx_file", Mock(return_value="test"))
@@ -271,6 +289,40 @@ class testUtils(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=content)):
             results = utils.search_for_regex(path, regex)
         assert len(results) == 1
+
+    @patch("bin.util.utils.dxpy.find_data_objects")
+    @patch("bin.util.utils.check_proj_folder_exists")
+    def test_get_prod_vep_config_single(self, mock_folder, mock_find):
+        """test get_prod_vep_config returns file ID when single match
+        to file name regex is found in folder
+        """
+        return_id = "file-1234567890"
+        response = [
+            {"id": return_id, "describe": {"name": "clinvar_20240101"}}
+        ]
+        mock_folder.return_value = True
+        mock_find.return_value = response
+        assert utils.get_prod_vep_config("", "", "TSO500") == return_id
+
+    @patch("bin.util.utils.get_latest_version")
+    @patch("bin.util.utils.dxpy.find_data_objects")
+    @patch("bin.util.utils.check_proj_folder_exists")
+    def test_get_prod_vep_config_multi(
+        self, mock_folder, mock_find, mock_version
+    ):
+        """test get_prod_vep_config returns file ID when multiple matches
+        to file name regex are found in folder
+        """
+        return_id = "file-1234567890"
+        response = [
+            {"id": return_id, "describe": {"name": "clinvar_20240101"}},
+            {"id": "file-00000000", "describe": {"name": "clinvar_20230101"}},
+            {"id": "file-00000001", "describe": {"name": "clinvar_20230401"}}
+        ]
+        mock_folder.return_value = True
+        mock_find.return_value = response
+        mock_version.return_value = return_id
+        assert utils.get_prod_vep_config("", "", "TSO500") == return_id
 
 
 if __name__ == "__main__":

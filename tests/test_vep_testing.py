@@ -75,6 +75,78 @@ class testVepTesting(unittest.TestCase):
         with self.subTest():
             assert bed == "file-1234512345"
 
+    # TODO: fix package not recognised problem
+    @patch("bin.util.vep_testing.dxpy.upload_local_file")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxproject.DXProject.new_folder")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxproject.DXProject")
+    @patch("bin.util.vep_testing.check_proj_folder_exists")
+    @patch("bin.util.vep_testing.inspect_logs")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxfile.DXFile.describe")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxfile.DXFile")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxjob.DXJob.get_id")
+    @patch("bin.util.vep_testing.dxpy.bindings.dxjob.DXJob.DXJob.wait_on_done")
+    @patch("bin.util.vep_testing.run_vep")
+    @patch("bin.util.vep_testing.get_recent_vep_vcf_bed")
+    def test_vep_testing_config(
+        self, mock_recent, mock_run, mock_wait, mock_id,
+        mock_file, mock_describe, mock_logs, mock_check,
+        mock_proj, mock_folder, mock_upload
+    ):
+        mock_recent.return_value = ("file-5432", "file-6543")
+        mock_run.return_value.mock_id.return_value = "file-7654"
+        mock_file.return_value.mock_describe.return_value = {"name": "config.json"}
+        mock_logs.return_value = (True, "pass_file.txt")
+        mock_check.return_value = False
+        mock_upload.return_value = "file-8888"
+
+        project_id = "project-1234"
+        dev_config_id = "file-1234"
+        dx_update_folder = "example_folder"
+        ref_proj_id = "project-2345"
+        assay = "TSO500"
+        genome_build = "b37"
+        clinvar_id = "file-2345"
+        assert vt.vep_testing_config(
+            project_id, dev_config_id, dx_update_folder, ref_proj_id,
+            assay, genome_build, clinvar_id
+        ) == "file-8888"
+
+    @patch("builtins.open", mock_open())
+    @patch("bin.util.vep_testing.vcfpy.Reader.from_path")
+    @patch("bin.util.vep_testing.glob.glob")
+    @patch("bin.util.vep_testing.download_folder")
+    @patch("bin.util.vep_testing.check_proj_folder_exists")
+    def test_parse_vep_output(
+        self, mock_folder, mock_download, mock_glob, mock_reader
+    ):
+        mock_folder.return_value = True
+        mock_glob.return_value = ["path"]
+        # TODO: mock vcfpy.Reader and provide contents
+        mock_reader.return_value = None
+
+        project_id = "project-1234"
+        folder = "folder"
+        label = "label"
+        update_folder = "update_folder"
+        # TODO: check write calls of mocked file written to
+        assert vt.parse_vep_output(
+            project_id, folder, label, update_folder
+        ) is str
+
+    @patch("dxpy.bindings.dxapp.DXApp.run")
+    @patch("dxpy.bindings.dxapp.DXApp")
+    def test_run_vep(self, mock_app, mock_run):
+        project_id = "project-1234"
+        project_folder = "folder"
+        config_file = "file-1234"
+        vcf_file = "file-2345"
+        panel_bed_file = "file-3456"
+        update_folder = "folder"
+        assert vt.run_vep(
+            project_id, project_folder, config_file, vcf_file, panel_bed_file,
+            update_folder
+        ) is not None
+
 
 if __name__ == "__main__":
     unittest.main()
