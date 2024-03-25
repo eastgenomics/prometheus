@@ -3,6 +3,8 @@ __pycache__/
 .vscode
 work/
 .nextflow*
+.coverage
+htmlcov/
 
 credentials.json
 downloads/

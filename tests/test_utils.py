@@ -324,6 +324,88 @@ class testUtils(unittest.TestCase):
         mock_version.return_value = return_id
         assert utils.get_prod_vep_config("", "", "TSO500") == return_id
 
+    def test_get_latest_version(self):
+        """test get_latest_version can get filename of latest file by version
+        """
+        response = [
+            {"id": "file-00000000", "describe": {"name": "my_file_v1.0.0.json"}},
+            {"id": "file-12345678", "describe": {"name": "my_file_v1.3.1.json"}},
+            {"id": "file-00000001", "describe": {"name": "my_file_v1.1.4.json"}}
+        ]
+        assert utils.get_latest_version(response) == "my_file_v1.3.1.json"
+
+    @patch("builtins.open", mock_open(read_data="data"))
+    @patch("bin.util.utils.os.remove")
+    @patch("bin.util.utils.json.load")
+    @patch("bin.util.utils.glob.glob")
+    def test_update_vep_config_file_id(
+        self, mock_glob, mock_json, mock_remove
+    ):
+        """test update_vep_config_file can update json with new value
+        """
+        mock_glob.return_value = "my_file.json"
+        mock_json.return_value = {"custom_annotations": [
+            {
+                "resource_files": [
+                    {
+                        "file_id": "file-1234567890",
+                        "index_id": "file-0987654321"
+                    }
+                ]
+            }
+        ]}
+
+        assert utils.update_vep_config_file_id("", "", False) is None
+
+    @patch("builtins.open", mock_open(read_data="data"))
+    @patch("bin.util.utils.json.load")
+    @patch("bin.util.utils.glob.glob")
+    def test_is_vep_config_id_different(self, mock_glob, mock_json):
+        """test is_vep_config_if_different can determing if provided
+        file ID is different to file ID found in json
+        """
+        mock_glob.return_value = "my_file.json"
+        mock_json.return_value = {"custom_annotations": [
+            {
+                "resource_files": [
+                    {
+                        "file_id": "file-1234567890",
+                        "index_id": "file-0987654321"
+                    }
+                ]
+            }
+        ]}
+        assert not utils.is_vep_config_id_different("", "file-1234567890", True)
+
+    @patch("bin.util.utils.dxpy.find_projects")
+    def test_get_recent_002_projects(self, mock_projects):
+        """test get_recent_002_projects can return info in recent projects
+        from past n months
+        """
+        response = [
+            {"id": "project-1234567890", "describe": {"id": "project-1234567890", "name": "002_TSO500_1", "created": "240101"}},
+            {"id": "project-1234567891", "describe": {"id": "project-1234567891", "name": "002_TSO500_1", "created": "240201"}},
+            {"id": "project-1234567892", "describe": {"id": "project-1234567892", "name": "002_TSO500_1", "created": "240108"}}
+        ]
+        mock_projects.return_value = response
+        result = utils.get_recent_002_projects("TSO500", 6)
+        with self.subTest():
+            assert result is not None
+        with self.subTest():
+            assert result.shape[0] == 3
+
+    @patch("bin.util.utils.list_subfolders")
+    @patch("bin.util.utils.check_proj_folder_exists")
+    def test_match_folder_name(self, mock_exists, mock_subfolder):
+        """test match_folder_name can get folder name from regex
+        """
+        mock_exists.return_value = True
+        folders = ["my_invalid_folder_1", "my_folder_2", "my_folder_3"]
+        mock_subfolder.return_value = folders
+        assert utils.match_folder_name(
+            "file-1234567890", "", "my_folder*"
+        ) == "my_folder_2"
+
 
 if __name__ == "__main__":
     unittest.main()

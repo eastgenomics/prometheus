@@ -198,7 +198,7 @@ def get_latest_version(files) -> str:
         RuntimeError: all config files have invalid versions
 
     Returns:
-        list[str]: name of latest file
+        str: name of latest file
     """
     # regex format: v, version number, file extension
     regex = r"v(.+?)\.[a-zA-Z]+"
@@ -218,7 +218,7 @@ def get_latest_version(files) -> str:
             continue
         if version_parsed > latest_version:
             latest_version = version_parsed
-            latest_file = file
+            latest_file = file["describe"]["name"]
 
     if latest_file is None:
         raise RuntimeError("All config files have invalid version numbers")
